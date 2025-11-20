@@ -13,10 +13,6 @@ const router = createBrowserRouter([
         loader: albumPageLoader,
       },
       {
-        path: "trash",
-        element: <div></div>,
-      },
-      {
         path: "notes/:id",
         element: <div></div>,
       },

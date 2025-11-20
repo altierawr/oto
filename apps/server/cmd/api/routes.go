@@ -17,6 +17,7 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/track/search", app.searchTracksHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/albums/:id", app.viewAlbumHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/tracks/:id/stream", app.getSongStream)
 
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 

@@ -1,5 +1,6 @@
 import { useLoaderData, type LoaderFunction } from "react-router";
 import type { Album } from "../types";
+import SongList from "../components/song-list";
 
 const loader: LoaderFunction = async ({ params }) => {
   const data = await fetch(`http://localhost:3003/v1/albums/${params.id}`);
@@ -11,13 +12,26 @@ const loader: LoaderFunction = async ({ params }) => {
 const AlbumPage = () => {
   const data = useLoaderData() as { album: Album };
 
+  console.log(data.album);
+
   return (
     <>
-      <p>{data.album.title}</p>
+      <div className="flex gap-4">
+        <div
+          className="min-w-[200px] aspect-square bg-cover rounded-lg"
+          style={{
+            backgroundImage: `url(https://resources.tidal.com/images/${data.album.cover.replace(/-/g, "/")}/1280x1280.jpg)`,
+          }}
+        ></div>
+
+        <div className="flex flex-col">
+          <h1 className="text-4xl font-bold tracking-tight">
+            {data.album.title}
+          </h1>
+        </div>
+      </div>
       <div className="mt-4"></div>
-      {data.album.songs.map((song) => (
-        <p key={song.id}>{song.title}</p>
-      ))}
+      <SongList songs={data.album.songs} />
     </>
   );
 };

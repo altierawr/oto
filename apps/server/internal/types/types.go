@@ -29,3 +29,17 @@ type TidalSong struct {
 	AlbumTitle string `json:"albumTitle"`
 	AlbumCover string `json:"albumCover"`
 }
+
+type PlaybackInfo struct {
+	Manifest string `json:"manifest,omitempty"`
+}
+
+type ManifestData struct {
+	Urls []string `json:"urls,omitempty"`
+}
+
+type TidalPlaybackInfo struct {
+	ManifestMimeType string `json:"manifestMimeType"`
+	Manifest         string `json:"manifest"`
+}
+
