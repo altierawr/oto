@@ -13,6 +13,7 @@ export class MusicPlayer {
       end: number;
       duration: number;
     }[];
+    isDataLoading: boolean;
     isDataLoaded: boolean;
     abortController: AbortController | null;
     segmentIndex: number;
@@ -50,11 +51,12 @@ export class MusicPlayer {
       song: s,
       segments: [],
       isDataLoaded: false,
+      isDataLoading: false,
       abortController: null,
       segmentIndex: 0,
     }));
 
-    this.#fetchPlaylistSong(index);
+    this.#loadPlaylistSong(index);
 
     this.#sourceBuffer.addEventListener("updateend", () => {
       this.#loadNext();
@@ -62,7 +64,36 @@ export class MusicPlayer {
 
     this.#audio.addEventListener("timeupdate", () => {
       this.#loadNext();
+      this.#pruneBuffer();
     });
+  }
+
+  async #waitForBufferReady() {
+    return new Promise<void>((resolve) => {
+      if (!this.#sourceBuffer.updating) return resolve();
+      this.#sourceBuffer.addEventListener(
+        "updateend",
+        () => {
+          resolve();
+        },
+        { once: true },
+      );
+    });
+  }
+
+  async #pruneBuffer() {
+    const currentTime = this.#audio.currentTime;
+    if (!this.#sourceBuffer) return;
+
+    const removeEnd = Math.max(0, currentTime - 10);
+    if (removeEnd > 0) {
+      try {
+        await this.#waitForBufferReady();
+        this.#sourceBuffer.remove(0, removeEnd);
+      } catch (e) {
+        console.error("Error pruning buffer:", e);
+      }
+    }
   }
 
   async #loadNext() {
@@ -86,13 +117,12 @@ export class MusicPlayer {
     ) {
       console.log("Switching to next track");
       this.#playlistIndex++;
+      this.#loadPlaylistSong(this.#playlistIndex + 1);
       playlistEntry = this.#playlist[this.#playlistIndex];
     }
 
     const buffer = this.#getBufferedSeconds();
     if (buffer < 10) {
-      console.log("Appending segment", playlistEntry.segmentIndex);
-
       this.#sourceBuffer.appendBuffer(
         playlistEntry.segments[playlistEntry.segmentIndex].data,
       );
@@ -117,11 +147,49 @@ export class MusicPlayer {
     return latestEnd - currentTime;
   }
 
-  async #fetchPlaylistSong(index: number) {
+  async #loadPlaylistSong(index: number) {
+    if (index >= this.#playlist.length) {
+      console.log(
+        "Tried to fetch playlist song at index",
+        index,
+        "but it's outside playlist range, aborting",
+      );
+      return;
+    }
+
+    if (this.#playlist[index].isDataLoading) {
+      console.log(
+        "Tried to load song at index",
+        index,
+        "but it's already loading, aborting",
+      );
+      return;
+    }
+
+    if (this.#playlist[index].isDataLoaded) {
+      console.log(
+        "Tried to load song at index",
+        index,
+        "but it's already loading, aborting",
+      );
+      return;
+    }
+
+    if (index < 0 || index >= this.#playlist.length) {
+      return;
+    }
+
+    // Don't fetch too many tracks
+    if (Math.abs(index - this.#playlistIndex) >= 2) {
+      return;
+    }
+
+    this.#playlist[index].isDataLoading = true;
+
     const controller = new AbortController();
     const signal = controller.signal;
 
-    console.log("Fetching song", this.#playlist[index].song.title);
+    console.log(`Loading song ${index}: ${this.#playlist[index].song.title}`);
     const resp = await fetch(
       `http://localhost:3003/v1/tracks/${this.#playlist[index].song.id}/stream`,
       { signal },
@@ -132,6 +200,20 @@ export class MusicPlayer {
     const reader = resp.body!.getReader();
 
     const mp4boxfile = mp4box.createFile();
+
+    // Suppress dfLa errors (they're not important and just hog the console)
+    const e = console.error;
+    console.error = (...args) => {
+      if (
+        args.length === 3 &&
+        args[1] === "[BoxParser]" &&
+        args[2].includes?.("dfLa")
+      ) {
+        return;
+      }
+
+      e(...args);
+    };
 
     let offset = 0;
     let timescale = 1;
@@ -192,8 +274,12 @@ export class MusicPlayer {
           );
           this.#playlist[index].abortController = null;
           this.#playlist[index].isDataLoaded = true;
+          this.#playlist[index].isDataLoading = true;
           mp4boxfile.flush();
+
           this.#loadNext();
+          this.#loadPlaylistSong(index + 1);
+
           break;
         }
 
