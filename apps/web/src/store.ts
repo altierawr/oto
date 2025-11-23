@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { MusicPlayer } from "./music-player";
+import type { MusicPlayerSong } from "./types";
 
 export type TLocation = "home" | "artists" | "albums";
 
@@ -15,6 +16,18 @@ export const useLocationStore = create<TLocationState>((set) => ({
 
 type TPlayerState = {
   player: MusicPlayer;
+  playInfo?: {
+    song: MusicPlayerSong;
+    currentTime: number;
+    isPaused: boolean;
+    isBuffering: boolean;
+    buffer: {
+      from: number;
+      to: number;
+    } | null;
+    playlist: MusicPlayerSong[];
+    playlistIndex: number;
+  };
 };
 
 export const usePlayerState = create<TPlayerState>(() => ({

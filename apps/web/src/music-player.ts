@@ -1,3 +1,4 @@
+import { usePlayerState } from "./store";
 import type { Song } from "./types";
 import * as mp4box from "mp4box";
 
@@ -12,7 +13,10 @@ export class MusicPlayer {
       start: number;
       end: number;
       duration: number;
+      isInBuffer: boolean;
     }[];
+    accurateDuration: number | null;
+    timestampOffset: number;
     isDataLoading: boolean;
     isDataLoaded: boolean;
     abortController: AbortController | null;
@@ -35,13 +39,99 @@ export class MusicPlayer {
     this.#mediaSource = new MediaSource();
 
     this.#audio.src = URL.createObjectURL(this.#mediaSource);
-    this.#audio.volume = 0.1;
+    this.#audio.volume = 0.02;
     this.#audio.autoplay = true;
 
     this.#mediaSource.addEventListener("sourceopen", () => {
       const mime = "audio/mp4;codecs=flac";
       this.#sourceBuffer = this.#mediaSource.addSourceBuffer(mime);
-      this.#sourceBuffer.mode = "sequence";
+      this.#sourceBuffer.mode = "segments";
+      this.#sourceBuffer.timestampOffset = 0;
+
+      this.#sourceBuffer.addEventListener("updateend", () => {
+        this.#loadNext();
+      });
+    });
+
+    const getBufferedRange = () => {
+      const buffered = this.#audio.buffered;
+
+      const ranges = [];
+      for (let i = 0; i < buffered.length; i++) {
+        ranges.push({
+          start: buffered.start(i),
+          end: buffered.end(i),
+        });
+      }
+
+      if (ranges.length === 0) {
+        return null;
+      }
+
+      return {
+        from: ranges[0].start,
+        to: ranges[ranges.length - 1].end,
+      };
+    };
+
+    this.#audio.addEventListener("timeupdate", () => {
+      usePlayerState.setState({
+        playInfo: {
+          ...usePlayerState.getState().playInfo!,
+          currentTime: this.#audio.currentTime,
+          buffer: getBufferedRange(),
+        },
+      });
+
+      this.#loadNext();
+      this.#pruneBuffer();
+    });
+
+    this.#audio.addEventListener("progress", () => {
+      usePlayerState.setState({
+        playInfo: {
+          ...usePlayerState.getState().playInfo!,
+          buffer: getBufferedRange(),
+        },
+      });
+    });
+
+    this.#audio.addEventListener("waiting", () => {
+      usePlayerState.setState({
+        playInfo: {
+          ...usePlayerState.getState().playInfo!,
+          isBuffering: true,
+        },
+      });
+    });
+
+    this.#audio.addEventListener("canplay", () => {
+      usePlayerState.setState({
+        playInfo: {
+          ...usePlayerState.getState().playInfo!,
+          isBuffering: false,
+          buffer: getBufferedRange(),
+        },
+      });
+    });
+
+    this.#audio.addEventListener("play", () => {
+      usePlayerState.setState({
+        playInfo: {
+          ...usePlayerState.getState().playInfo!,
+          isPaused: false,
+          buffer: getBufferedRange(),
+        },
+      });
+    });
+
+    this.#audio.addEventListener("pause", () => {
+      usePlayerState.setState({
+        playInfo: {
+          ...usePlayerState.getState().playInfo!,
+          isPaused: true,
+        },
+      });
     });
   }
 
@@ -50,22 +140,53 @@ export class MusicPlayer {
     this.#playlist = songs.map((s) => ({
       song: s,
       segments: [],
+      timestampOffset: 0,
+      accurateDuration: null,
       isDataLoaded: false,
       isDataLoading: false,
       abortController: null,
       segmentIndex: 0,
     }));
 
+    usePlayerState.setState({
+      playInfo: {
+        song: songs[index],
+        playlist: songs,
+        playlistIndex: index,
+        currentTime: 0,
+        buffer: null,
+        isBuffering: true,
+        isPaused: false,
+      },
+    });
+
     this.#loadPlaylistSong(index);
+  }
 
-    this.#sourceBuffer.addEventListener("updateend", () => {
-      this.#loadNext();
-    });
+  async seek(positionPerc: number) {
+    const current = this.#playlist[this.#playlistIndex];
+    const duration = current.accurateDuration || current.song.duration;
+    const position = duration * positionPerc;
 
-    this.#audio.addEventListener("timeupdate", () => {
-      this.#loadNext();
-      this.#pruneBuffer();
-    });
+    const targetSegmentIndex = current.segments.findIndex(
+      (seg) => position >= seg.start && position <= seg.end,
+    );
+
+    // Found segment
+    if (targetSegmentIndex !== -1) {
+      const segment = current.segments[targetSegmentIndex];
+
+      // Segment is in buffer, we can just jump to it
+      if (segment.isInBuffer) {
+        this.#audio.currentTime = position;
+        return;
+      }
+
+      console.error("Segment not in buffer, seeking not implemented");
+    }
+
+    // Segment not found
+    console.error("Segment not found when seeking");
   }
 
   async #waitForBufferReady() {
@@ -86,10 +207,12 @@ export class MusicPlayer {
     if (!this.#sourceBuffer) return;
 
     const removeEnd = Math.max(0, currentTime - 10);
+
     if (removeEnd > 0) {
       try {
-        await this.#waitForBufferReady();
-        this.#sourceBuffer.remove(0, removeEnd);
+        this.#waitForBufferReady().then(() => {
+          this.#sourceBuffer.remove(0, removeEnd);
+        });
       } catch (e) {
         console.error("Error pruning buffer:", e);
       }
@@ -123,9 +246,14 @@ export class MusicPlayer {
 
     const buffer = this.#getBufferedSeconds();
     if (buffer < 10) {
+      this.#sourceBuffer.timestampOffset = playlistEntry.timestampOffset;
+
       this.#sourceBuffer.appendBuffer(
         playlistEntry.segments[playlistEntry.segmentIndex].data,
       );
+      this.#playlist[this.#playlistIndex].segments[
+        playlistEntry.segmentIndex
+      ].isInBuffer = true;
 
       this.#playlist[this.#playlistIndex].segmentIndex++;
     }
@@ -223,6 +351,7 @@ export class MusicPlayer {
     mp4boxfile.onReady = (info) => {
       info.tracks.forEach((track) => {
         timescale = track.timescale;
+
         mp4boxfile.setExtractionOptions(track.id, null, {
           nbSamples: Infinity,
         });
@@ -256,6 +385,7 @@ export class MusicPlayer {
           start: startTime,
           end: endTime,
           duration: endTime - startTime,
+          isInBuffer: false,
         });
 
         this.#loadNext();
@@ -275,6 +405,17 @@ export class MusicPlayer {
           this.#playlist[index].abortController = null;
           this.#playlist[index].isDataLoaded = true;
           this.#playlist[index].isDataLoading = true;
+
+          const pe = this.#playlist[index];
+          const songDuration = pe.segments[pe.segments.length - 1].end;
+
+          this.#playlist[index].accurateDuration = songDuration;
+
+          if (index + 1 < this.#playlist.length) {
+            this.#playlist[index + 1].timestampOffset =
+              pe.timestampOffset + songDuration;
+          }
+
           mp4boxfile.flush();
 
           this.#loadNext();

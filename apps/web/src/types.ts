@@ -27,3 +27,7 @@ export type Song = {
   albumTitle: string;
   albumCover: string;
 };
+
+export type MusicPlayerSong = Song & {
+  progress?: number;
+};
