@@ -15,7 +15,7 @@ const AlbumPage = () => {
   console.log(data.album);
 
   return (
-    <>
+    <div className="max-w-[900px]">
       <div className="flex gap-4">
         <div
           className="min-w-[200px] aspect-square bg-cover rounded-lg"
@@ -32,7 +32,7 @@ const AlbumPage = () => {
       </div>
       <div className="mt-4"></div>
       <SongList songs={data.album.songs} />
-    </>
+    </div>
   );
 };
 

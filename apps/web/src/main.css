@@ -17,26 +17,16 @@
   --spacing-8: var(--space-8);
   --spacing-9: var(--space-9);
   --spacing-10: var(--space-10);
-
-  --color-gray-0: var(--gray-0);
-  --color-gray-1: var(--slate-1);
-  --color-gray-2: var(--slate-2);
-  --color-gray-3: var(--slate-3);
-  --color-gray-4: var(--slate-4);
-  --color-gray-5: var(--slate-5);
-  --color-gray-6: var(--slate-6);
-  --color-gray-7: var(--slate-7);
-  --color-gray-8: var(--slate-8);
-  --color-gray-9: var(--slate-9);
-  --color-gray-10: var(--slate-10);
-  --color-gray-11: var(--slate-11);
-  --color-gray-12: var(--slate-12);
 }
 
 * {
   box-sizing: border-box;
   font-family: "Geist";
   font-feature-settings: "ss02", "ss03", "ss04", "ss07", "ss08", "ss09";
+}
+
+body {
+  overflow-y: hidden;
 }
 
 @font-face {

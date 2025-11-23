@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router";
 import Sidebar from "../components/sidebar";
 import { useEffect, useState } from "react";
 import { useLocationStore } from "../store";
+import MusicControls from "../components/music-controls";
 
 const Root = () => {
   const location = useLocation();
@@ -28,11 +29,14 @@ const Root = () => {
   }, [hasSetInitialLocation, location.pathname, setLocation]);
 
   return (
-    <div className="w-full flex h-[100dvh]">
-      <Sidebar />
-      <div className="flex-1 px-8 pt-8">
-        <Outlet />
+    <div className="h-dvh bg-(--gray-1) text-(--gray-12)">
+      <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
+        <Sidebar />
+        <div className="flex-1 px-8 pt-8 overflow-y-auto flex justify-center">
+          <Outlet />
+        </div>
       </div>
+      <MusicControls />
     </div>
   );
 };

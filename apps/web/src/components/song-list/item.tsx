@@ -23,7 +23,7 @@ const SongListItem = ({ song, songs, index }: TProps) => {
   };
 
   return (
-    <div className="w-full flex items-center gap-2 h-7 rounded-lg py-6 px-4 hover:bg-gray-3 group">
+    <div className="w-full flex items-center gap-2 rounded-lg py-2 px-4 hover:bg-gray-3 group">
       <div className="text-center shrink-0 basis-[24px]" onClick={handleClick}>
         <span className="group-hover:hidden">{song.trackNumber}</span>
         <IconPlayerPlay
@@ -33,9 +33,7 @@ const SongListItem = ({ song, songs, index }: TProps) => {
         />
       </div>
       <div className="grow basis-[300px] overflow-hidden text-ellipsis text-nowrap cursor-default select-none tracking-tight">
-        {song.title}
-      </div>
-      <div className="grow shrink basis-[200px] overflow-hidden text-ellipsis text-nowrap cursor-default select-none tracking-tight">
+        <p>{song.title}</p>
         <Link to={`/artists/${song.artistId}`}>{song.artistName}</Link>
       </div>
       <div className="shrink-0 basis-[72px] cursor-default select-none">
