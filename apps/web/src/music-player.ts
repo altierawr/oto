@@ -197,11 +197,6 @@ export class MusicPlayer {
       console.log("SEEKING TO UNKNOWN TERRITORY (danger)");
       current.abortController?.abort();
 
-      console.log(
-        "Playlist index",
-        this.#playlistIndex,
-        "segment index set to 0",
-      );
       this.#playlist[this.#playlistIndex].segments = [];
       this.#playlist[this.#playlistIndex].segmentIndex = 0;
       this.#playlist[this.#playlistIndex].isDataLoading = false;
@@ -209,8 +204,6 @@ export class MusicPlayer {
       this.#playlist[this.#playlistIndex].timestampOffset = position;
 
       await this.#clearSourceBuffer();
-
-      console.log("buffered:", this.#getBufferedRange());
 
       this.#loadPlaylistSong(this.#playlistIndex, position);
 
@@ -304,18 +297,6 @@ export class MusicPlayer {
     const buffer = this.#getBufferedSeconds();
     if (buffer < 10) {
       this.#sourceBuffer.timestampOffset = playlistEntry.timestampOffset;
-      console.log("appending at", playlistEntry.timestampOffset);
-      console.log(
-        "segment index is",
-        playlistEntry.segmentIndex,
-        "for playlist index",
-        this.#playlistIndex,
-      );
-
-      console.log(
-        "source buffer timestamp offset is",
-        this.#sourceBuffer.timestampOffset,
-      );
 
       const segment = playlistEntry.segments[playlistEntry.segmentIndex];
 
