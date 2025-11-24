@@ -6,6 +6,7 @@ import {
   IconPlayerTrackPrev,
 } from "@tabler/icons-react";
 import { usePlayerState } from "../../store";
+import { formatDuration } from "../../utils/utils";
 
 const MusicControls = () => {
   const playerState = usePlayerState();
@@ -49,7 +50,9 @@ const MusicControls = () => {
         </div>
 
         <div className="flex items-center gap-3 text-sm">
-          <p>0:00</p>
+          <p className="w-[30px]">
+            {formatDuration(playerState.playInfo.currentTime)}
+          </p>
           <div className="flex-1 h-[12px] py-[4px]" onClick={handleSeekClick}>
             <div className="h-full rounded-full relative bg-(--gray-5)">
               {playerState.playInfo.buffer && (
@@ -79,7 +82,7 @@ const MusicControls = () => {
               />
             </div>
           </div>
-          <p>4:20</p>
+          <p>{formatDuration(playerState.playInfo.song.duration)}</p>
         </div>
       </div>
       <div className="flex-1"></div>

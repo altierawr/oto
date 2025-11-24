@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -39,17 +40,27 @@ func (app *application) getSongStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ss := r.URL.Query().Get("ss")
+
 	w.Header().Set("Content-Type", "audio/mp4")
 	w.Header().Set("Transfer-Encoding", "chunked")
 
-	cmd := exec.Command("ffmpeg",
+	args := []string{
 		"-i", *stream,
 		"-c:a", "flac",
 		"-f", "mp4",
 		"-movflags", "frag_keyframe+empty_moov+default_base_moof",
 		"-frag_duration", "5000000",
 		"pipe:1",
-	)
+	}
+
+	if ss != "" {
+		args = append([]string{"-ss", fmt.Sprintf("%ss", ss)}, args...)
+	}
+
+	fmt.Printf("%v\n", args)
+
+	cmd := exec.Command("ffmpeg", args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

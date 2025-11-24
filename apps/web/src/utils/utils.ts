@@ -1,4 +1,6 @@
-export const formatDuration = (duration: number) => {
+export const formatDuration = (dur: number) => {
+  let duration = Math.floor(dur);
+
   let hours = 0;
   let minutes = 0;
 
