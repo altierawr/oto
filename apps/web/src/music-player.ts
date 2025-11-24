@@ -210,9 +210,14 @@ export class MusicPlayer {
 
     if (removeEnd > 0) {
       try {
-        this.#waitForBufferReady().then(() => {
-          this.#sourceBuffer.remove(0, removeEnd);
-        });
+        await this.#waitForBufferReady();
+
+        // This sometimes happens when seeking, shouldn't be a big deal to return here?
+        if (this.#sourceBuffer.updating) {
+          return;
+        }
+
+        this.#sourceBuffer.remove(0, removeEnd);
       } catch (e) {
         console.error("Error pruning buffer:", e);
       }
