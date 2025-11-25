@@ -16,13 +16,14 @@ export class MusicPlayer {
       isInBuffer: boolean;
     }[];
     accurateDuration: number | null;
-    timestampOffset: number;
+    timestampOffset: number | null;
     isDataLoading: boolean;
     isDataLoaded: boolean;
     abortController: AbortController | null;
     segmentIndex: number;
   }[];
   #playlistIndex: number = 0;
+  #lastNotifiedTrackIndex: number | null = null;
 
   constructor() {
     this.#playlist = [];
@@ -50,6 +51,24 @@ export class MusicPlayer {
     });
 
     this.#audio.addEventListener("timeupdate", () => {
+      const currentTime = this.#audio.currentTime;
+      for (let i = 0; i < this.#playlist.length; i++) {
+        const pe = this.#playlist[i];
+
+        const trackStart = pe.timestampOffset;
+
+        if (trackStart === null) {
+          continue;
+        }
+
+        const trackEnd = trackStart + (pe.accurateDuration || pe.song.duration);
+
+        if (currentTime >= trackStart && currentTime < trackEnd) {
+          this.#notifyTrackChange(i);
+          break;
+        }
+      }
+
       usePlayerState.setState({
         playInfo: {
           ...usePlayerState.getState().playInfo!,
@@ -110,6 +129,38 @@ export class MusicPlayer {
     });
   }
 
+  #notifyTrackChange(index: number) {
+    if (index === this.#lastNotifiedTrackIndex) {
+      return;
+    }
+
+    this.#lastNotifiedTrackIndex = index;
+
+    const existingPlayInfo = usePlayerState.getState().playInfo;
+
+    usePlayerState.setState({
+      playInfo: existingPlayInfo
+        ? {
+          ...existingPlayInfo,
+          timestampOffset: this.#playlist[index].timestampOffset,
+          song: this.#playlist[index].song,
+          playlistIndex: index,
+          currentTime: this.#audio.currentTime,
+        }
+        : // TODO: some of these defaults are probably incorrect
+        {
+          currentTime: this.#audio.currentTime,
+          timestampOffset: 0,
+          isBuffering: true,
+          isPaused: false,
+          song: this.#playlist[index].song,
+          buffer: this.#getBufferedRange(),
+          playlist: this.#playlist.map((pe) => pe.song),
+          playlistIndex: index,
+        },
+    });
+  }
+
   #getBufferedRange() {
     const buffered = this.#audio.buffered;
 
@@ -141,7 +192,7 @@ export class MusicPlayer {
     this.#playlist = songs.map((s) => ({
       song: s,
       segments: [],
-      timestampOffset: 0,
+      timestampOffset: null,
       accurateDuration: null,
       isDataLoaded: false,
       isDataLoading: false,
@@ -149,17 +200,7 @@ export class MusicPlayer {
       segmentIndex: 0,
     }));
 
-    usePlayerState.setState({
-      playInfo: {
-        song: songs[index],
-        playlist: songs,
-        playlistIndex: index,
-        currentTime: 0,
-        buffer: null,
-        isBuffering: true,
-        isPaused: false,
-      },
-    });
+    this.#notifyTrackChange(index);
 
     await this.#clearSourceBuffer();
 
@@ -296,6 +337,13 @@ export class MusicPlayer {
 
     const buffer = this.#getBufferedSeconds();
     if (buffer < 10) {
+      if (playlistEntry.timestampOffset === null) {
+        console.error(
+          "Tried to append buffer but timestamp offset is null for playlist entry",
+          playlistEntry,
+        );
+        return;
+      }
       this.#sourceBuffer.timestampOffset = playlistEntry.timestampOffset;
 
       const segment = playlistEntry.segments[playlistEntry.segmentIndex];
@@ -368,6 +416,10 @@ export class MusicPlayer {
     }
 
     this.#playlist[index].isDataLoading = true;
+
+    if (this.#playlist[index].timestampOffset === null) {
+      this.#playlist[index].timestampOffset = 0;
+    }
 
     const controller = new AbortController();
     const signal = controller.signal;
@@ -458,6 +510,9 @@ export class MusicPlayer {
             this.#playlist[index].song.title,
           );
           console.log(this.#playlist[index]);
+
+          mp4boxfile.flush();
+
           this.#playlist[index].abortController = null;
           this.#playlist[index].isDataLoaded = true;
           this.#playlist[index].isDataLoading = false;
@@ -467,12 +522,13 @@ export class MusicPlayer {
 
           this.#playlist[index].accurateDuration = songDuration;
 
-          if (index + 1 < this.#playlist.length) {
+          if (
+            index + 1 < this.#playlist.length &&
+            pe.timestampOffset !== null
+          ) {
             this.#playlist[index + 1].timestampOffset =
               pe.timestampOffset + songDuration;
           }
-
-          mp4boxfile.flush();
 
           this.#loadNext();
           this.#loadPlaylistSong(index + 1);

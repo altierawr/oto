@@ -51,10 +51,13 @@ const MusicControls = () => {
 
         <div className="flex items-center gap-3 text-sm">
           <p className="w-[30px]">
-            {formatDuration(playerState.playInfo.currentTime)}
+            {formatDuration(
+              playerState.playInfo.currentTime -
+              (playerState.playInfo.timestampOffset || 0),
+            )}
           </p>
           <div className="flex-1 h-[12px] py-[4px]" onClick={handleSeekClick}>
-            <div className="h-full rounded-full relative bg-(--gray-5)">
+            <div className="h-full rounded-full relative bg-(--gray-5) overflow-hidden">
               {playerState.playInfo.buffer && (
                 <div
                   style={{
@@ -63,7 +66,7 @@ const MusicControls = () => {
                         playerState.playInfo.song.duration) *
                       100
                       }%`,
-                    left: `${(playerState.playInfo.buffer.from / playerState.playInfo.song.duration) * 100}%`,
+                    left: `${((playerState.playInfo.buffer.from - (playerState.playInfo.timestampOffset || 0)) / playerState.playInfo.song.duration) * 100}%`,
                   }}
                   className="h-full absolute top-0 bg-(--blue-9)"
                 />
@@ -73,12 +76,13 @@ const MusicControls = () => {
                 style={{
                   width: "4px",
                   top: "-4px",
-                  left: `${(playerState.playInfo.currentTime /
+                  left: `${((playerState.playInfo.currentTime -
+                      (playerState.playInfo.timestampOffset || 0)) /
                       playerState.playInfo.song.duration) *
                     100
                     }%`,
                 }}
-                className="h-[12px] absolute left-0 bg-(--gray-11)"
+                className="h-[12px] absolute left-0 bg-(--red-9)"
               />
             </div>
           </div>

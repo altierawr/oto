@@ -25,6 +25,7 @@ type TPlayerState = {
       from: number;
       to: number;
     } | null;
+    timestampOffset: number | null;
     playlist: MusicPlayerSong[];
     playlistIndex: number;
   };
