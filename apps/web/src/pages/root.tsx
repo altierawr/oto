@@ -3,6 +3,7 @@ import Sidebar from "../components/sidebar";
 import { useEffect, useState } from "react";
 import { useLocationStore } from "../store";
 import MusicControls from "../components/music-controls";
+import AudioDebugger from "../components/debugger";
 
 const Root = () => {
   const location = useLocation();
@@ -29,7 +30,9 @@ const Root = () => {
   }, [hasSetInitialLocation, location.pathname, setLocation]);
 
   return (
-    <div className="h-dvh bg-(--gray-1) text-(--gray-12)">
+    <div className="h-dvh bg-(--gray-1) text-(--gray-12) relative">
+      <AudioDebugger />
+
       <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
         <Sidebar />
         <div className="flex-1 px-8 pt-8 overflow-y-auto flex justify-center">

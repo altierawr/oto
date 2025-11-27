@@ -2,31 +2,36 @@ import { usePlayerState } from "./store";
 import type { Song } from "./types";
 import * as mp4box from "mp4box";
 
+type PlaylistSong = {
+  song: Song;
+  segments: {
+    data: Uint8Array<ArrayBuffer>;
+    start: number;
+    end: number;
+    duration: number;
+    isInBuffer: boolean;
+  }[];
+  accurateDuration: number | null;
+  timestampOffset: number | null;
+  timestampOffsetType?: "seek" | "sequence";
+  isDataLoading: boolean;
+  isDataLoaded: boolean;
+  abortController: AbortController | null;
+  segmentIndex: number;
+};
+
 export class MusicPlayer {
   #mediaSource!: MediaSource;
   #sourceBuffer!: SourceBuffer;
   #audio: HTMLAudioElement;
-  #playlist: {
-    song: Song;
-    segments: {
-      data: Uint8Array<ArrayBuffer>;
-      start: number;
-      end: number;
-      duration: number;
-      isInBuffer: boolean;
-    }[];
-    accurateDuration: number | null;
-    timestampOffset: number | null;
-    isDataLoading: boolean;
-    isDataLoaded: boolean;
-    abortController: AbortController | null;
-    segmentIndex: number;
-  }[];
+  playlist: PlaylistSong[];
   #playlistIndex: number = 0;
   #lastNotifiedTrackIndex: number | null = null;
+  #bufferSizeBehind = 10;
+  #bufferSizeForward = 10;
 
   constructor() {
-    this.#playlist = [];
+    this.playlist = [];
     this.#audio = new Audio();
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -36,11 +41,32 @@ export class MusicPlayer {
     });
   }
 
+  #getCurrentlyPlayingSongIndex() {
+    const currentTime = this.#audio.currentTime;
+    for (let i = 0; i < this.playlist.length; i++) {
+      const pe = this.playlist[i];
+
+      const trackStart = pe.timestampOffset;
+
+      if (trackStart === null) {
+        continue;
+      }
+
+      const trackEnd = trackStart + (pe.accurateDuration || pe.song.duration);
+
+      if (currentTime >= trackStart && currentTime < trackEnd) {
+        return i;
+      }
+    }
+
+    return null;
+  }
+
   async #initMediaSource() {
     this.#mediaSource = new MediaSource();
 
     this.#audio.src = URL.createObjectURL(this.#mediaSource);
-    this.#audio.volume = 0.02;
+    this.#audio.volume = 0.05;
     this.#audio.autoplay = true;
 
     this.#mediaSource.addEventListener("sourceopen", () => {
@@ -51,22 +77,9 @@ export class MusicPlayer {
     });
 
     this.#audio.addEventListener("timeupdate", () => {
-      const currentTime = this.#audio.currentTime;
-      for (let i = 0; i < this.#playlist.length; i++) {
-        const pe = this.#playlist[i];
-
-        const trackStart = pe.timestampOffset;
-
-        if (trackStart === null) {
-          continue;
-        }
-
-        const trackEnd = trackStart + (pe.accurateDuration || pe.song.duration);
-
-        if (currentTime >= trackStart && currentTime < trackEnd) {
-          this.#notifyTrackChange(i);
-          break;
-        }
+      const track = this.#getCurrentlyPlayingSongIndex();
+      if (track) {
+        this.#notifyTrackChange(track);
       }
 
       usePlayerState.setState({
@@ -142,8 +155,8 @@ export class MusicPlayer {
       playInfo: existingPlayInfo
         ? {
           ...existingPlayInfo,
-          timestampOffset: this.#playlist[index].timestampOffset,
-          song: this.#playlist[index].song,
+          timestampOffset: this.playlist[index].timestampOffset,
+          song: this.playlist[index].song,
           playlistIndex: index,
           currentTime: this.#audio.currentTime,
         }
@@ -153,9 +166,9 @@ export class MusicPlayer {
           timestampOffset: 0,
           isBuffering: true,
           isPaused: false,
-          song: this.#playlist[index].song,
+          song: this.playlist[index].song,
           buffer: this.#getBufferedRange(),
-          playlist: this.#playlist.map((pe) => pe.song),
+          playlist: this.playlist.map((pe) => pe.song),
           playlistIndex: index,
         },
     });
@@ -182,14 +195,20 @@ export class MusicPlayer {
     };
   }
 
-  async playSongs(songs: Song[], index: number) {
-    console.log("Requested playback of", songs.length, "songs");
-    for (const song of this.#playlist) {
+  async #reset() {
+    for (const song of this.playlist) {
       song.abortController?.abort();
     }
 
+    this.#lastNotifiedTrackIndex = null;
+  }
+
+  async playSongs(songs: Song[], index: number) {
+    console.log("Requested playback of", songs.length, "songs");
+    this.#reset();
+
     this.#playlistIndex = index;
-    this.#playlist = songs.map((s) => ({
+    this.playlist = songs.map((s) => ({
       song: s,
       segments: [],
       timestampOffset: null,
@@ -216,51 +235,76 @@ export class MusicPlayer {
   }
 
   async seek(positionPerc: number) {
-    const current = this.#playlist[this.#playlistIndex];
-    const duration = current.accurateDuration || current.song.duration;
-    const position = parseFloat((duration * positionPerc).toFixed(1));
-    console.log("Seeking to", position);
-
-    const targetSegmentIndex = current.segments.findIndex(
-      (seg) => position >= seg.start && position <= seg.end,
-    );
-
-    // Found segment
-    if (targetSegmentIndex !== -1) {
-      const segment = current.segments[targetSegmentIndex];
-
-      // Segment is in buffer, we can just jump to it
-      if (segment.isInBuffer) {
-        this.#audio.currentTime = position;
-        return;
-      }
-
-      console.log("SEEKING TO UNKNOWN TERRITORY (danger)");
-      current.abortController?.abort();
-
-      this.#playlist[this.#playlistIndex].segments = [];
-      this.#playlist[this.#playlistIndex].segmentIndex = 0;
-      this.#playlist[this.#playlistIndex].isDataLoading = false;
-      this.#playlist[this.#playlistIndex].isDataLoaded = false;
-      this.#playlist[this.#playlistIndex].timestampOffset = position;
-
-      await this.#clearSourceBuffer();
-
-      this.#loadPlaylistSong(this.#playlistIndex, position);
-
-      this.#sourceBuffer.addEventListener(
-        "updateend",
-        () => {
-          this.#audio.currentTime = position;
-        },
-        { once: true },
-      );
-
+    const currentIndex = this.#getCurrentlyPlayingSongIndex();
+    if (currentIndex === null) {
+      console.error("Couldn't find currently playing song");
       return;
     }
 
+    const current = this.playlist[currentIndex];
+
+    const position = parseFloat(
+      (current.song.duration * positionPerc).toFixed(1),
+    );
+
+    const offset =
+      current.timestampOffsetType === "seek" ? current.timestampOffset || 0 : 0;
+
+    const offsetPosition = position - offset;
+
+    console.log("Timestamp offset is", current.timestampOffset);
+    console.log("Using an actual offset of", offset);
+
+    console.log(current.segments);
+
+    const targetSegmentIndex = current.segments.findIndex(
+      (seg) => offsetPosition >= seg.start && offsetPosition <= seg.end,
+    );
+
+    // Found segment
+    if (
+      targetSegmentIndex !== -1 &&
+      current.segments[targetSegmentIndex].isInBuffer
+    ) {
+      const seekPosition =
+        position +
+        (current.timestampOffsetType === "seek"
+          ? 0
+          : current.timestampOffset || 0);
+      console.log("Segment is in buffer, seeking to", seekPosition);
+      this.#audio.currentTime = seekPosition;
+      return;
+    }
+
+    if (
+      targetSegmentIndex !== -1 &&
+      !current.segments[targetSegmentIndex].isInBuffer
+    ) {
+      console.warn("SEGMENT IS IN MEMORY BUT NOT IN BUFFER, IMPLEMENT THIS");
+    }
+
     // Segment not found
-    console.error("Segment not found when seeking");
+    console.log("SEEKING TO UNKNOWN TERRITORY (danger)");
+    current.abortController?.abort();
+
+    this.playlist[this.#playlistIndex].segments = [];
+    this.playlist[this.#playlistIndex].segmentIndex = 0;
+    this.playlist[this.#playlistIndex].isDataLoading = false;
+    this.playlist[this.#playlistIndex].isDataLoaded = false;
+    this.playlist[this.#playlistIndex].timestampOffset = position;
+    this.playlist[this.#playlistIndex].timestampOffsetType = "seek";
+
+    await this.#clearSourceBuffer();
+
+    this.#loadPlaylistSong(this.#playlistIndex, position);
+
+    this.#sourceBuffer.addEventListener(
+      "updateend",
+      () => {
+        this.#audio.currentTime = position;
+      },
+      { once: true },
+    );
   }
 
   async #clearSourceBuffer() {
@@ -292,7 +336,48 @@ export class MusicPlayer {
     const currentTime = this.#audio.currentTime;
     if (!this.#sourceBuffer) return;
 
-    const removeEnd = Math.max(0, currentTime - 10);
+    for (let i = 0; i < this.playlist.length; i++) {
+      const pe = this.playlist[i];
+      const offset = pe.timestampOffset || 0;
+
+      const time = currentTime - offset;
+      if (time < 0) {
+        return;
+      }
+
+      for (let j = 0; j < pe.segments.length; j++) {
+        const segment = pe.segments[j];
+        if (
+          time >= segment.start - this.#bufferSizeBehind &&
+          time <= segment.end + this.#bufferSizeForward
+        ) {
+          continue;
+        }
+
+        if (segment.isInBuffer) {
+          await this.#waitForBufferReady();
+          if (this.#sourceBuffer.updating) {
+            continue;
+          }
+
+          this.#sourceBuffer.remove(
+            offset + segment.start,
+            offset + segment.end,
+          );
+          await this.#waitForBufferReady();
+          this.playlist[i].segments[j].isInBuffer = false;
+          console.log(
+            "Removed segment",
+            j,
+            "from playlist index",
+            i,
+            "from the buffer",
+          );
+        }
+      }
+    }
+
+    const removeEnd = Math.max(0, currentTime - this.#bufferSizeBehind);
 
     if (removeEnd > 0) {
       try {
@@ -304,6 +389,8 @@ export class MusicPlayer {
         }
 
         this.#sourceBuffer.remove(0, removeEnd);
+
+        await this.#waitForBufferReady();
       } catch (e) {
         console.error("Error pruning buffer:", e);
       }
@@ -315,47 +402,43 @@ export class MusicPlayer {
       return;
     }
 
-    let playlistEntry = this.#playlist[this.#playlistIndex];
-    if (
-      playlistEntry.segments.length <= playlistEntry.segmentIndex &&
-      !playlistEntry.isDataLoaded
-    ) {
+    let pe = this.playlist[this.#playlistIndex];
+    if (pe.segments.length <= pe.segmentIndex && !pe.isDataLoaded) {
       return;
     }
 
     // Switch over to the next track if we're done loading the current one
     if (
-      playlistEntry.isDataLoaded &&
-      playlistEntry.segments.length === playlistEntry.segmentIndex &&
-      this.#playlist.length - 1 > this.#playlistIndex
+      pe.isDataLoaded &&
+      pe.segments.length === pe.segmentIndex &&
+      this.playlist.length - 1 > this.#playlistIndex
     ) {
       console.log("Switching to next track");
       this.#playlistIndex++;
       this.#loadPlaylistSong(this.#playlistIndex + 1);
-      playlistEntry = this.#playlist[this.#playlistIndex];
+      pe = this.playlist[this.#playlistIndex];
     }
 
     const buffer = this.#getBufferedSeconds();
-    if (buffer < 10) {
-      if (playlistEntry.timestampOffset === null) {
+    if (buffer < this.#bufferSizeForward) {
+      if (pe.timestampOffset === null) {
         console.error(
           "Tried to append buffer but timestamp offset is null for playlist entry",
-          playlistEntry,
+          pe,
         );
         return;
       }
-      this.#sourceBuffer.timestampOffset = playlistEntry.timestampOffset;
+      this.#sourceBuffer.timestampOffset = pe.timestampOffset;
 
-      const segment = playlistEntry.segments[playlistEntry.segmentIndex];
+      const segment = pe.segments[pe.segmentIndex];
 
       this.#sourceBuffer.appendBuffer(segment.data);
-      this.#playlist[this.#playlistIndex].segments[
-        playlistEntry.segmentIndex
-      ].isInBuffer = true;
+      this.playlist[this.#playlistIndex].segments[pe.segmentIndex].isInBuffer =
+        true;
 
-      this.#playlist[this.#playlistIndex].segmentIndex++;
+      this.playlist[this.#playlistIndex].segmentIndex++;
 
-      if (buffer + segment.duration < 10) {
+      if (buffer + segment.duration < this.#bufferSizeForward) {
         await this.#waitForBufferReady();
         this.#loadNext();
       }
@@ -379,7 +462,7 @@ export class MusicPlayer {
   }
 
   async #loadPlaylistSong(index: number, startTime?: number) {
-    if (index >= this.#playlist.length) {
+    if (index >= this.playlist.length) {
       console.log(
         "Tried to fetch playlist song at index",
         index,
@@ -388,7 +471,7 @@ export class MusicPlayer {
       return;
     }
 
-    if (this.#playlist[index].isDataLoading) {
+    if (this.playlist[index].isDataLoading) {
       console.log(
         "Tried to load song at index",
         index,
@@ -397,7 +480,7 @@ export class MusicPlayer {
       return;
     }
 
-    if (this.#playlist[index].isDataLoaded) {
+    if (this.playlist[index].isDataLoaded) {
       console.log(
         "Tried to load song at index",
         index,
@@ -406,7 +489,7 @@ export class MusicPlayer {
       return;
     }
 
-    if (index < 0 || index >= this.#playlist.length) {
+    if (index < 0 || index >= this.playlist.length) {
       return;
     }
 
@@ -415,22 +498,22 @@ export class MusicPlayer {
       return;
     }
 
-    this.#playlist[index].isDataLoading = true;
+    this.playlist[index].isDataLoading = true;
 
-    if (this.#playlist[index].timestampOffset === null) {
-      this.#playlist[index].timestampOffset = 0;
+    if (this.playlist[index].timestampOffset === null) {
+      this.playlist[index].timestampOffset = 0;
     }
 
     const controller = new AbortController();
     const signal = controller.signal;
 
-    console.log(`Loading song ${index}: ${this.#playlist[index].song.title}`);
+    console.log(`Loading song ${index}: ${this.playlist[index].song.title}`);
     const resp = await fetch(
-      `http://localhost:3003/v1/tracks/${this.#playlist[index].song.id}/stream${startTime !== undefined ? `?ss=${startTime}` : ""}`,
+      `http://localhost:3003/v1/tracks/${this.playlist[index].song.id}/stream${startTime !== undefined ? `?ss=${startTime}` : ""}`,
       { signal },
     );
 
-    this.#playlist[index].abortController = controller;
+    this.playlist[index].abortController = controller;
 
     const reader = resp.body!.getReader();
 
@@ -487,7 +570,7 @@ export class MusicPlayer {
           pos += chunk.length;
         }
 
-        this.#playlist[index].segments.push({
+        this.playlist[index].segments.push({
           data: segment,
           start: startTime,
           end: endTime,
@@ -507,27 +590,25 @@ export class MusicPlayer {
         if (done) {
           console.log(
             "Finished fetching song",
-            this.#playlist[index].song.title,
+            this.playlist[index].song.title,
           );
-          console.log(this.#playlist[index]);
+          console.log(this.playlist[index]);
 
           mp4boxfile.flush();
 
-          this.#playlist[index].abortController = null;
-          this.#playlist[index].isDataLoaded = true;
-          this.#playlist[index].isDataLoading = false;
+          this.playlist[index].abortController = null;
+          this.playlist[index].isDataLoaded = true;
+          this.playlist[index].isDataLoading = false;
 
-          const pe = this.#playlist[index];
+          const pe = this.playlist[index];
           const songDuration = pe.segments[pe.segments.length - 1].end;
 
-          this.#playlist[index].accurateDuration = songDuration;
+          this.playlist[index].accurateDuration = songDuration;
 
-          if (
-            index + 1 < this.#playlist.length &&
-            pe.timestampOffset !== null
-          ) {
-            this.#playlist[index + 1].timestampOffset =
+          if (index + 1 < this.playlist.length && pe.timestampOffset !== null) {
+            this.playlist[index + 1].timestampOffset =
               pe.timestampOffset + songDuration;
+            this.playlist[index + 1].timestampOffsetType = "sequence";
           }
 
           this.#loadNext();
@@ -537,7 +618,7 @@ export class MusicPlayer {
         }
 
         // We stopped the loading somewhere else
-        if (!this.#playlist[index].isDataLoading) {
+        if (!this.playlist[index].isDataLoading) {
           break;
         }
 
