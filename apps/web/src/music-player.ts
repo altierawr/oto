@@ -283,9 +283,6 @@ export class MusicPlayer {
     console.log("Segment not found in buffer or memory, need to fetch.");
     current.abortController?.abort();
 
-    for (let i = 0; i < this.playlist.length; i++) {
-      this.playlist[i].segmentIndex = 0;
-    }
     this.playlist[currentIndex].segments = [];
     this.playlist[currentIndex].segmentIndex = 0;
     this.playlist[currentIndex].isDataLoading = false;
