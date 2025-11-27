@@ -51,7 +51,11 @@ const MusicControls = () => {
 
         <div className="flex items-center gap-3 text-sm">
           <p className="w-[30px]">
-            {formatDuration(playerState.playInfo.currentTime)}
+            {formatDuration(
+              playerState.playInfo.currentTime -
+              playerState.playInfo.seekOffset -
+              (playerState.playInfo.timestampOffset || 0),
+            )}
           </p>
           <div className="flex-1 h-[12px] py-[4px]" onClick={handleSeekClick}>
             <div className="h-full rounded-full relative bg-(--gray-5) overflow-hidden">

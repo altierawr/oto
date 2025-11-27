@@ -176,6 +176,19 @@ export class MusicPlayer {
   }
 
   #getBufferedRange() {
+    const ranges = this.#getBufferedRanges();
+
+    if (ranges.length === 0) {
+      return null;
+    }
+
+    return {
+      from: ranges[0].start,
+      to: ranges[ranges.length - 1].end,
+    };
+  }
+
+  #getBufferedRanges() {
     const buffered = this.#audio.buffered;
 
     const ranges = [];
@@ -186,14 +199,7 @@ export class MusicPlayer {
       });
     }
 
-    if (ranges.length === 0) {
-      return null;
-    }
-
-    return {
-      from: ranges[0].start,
-      to: ranges[ranges.length - 1].end,
-    };
+    return ranges;
   }
 
   async #reset() {
@@ -276,7 +282,26 @@ export class MusicPlayer {
       targetSegmentIndex !== -1 &&
       !current.segments[targetSegmentIndex].isInBuffer
     ) {
-      console.warn("SEGMENT IS IN MEMORY BUT NOT IN BUFFER, IMPLEMENT THIS");
+      console.warn("Segment is in memory, but not buffer, jumping there now!");
+      while (this.#sourceBuffer.updating) {
+        await this.#waitForBufferReady();
+      }
+
+      const segment = current.segments[targetSegmentIndex];
+
+      console.log({ segment });
+      this.#sourceBuffer.appendBuffer(segment.data);
+      this.playlist[currentIndex].segments[targetSegmentIndex].isInBuffer =
+        true;
+      this.playlist[currentIndex].segmentIndex = targetSegmentIndex + 1;
+
+      await this.#waitForBufferReady();
+      console.log(this.#getBufferedRanges());
+      console.log(this.#sourceBuffer.timestampOffset);
+      console.log("Jumping to", position + (current.timestampOffset || 0));
+      this.#audio.currentTime = position + (current.timestampOffset || 0);
+
+      return;
     }
 
     // Segment not found
