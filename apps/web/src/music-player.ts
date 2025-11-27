@@ -13,7 +13,7 @@ type PlaylistSong = {
   }[];
   accurateDuration: number | null;
   timestampOffset: number | null;
-  timestampOffsetType?: "seek" | "sequence";
+  seekOffset: number;
   isDataLoading: boolean;
   isDataLoaded: boolean;
   abortController: AbortController | null;
@@ -25,7 +25,7 @@ export class MusicPlayer {
   #sourceBuffer!: SourceBuffer;
   #audio: HTMLAudioElement;
   playlist: PlaylistSong[];
-  #playlistIndex: number = 0;
+  #bufferIndex: number = 0;
   #lastNotifiedTrackIndex: number | null = null;
   #bufferSizeBehind = 10;
   #bufferSizeForward = 10;
@@ -46,12 +46,11 @@ export class MusicPlayer {
     for (let i = 0; i < this.playlist.length; i++) {
       const pe = this.playlist[i];
 
-      const trackStart = pe.timestampOffset;
-
-      if (trackStart === null) {
+      if (pe.timestampOffset === null) {
         continue;
       }
 
+      const trackStart = pe.timestampOffset + pe.seekOffset;
       const trackEnd = trackStart + (pe.accurateDuration || pe.song.duration);
 
       if (currentTime >= trackStart && currentTime < trackEnd) {
@@ -156,6 +155,7 @@ export class MusicPlayer {
         ? {
           ...existingPlayInfo,
           timestampOffset: this.playlist[index].timestampOffset,
+          seekOffset: this.playlist[index].seekOffset,
           song: this.playlist[index].song,
           playlistIndex: index,
           currentTime: this.#audio.currentTime,
@@ -164,6 +164,7 @@ export class MusicPlayer {
         {
           currentTime: this.#audio.currentTime,
           timestampOffset: 0,
+          seekOffset: 0,
           isBuffering: true,
           isPaused: false,
           song: this.playlist[index].song,
@@ -204,14 +205,14 @@ export class MusicPlayer {
   }
 
   async playSongs(songs: Song[], index: number) {
-    console.log("Requested playback of", songs.length, "songs");
     this.#reset();
 
-    this.#playlistIndex = index;
+    this.#bufferIndex = index;
     this.playlist = songs.map((s) => ({
       song: s,
       segments: [],
       timestampOffset: null,
+      seekOffset: 0,
       accurateDuration: null,
       isDataLoaded: false,
       isDataLoading: false,
@@ -247,32 +248,27 @@ export class MusicPlayer {
       (current.song.duration * positionPerc).toFixed(1),
     );
 
-    const offset =
-      current.timestampOffsetType === "seek" ? current.timestampOffset || 0 : 0;
-
-    const offsetPosition = position - offset;
-
-    console.log("Timestamp offset is", current.timestampOffset);
-    console.log("Using an actual offset of", offset);
-
-    console.log(current.segments);
-
+    // Adjust position for already seeked position if it exists,
+    // because the segments always start at 0
+    const offsetPosition = position - current.seekOffset;
     const targetSegmentIndex = current.segments.findIndex(
       (seg) => offsetPosition >= seg.start && offsetPosition <= seg.end,
     );
+
+    console.log("\n\n\n\n\n\n\n\n\n\nSEEK");
+    console.log("Seek offset", current.seekOffset);
+    console.log("Offset position", offsetPosition);
+    console.log({ targetSegmentIndex });
+    console.log({ current });
 
     // Found segment
     if (
       targetSegmentIndex !== -1 &&
       current.segments[targetSegmentIndex].isInBuffer
     ) {
-      const seekPosition =
-        position +
-        (current.timestampOffsetType === "seek"
-          ? 0
-          : current.timestampOffset || 0);
-      console.log("Segment is in buffer, seeking to", seekPosition);
-      this.#audio.currentTime = seekPosition;
+      const seekPos = position + (current.timestampOffset || 0);
+      console.log("Segment is in buffer, seeking to", seekPos);
+      this.#audio.currentTime = seekPos;
       return;
     }
 
@@ -284,24 +280,37 @@ export class MusicPlayer {
     }
 
     // Segment not found
-    console.log("SEEKING TO UNKNOWN TERRITORY (danger)");
+    console.log("Segment not found in buffer or memory, need to fetch.");
     current.abortController?.abort();
 
-    this.playlist[this.#playlistIndex].segments = [];
-    this.playlist[this.#playlistIndex].segmentIndex = 0;
-    this.playlist[this.#playlistIndex].isDataLoading = false;
-    this.playlist[this.#playlistIndex].isDataLoaded = false;
-    this.playlist[this.#playlistIndex].timestampOffset = position;
-    this.playlist[this.#playlistIndex].timestampOffsetType = "seek";
+    for (let i = 0; i < this.playlist.length; i++) {
+      this.playlist[i].segmentIndex = 0;
+    }
+    this.playlist[currentIndex].segments = [];
+    this.playlist[currentIndex].segmentIndex = 0;
+    this.playlist[currentIndex].isDataLoading = false;
+    this.playlist[currentIndex].isDataLoaded = false;
+    this.playlist[currentIndex].seekOffset = position;
 
     await this.#clearSourceBuffer();
 
-    this.#loadPlaylistSong(this.#playlistIndex, position);
+    // We might've started loading the next track already
+    if (this.#bufferIndex !== currentIndex) {
+      console.warn(
+        "Buffer index doesn't match",
+        this.#bufferIndex,
+        currentIndex,
+      );
+      this.#bufferIndex = currentIndex;
+    }
+
+    this.#loadPlaylistSong(currentIndex, position);
 
     this.#sourceBuffer.addEventListener(
       "updateend",
       () => {
-        this.#audio.currentTime = position;
+        console.log("jumping to", position + (current.timestampOffset || 0));
+        this.#audio.currentTime = position + (current.timestampOffset || 0);
       },
       { once: true },
     );
@@ -338,7 +347,7 @@ export class MusicPlayer {
 
     for (let i = 0; i < this.playlist.length; i++) {
       const pe = this.playlist[i];
-      const offset = pe.timestampOffset || 0;
+      const offset = pe.seekOffset + (pe.timestampOffset || 0);
 
       const time = currentTime - offset;
       if (time < 0) {
@@ -366,13 +375,6 @@ export class MusicPlayer {
           );
           await this.#waitForBufferReady();
           this.playlist[i].segments[j].isInBuffer = false;
-          console.log(
-            "Removed segment",
-            j,
-            "from playlist index",
-            i,
-            "from the buffer",
-          );
         }
       }
     }
@@ -402,7 +404,7 @@ export class MusicPlayer {
       return;
     }
 
-    let pe = this.playlist[this.#playlistIndex];
+    let pe = this.playlist[this.#bufferIndex];
     if (pe.segments.length <= pe.segmentIndex && !pe.isDataLoaded) {
       return;
     }
@@ -411,12 +413,12 @@ export class MusicPlayer {
     if (
       pe.isDataLoaded &&
       pe.segments.length === pe.segmentIndex &&
-      this.playlist.length - 1 > this.#playlistIndex
+      this.playlist.length - 1 > this.#bufferIndex
     ) {
       console.log("Switching to next track");
-      this.#playlistIndex++;
-      this.#loadPlaylistSong(this.#playlistIndex + 1);
-      pe = this.playlist[this.#playlistIndex];
+      this.#bufferIndex++;
+      this.#loadPlaylistSong(this.#bufferIndex + 1);
+      pe = this.playlist[this.#bufferIndex];
     }
 
     const buffer = this.#getBufferedSeconds();
@@ -428,15 +430,15 @@ export class MusicPlayer {
         );
         return;
       }
-      this.#sourceBuffer.timestampOffset = pe.timestampOffset;
+      this.#sourceBuffer.timestampOffset = pe.timestampOffset + pe.seekOffset;
 
       const segment = pe.segments[pe.segmentIndex];
 
       this.#sourceBuffer.appendBuffer(segment.data);
-      this.playlist[this.#playlistIndex].segments[pe.segmentIndex].isInBuffer =
+      this.playlist[this.#bufferIndex].segments[pe.segmentIndex].isInBuffer =
         true;
 
-      this.playlist[this.#playlistIndex].segmentIndex++;
+      this.playlist[this.#bufferIndex].segmentIndex++;
 
       if (buffer + segment.duration < this.#bufferSizeForward) {
         await this.#waitForBufferReady();
@@ -494,7 +496,7 @@ export class MusicPlayer {
     }
 
     // Don't fetch too many tracks
-    if (Math.abs(index - this.#playlistIndex) >= 2) {
+    if (Math.abs(index - this.#bufferIndex) >= 2) {
       return;
     }
 
@@ -607,8 +609,7 @@ export class MusicPlayer {
 
           if (index + 1 < this.playlist.length && pe.timestampOffset !== null) {
             this.playlist[index + 1].timestampOffset =
-              pe.timestampOffset + songDuration;
-            this.playlist[index + 1].timestampOffsetType = "sequence";
+              pe.timestampOffset + pe.seekOffset + songDuration;
           }
 
           this.#loadNext();

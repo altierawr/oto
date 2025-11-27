@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
+import { Fragment } from "react/jsx-runtime";
 
 const AudioDebugger = () => {
   const { player } = usePlayerState();
@@ -30,25 +31,19 @@ const AudioDebugger = () => {
 
       <div className="flex flex-col gap-2">
         {player.playlist.map((pe, index) => (
-          <>
-            <div key={index}>
+          <Fragment key={index}>
+            <div>
               <p>Index {index}</p>
               {pe.timestampOffset !== null
-                ? formatDuration(pe.timestampOffset)
+                ? `tOFF: ${pe.timestampOffset}, sOFF: ${pe.seekOffset}, total: ${pe.timestampOffset + pe.seekOffset}`
                 : "Not set"}
             </div>
 
             <div className="flex w-full relative h-[8px]">
               {pe.segments.map((seg, index) => {
                 const duration = pe.song.duration;
-                const start =
-                  pe.timestampOffsetType === "seek"
-                    ? seg.start + (pe.timestampOffset || 0)
-                    : seg.start;
-                const end =
-                  pe.timestampOffsetType === "seek"
-                    ? seg.end + (pe.timestampOffset || 0)
-                    : seg.end;
+                const start = seg.start + pe.seekOffset;
+                const end = seg.end + pe.seekOffset;
 
                 return (
                   <div
@@ -67,7 +62,7 @@ const AudioDebugger = () => {
                 );
               })}
             </div>
-          </>
+          </Fragment>
         ))}
       </div>
     </div>
