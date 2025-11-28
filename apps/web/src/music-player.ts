@@ -1,4 +1,5 @@
 import { usePlayerState } from "./store";
+
 import type { Song } from "./types";
 import * as mp4box from "mp4box";
 
@@ -29,6 +30,7 @@ export class MusicPlayer {
   #lastNotifiedTrackIndex: number | null = null;
   #bufferSizeBehind = 10;
   #bufferSizeForward = 10;
+  #isBufferUpdating = false;
 
   constructor() {
     this.playlist = [];
@@ -283,6 +285,7 @@ export class MusicPlayer {
       !current.segments[targetSegmentIndex].isInBuffer
     ) {
       console.warn("Segment is in memory, but not buffer, jumping there now!");
+      this.#isBufferUpdating = true;
       while (this.#sourceBuffer.updating) {
         await this.#waitForBufferReady();
       }
@@ -295,11 +298,15 @@ export class MusicPlayer {
         true;
       this.playlist[currentIndex].segmentIndex = targetSegmentIndex + 1;
 
-      await this.#waitForBufferReady();
+      while (this.#sourceBuffer.updating) {
+        await this.#waitForBufferReady();
+      }
+
       console.log(this.#getBufferedRanges());
-      console.log(this.#sourceBuffer.timestampOffset);
+      console.log("Timestamp offset:", this.#sourceBuffer.timestampOffset);
       console.log("Jumping to", position + (current.timestampOffset || 0));
       this.#audio.currentTime = position + (current.timestampOffset || 0);
+      this.#isBufferUpdating = false;
 
       return;
     }
@@ -365,7 +372,7 @@ export class MusicPlayer {
 
   async #pruneBuffer() {
     const currentTime = this.#audio.currentTime;
-    if (!this.#sourceBuffer) return;
+    if (!this.#sourceBuffer || this.#isBufferUpdating) return;
 
     for (let i = 0; i < this.playlist.length; i++) {
       const pe = this.playlist[i];
@@ -389,6 +396,10 @@ export class MusicPlayer {
           await this.#waitForBufferReady();
           if (this.#sourceBuffer.updating) {
             continue;
+          }
+
+          if (this.#isBufferUpdating) {
+            return;
           }
 
           this.#sourceBuffer.remove(
@@ -452,6 +463,8 @@ export class MusicPlayer {
         );
         return;
       }
+
+      this.#isBufferUpdating = true;
       this.#sourceBuffer.timestampOffset = pe.timestampOffset + pe.seekOffset;
 
       const segment = pe.segments[pe.segmentIndex];
@@ -462,8 +475,10 @@ export class MusicPlayer {
 
       this.playlist[this.#bufferIndex].segmentIndex++;
 
+      await this.#waitForBufferReady();
+      this.#isBufferUpdating = false;
+
       if (buffer + segment.duration < this.#bufferSizeForward) {
-        await this.#waitForBufferReady();
         this.#loadNext();
       }
     }
