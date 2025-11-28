@@ -35,7 +35,7 @@ const AudioDebugger = () => {
             <div>
               <p>Index {index}</p>
               {pe.timestampOffset !== null
-                ? `tOFF: ${pe.timestampOffset}, sOFF: ${pe.seekOffset}, total: ${pe.timestampOffset + pe.seekOffset}`
+                ? `tOFF: ${pe.timestampOffset?.toFixed(1)}, sOFF: ${pe.seekOffset.toFixed(1)}, total: ${(pe.timestampOffset + pe.seekOffset).toFixed(1)}, offsetPos: ${(audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0)).toFixed(1)} (${formatDuration(audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0))})}`
                 : "Not set"}
             </div>
 

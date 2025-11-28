@@ -18,7 +18,6 @@ type PlaylistSong = {
   isDataLoading: boolean;
   isDataLoaded: boolean;
   abortController: AbortController | null;
-  segmentIndex: number;
 };
 
 export class MusicPlayer {
@@ -26,12 +25,12 @@ export class MusicPlayer {
   #sourceBuffer!: SourceBuffer;
   #audio: HTMLAudioElement;
   playlist: PlaylistSong[];
-  #bufferIndex: number = 0;
   #lastNotifiedTrackIndex: number | null = null;
   #bufferSizeBehind = 10;
   #bufferSizeForward = 10;
   #isBufferBeingAppended = false;
   #isBufferBeingPruned = false;
+  #lastPlayingSongIndex: number | null = null;
 
   constructor() {
     this.playlist = [];
@@ -44,7 +43,7 @@ export class MusicPlayer {
     });
   }
 
-  #getCurrentlyPlayingSongIndex() {
+  #getCurrentlyPlayingSongIndex(includePausedAndStopped = false) {
     const currentTime = this.#audio.currentTime;
     for (let i = 0; i < this.playlist.length; i++) {
       const pe = this.playlist[i];
@@ -57,11 +56,16 @@ export class MusicPlayer {
       const trackEnd = trackStart + (pe.accurateDuration || pe.song.duration);
 
       if (currentTime >= trackStart && currentTime < trackEnd) {
+        this.#lastPlayingSongIndex = i;
         return i;
       }
     }
 
-    return null;
+    if (includePausedAndStopped) {
+      return this.#lastPlayingSongIndex;
+    } else {
+      return null;
+    }
   }
 
   async #initMediaSource() {
@@ -154,7 +158,6 @@ export class MusicPlayer {
       if (Math.abs(i - index) > 1) {
         this.playlist[i].abortController?.abort();
         this.playlist[i].segments = [];
-        this.playlist[i].segmentIndex = 0;
         this.playlist[i].isDataLoaded = false;
         this.playlist[i].isDataLoading = false;
         this.playlist[i].accurateDuration = null;
@@ -163,6 +166,7 @@ export class MusicPlayer {
 
     this.#lastNotifiedTrackIndex = index;
 
+    this.#maybeLoadPlaylistSong(index + 1);
     this.#notifyTrackChange(index);
   }
 
@@ -232,7 +236,7 @@ export class MusicPlayer {
   async playSongs(songs: Song[], index: number) {
     this.#reset();
 
-    this.#bufferIndex = index;
+    this.#lastPlayingSongIndex = index;
     this.playlist = songs.map((s) => ({
       song: s,
       segments: [],
@@ -242,7 +246,6 @@ export class MusicPlayer {
       isDataLoaded: false,
       isDataLoading: false,
       abortController: null,
-      segmentIndex: 0,
     }));
 
     this.#handleTrackChange(index);
@@ -257,11 +260,13 @@ export class MusicPlayer {
       { once: true },
     );
 
-    this.#loadPlaylistSong(index);
+    this.#maybeLoadPlaylistSong(index);
   }
 
   async seek(positionPerc: number) {
-    const currentIndex = this.#getCurrentlyPlayingSongIndex();
+    console.log({ buffer: this.#getBufferedRanges() });
+
+    const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
     if (currentIndex === null) {
       console.error("Couldn't find currently playing song");
       return;
@@ -303,27 +308,16 @@ export class MusicPlayer {
       !current.segments[targetSegmentIndex].isInBuffer
     ) {
       console.warn("Segment is in memory, but not buffer, jumping there now!");
-      while (this.#sourceBuffer.updating) {
-        await this.#waitForBufferReady();
-      }
+      await this.#waitForBufferReady();
 
       if (this.playlist[currentIndex].timestampOffset === null) {
         console.error("Timestamp offset is null");
       }
 
-      this.playlist[currentIndex].segmentIndex = targetSegmentIndex;
-
-      if (this.#bufferIndex !== currentIndex) {
-        this.playlist[this.#bufferIndex].segmentIndex = 0;
-        this.#bufferIndex = currentIndex;
-      }
-
-      await this.#maybeLoadNextSegment(true);
-      while (this.#sourceBuffer.updating) {
-        await this.#waitForBufferReady();
-      }
-
+      await this.#maybeLoadNextSegment(targetSegmentIndex);
+      await this.#waitForBufferReady();
       this.#audio.currentTime = position + (current.timestampOffset || 0);
+
       console.log("Got done seeking");
 
       return;
@@ -334,20 +328,13 @@ export class MusicPlayer {
     current.abortController?.abort();
 
     this.playlist[currentIndex].segments = [];
-    this.playlist[currentIndex].segmentIndex = 0;
     this.playlist[currentIndex].isDataLoading = false;
     this.playlist[currentIndex].isDataLoaded = false;
     this.playlist[currentIndex].seekOffset = position;
 
     await this.#clearSourceBuffer();
 
-    // We might've started loading the next track already
-    if (this.#bufferIndex !== currentIndex) {
-      this.playlist[this.#bufferIndex].segmentIndex = 0;
-      this.#bufferIndex = currentIndex;
-    }
-
-    this.#loadPlaylistSong(currentIndex, position);
+    this.#maybeLoadPlaylistSong(currentIndex, position);
 
     this.#sourceBuffer.addEventListener(
       "updateend",
@@ -409,6 +396,7 @@ export class MusicPlayer {
       return;
     }
 
+    let nrRemovedSegments = 0;
     for (let i = currentIndex - 1; i <= currentIndex + 1; i++) {
       if (i < 0 || i >= this.playlist.length) {
         continue;
@@ -430,67 +418,108 @@ export class MusicPlayer {
 
         if (segment.isInBuffer) {
           await this.#waitForBufferReady();
-          if (this.#sourceBuffer.updating) {
-            continue;
-          }
 
           this.#sourceBuffer.remove(
             offset + segment.start,
             offset + segment.end,
           );
+          nrRemovedSegments++;
 
           await this.#waitForBufferReady();
           this.playlist[i].segments[j].isInBuffer = false;
         }
       }
     }
+
+    if (nrRemovedSegments > 0) {
+      console.log(
+        "Removed",
+        nrRemovedSegments,
+        "segments, buffer:",
+        this.#getBufferedRanges(),
+      );
+    }
   }
 
-  async #maybeLoadNextSegment(force: boolean = false) {
+  async #maybeLoadNextSegment(segmentIndex?: number) {
     const buffer = this.#getBufferedSeconds();
-    if (!force && buffer >= this.#bufferSizeForward) {
+    if (segmentIndex === undefined && buffer >= this.#bufferSizeForward) {
       return;
     }
 
-    let pe = this.playlist[this.#bufferIndex];
-
-    // We've already loaded all data we currently have but there is still more data to be loaded
-    if (pe.segmentIndex >= pe.segments.length && !pe.isDataLoaded) {
-      return;
+    // We want to load the segment if we have a segment index set, so let's wait till we can.
+    if (segmentIndex !== undefined) {
+      while (this.#isBufferBeingAppended || this.#isBufferBeingPruned) {
+        await this.#waitForBufferReady();
+      }
     }
 
     if (!this.#isBufferBeingAppended && !this.#isBufferBeingPruned) {
       this.#isBufferBeingAppended = true;
       try {
-        await this.#loadNextSegment();
+        await this.#loadNextSegment(segmentIndex);
       } finally {
         this.#isBufferBeingAppended = false;
       }
     }
   }
 
-  async #loadNextSegment() {
-    let pe = this.playlist[this.#bufferIndex];
+  async #loadNextSegment(customSegmentIndex?: number) {
+    let playlistIndex = this.#getCurrentlyPlayingSongIndex(true);
+    if (playlistIndex === null) {
+      console.error("Couldn't find currently playing song");
+      return;
+    }
+
+    let pe = this.playlist[playlistIndex];
+
+    const position = this.#audio.currentTime;
+
+    // Adjust position for already seeked position if it exists,
+    // because the segments always start at 0
+    const offsetPosition = position - pe.seekOffset - (pe.timestampOffset || 0);
+    let segmentIndex =
+      customSegmentIndex !== undefined
+        ? customSegmentIndex
+        : pe.segments.findIndex(
+          (seg) => offsetPosition >= seg.start && offsetPosition <= seg.end,
+        );
+
+    if (segmentIndex === -1) {
+      console.log("Couldn't find segment index, probably not loaded");
+
+      if (pe.isDataLoaded) {
+        console.error("But the data is already loaded");
+      }
+      return;
+    }
 
     // Let's not append segments that are already in the buffer (might happen due to seeking)
     while (
-      pe.segmentIndex < pe.segments.length &&
-      pe.segments[pe.segmentIndex].isInBuffer
+      playlistIndex < this.playlist.length &&
+      segmentIndex < pe.segments.length &&
+      pe.segments[segmentIndex].isInBuffer
     ) {
-      this.playlist[this.#bufferIndex].segmentIndex++;
-      pe = this.playlist[this.#bufferIndex];
+      segmentIndex++;
+
+      if (segmentIndex >= pe.segments.length && pe.isDataLoaded) {
+        playlistIndex++;
+        pe = this.playlist[playlistIndex];
+        segmentIndex = 0;
+      }
     }
 
-    // Switch over to the next track if we're done loading the current one
-    if (
-      pe.isDataLoaded &&
-      pe.segments.length === pe.segmentIndex &&
-      this.playlist.length - 1 > this.#bufferIndex
-    ) {
-      console.log("Switching to next track");
-      this.#bufferIndex++;
-      this.#loadPlaylistSong(this.#bufferIndex + 1);
-      pe = this.playlist[this.#bufferIndex];
+    if (playlistIndex >= this.playlist.length) {
+      console.info("Reached end of playlist, can't append more");
+      return;
+    }
+
+    if (segmentIndex >= pe.segments.length) {
+      if (!pe.isDataLoaded) {
+      } else {
+        console.error("Can't load another segment for unknown reason");
+      }
+      return;
     }
 
     if (pe.timestampOffset === null) {
@@ -506,13 +535,21 @@ export class MusicPlayer {
     // Segments for each track start at 0 so adjust the timestamp offset to the start of the current track
     this.#sourceBuffer.timestampOffset = pe.timestampOffset + pe.seekOffset;
 
-    const segment = pe.segments[pe.segmentIndex];
-    console.log("Is updating?", this.#sourceBuffer.updating);
-    this.#sourceBuffer.appendBuffer(segment.data);
-    this.playlist[this.#bufferIndex].segments[pe.segmentIndex].isInBuffer =
-      true;
+    const segment = pe.segments[segmentIndex];
 
-    this.playlist[this.#bufferIndex].segmentIndex++;
+    console.log(
+      "Appending segment",
+      segmentIndex,
+      "at playlist",
+      playlistIndex,
+      "buffer:",
+      this.#getBufferedRanges(),
+      "is updating:",
+      this.#sourceBuffer.updating,
+    );
+
+    this.#sourceBuffer.appendBuffer(segment.data);
+    this.playlist[playlistIndex].segments[segmentIndex].isInBuffer = true;
 
     await this.#waitForBufferReady();
   }
@@ -537,7 +574,7 @@ export class MusicPlayer {
     return 0;
   }
 
-  async #loadPlaylistSong(index: number, startTime?: number) {
+  async #maybeLoadPlaylistSong(index: number, startTime?: number) {
     if (index >= this.playlist.length) {
       console.log(
         "Tried to fetch playlist song at index",
@@ -570,7 +607,11 @@ export class MusicPlayer {
     }
 
     // Don't fetch too many tracks
-    if (Math.abs(index - this.#bufferIndex) >= 2) {
+    const currentlyPlayingSongIndex = this.#getCurrentlyPlayingSongIndex();
+    if (
+      currentlyPlayingSongIndex &&
+      Math.abs(index - currentlyPlayingSongIndex) >= 2
+    ) {
       return;
     }
 
@@ -681,12 +722,23 @@ export class MusicPlayer {
 
           this.playlist[index].accurateDuration = songDuration;
 
-          if (index + 1 < this.playlist.length && pe.timestampOffset !== null) {
-            this.playlist[index + 1].timestampOffset =
-              pe.timestampOffset + pe.seekOffset + songDuration;
+          // Update offsets for future tracks
+          for (let i = index + 1; i < this.playlist.length; i++) {
+            const peLast = this.playlist[i - 1];
+            if (
+              peLast.timestampOffset === null ||
+              peLast.accurateDuration === null
+            ) {
+              break;
+            }
+
+            this.playlist[i].timestampOffset =
+              peLast.timestampOffset +
+              peLast.seekOffset +
+              peLast.accurateDuration;
           }
 
-          this.#loadPlaylistSong(index + 1);
+          this.#maybeLoadPlaylistSong(index + 1);
           this.#maybeLoadNextSegment();
 
           break;

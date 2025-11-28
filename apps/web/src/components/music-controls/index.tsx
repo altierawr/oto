@@ -20,6 +20,10 @@ const MusicControls = () => {
 
     const perc = (e.clientX - rect.left) / rect.width;
 
+    if (rect.width <= 0) {
+      console.error("Rect has a width of", rect.width);
+    }
+
     playerState.player.seek(perc);
   };
 
