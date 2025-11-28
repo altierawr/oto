@@ -299,7 +299,6 @@ export class MusicPlayer {
     }
 
     if (
-      false &&
       targetSegmentIndex !== -1 &&
       !current.segments[targetSegmentIndex].isInBuffer
     ) {
