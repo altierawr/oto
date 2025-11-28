@@ -30,7 +30,7 @@ export class MusicPlayer {
   #lastNotifiedTrackIndex: number | null = null;
   #bufferSizeBehind = 10;
   #bufferSizeForward = 10;
-  #isBufferUpdating = false;
+  #isBufferBeingAppended = false;
 
   constructor() {
     this.playlist = [];
@@ -285,7 +285,7 @@ export class MusicPlayer {
       !current.segments[targetSegmentIndex].isInBuffer
     ) {
       console.warn("Segment is in memory, but not buffer, jumping there now!");
-      this.#isBufferUpdating = true;
+      this.#isBufferBeingAppended = true;
       while (this.#sourceBuffer.updating) {
         await this.#waitForBufferReady();
       }
@@ -306,7 +306,7 @@ export class MusicPlayer {
       console.log("Timestamp offset:", this.#sourceBuffer.timestampOffset);
       console.log("Jumping to", position + (current.timestampOffset || 0));
       this.#audio.currentTime = position + (current.timestampOffset || 0);
-      this.#isBufferUpdating = false;
+      this.#isBufferBeingAppended = false;
 
       return;
     }
@@ -372,7 +372,7 @@ export class MusicPlayer {
 
   async #pruneBuffer() {
     const currentTime = this.#audio.currentTime;
-    if (!this.#sourceBuffer || this.#isBufferUpdating) return;
+    if (!this.#sourceBuffer || this.#isBufferBeingAppended) return;
 
     for (let i = 0; i < this.playlist.length; i++) {
       const pe = this.playlist[i];
@@ -398,7 +398,7 @@ export class MusicPlayer {
             continue;
           }
 
-          if (this.#isBufferUpdating) {
+          if (this.#isBufferBeingAppended) {
             return;
           }
 
@@ -464,7 +464,7 @@ export class MusicPlayer {
         return;
       }
 
-      this.#isBufferUpdating = true;
+      this.#isBufferBeingAppended = true;
       this.#sourceBuffer.timestampOffset = pe.timestampOffset + pe.seekOffset;
 
       const segment = pe.segments[pe.segmentIndex];
@@ -476,7 +476,7 @@ export class MusicPlayer {
       this.playlist[this.#bufferIndex].segmentIndex++;
 
       await this.#waitForBufferReady();
-      this.#isBufferUpdating = false;
+      this.#isBufferBeingAppended = false;
 
       if (buffer + segment.duration < this.#bufferSizeForward) {
         this.#loadNext();
