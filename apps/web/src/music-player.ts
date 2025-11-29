@@ -28,9 +28,8 @@ export class MusicPlayer {
   #lastNotifiedTrackIndex: number | null = null;
   #bufferSizeBehind = 10;
   #bufferSizeForward = 10;
-  #isBufferBeingAppended = false;
-  #isBufferBeingPruned = false;
   #lastPlayingSongIndex: number | null = null;
+  #bufferOperationsQueue: Promise<void> = Promise.resolve();
 
   constructor() {
     this.playlist = [];
@@ -41,6 +40,17 @@ export class MusicPlayer {
 
       this.#initMediaSource();
     });
+  }
+
+  #enqueueBufferOperation<T>(operation: () => Promise<T>): Promise<T> {
+    const promise = this.#bufferOperationsQueue.then(operation);
+
+    this.#bufferOperationsQueue = promise.then(
+      () => { },
+      () => { },
+    );
+
+    return promise;
   }
 
   #getCurrentlyPlayingSongIndex(includePausedAndStopped = false) {
@@ -96,8 +106,8 @@ export class MusicPlayer {
         },
       });
 
-      await this.#maybePruneBuffer();
-      await this.#maybeLoadNextSegment();
+      this.#maybePruneBuffer();
+      this.#maybeLoadNextSegment();
     });
 
     this.#audio.addEventListener("progress", () => {
@@ -377,15 +387,9 @@ export class MusicPlayer {
   }
 
   async #maybePruneBuffer() {
-    if (!this.#isBufferBeingPruned && !this.#isBufferBeingAppended) {
-      this.#isBufferBeingPruned = true;
-
-      try {
-        await this.#pruneBuffer();
-      } finally {
-        this.#isBufferBeingPruned = false;
-      }
-    }
+    return this.#enqueueBufferOperation(async () => {
+      await this.#pruneBuffer();
+    });
   }
 
   async #pruneBuffer() {
@@ -447,21 +451,9 @@ export class MusicPlayer {
       return;
     }
 
-    // We want to load the segment if we have a segment index set, so let's wait till we can.
-    if (segmentIndex !== undefined) {
-      while (this.#isBufferBeingAppended || this.#isBufferBeingPruned) {
-        await this.#waitForBufferReady();
-      }
-    }
-
-    if (!this.#isBufferBeingAppended && !this.#isBufferBeingPruned) {
-      this.#isBufferBeingAppended = true;
-      try {
-        await this.#loadNextSegment(segmentIndex);
-      } finally {
-        this.#isBufferBeingAppended = false;
-      }
-    }
+    return this.#enqueueBufferOperation(async () => {
+      await this.#loadNextSegment(segmentIndex);
+    });
   }
 
   async #loadNextSegment(customSegmentIndex?: number) {
