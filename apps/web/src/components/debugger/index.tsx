@@ -2,9 +2,21 @@ import clsx from "clsx";
 import { usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
 import { Fragment } from "react/jsx-runtime";
+import { useEffect, useState } from "react";
 
 const AudioDebugger = () => {
+  const [isVisible, setIsVisible] = useState(false);
   const { player } = usePlayerState();
+
+  useEffect(() => {
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "d") {
+        setIsVisible(true);
+      } else if (e.key === "f") {
+        setIsVisible(false);
+      }
+    });
+  }, []);
 
   if (!player.playlist) {
     return;
@@ -23,6 +35,7 @@ const AudioDebugger = () => {
       style={{
         backgroundColor: "rgba(0, 0, 0, 0.6)",
         backdropFilter: "blur(5px)",
+        display: isVisible ? "block" : "none",
       }}
     >
       <p>Audio debugger</p>
