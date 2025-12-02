@@ -15,6 +15,14 @@ const MusicControls = () => {
     return null;
   }
 
+  const handlePrevClick = () => {
+    playerState.player.prevTrack();
+  };
+
+  const handleNextClick = () => {
+    playerState.player.nextTrack();
+  };
+
   const handleSeekClick: React.MouseEventHandler = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
 
@@ -46,11 +54,19 @@ const MusicControls = () => {
       </div>
       <div className="flex-1 flex flex-col gap-2">
         <div className="flex gap-4 justify-center w-full items-center">
-          <IconPlayerSkipBack size={20} stroke={1.5} />
+          <IconPlayerSkipBack
+            size={20}
+            stroke={1.5}
+            onClick={handlePrevClick}
+          />
           <IconPlayerTrackPrev size={20} stroke={1.5} />
           <IconPlayerPlay size={28} stroke={1.5} />
           <IconPlayerTrackNext size={20} stroke={1.5} />
-          <IconPlayerSkipForward size={20} stroke={1.5} />
+          <IconPlayerSkipForward
+            size={20}
+            stroke={1.5}
+            onClick={handleNextClick}
+          />
         </div>
 
         <div className="flex items-center gap-3 text-sm">
