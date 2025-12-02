@@ -1,4 +1,5 @@
 import {
+  IconPlayerPause,
   IconPlayerPlay,
   IconPlayerSkipBack,
   IconPlayerSkipForward,
@@ -21,6 +22,10 @@ const MusicControls = () => {
 
   const handleNextClick = () => {
     playerState.player.nextTrack();
+  };
+
+  const handlePlayPauseClick = () => {
+    playerState.player.togglePlayPause();
   };
 
   const handleSeekClick: React.MouseEventHandler = (e) => {
@@ -60,7 +65,13 @@ const MusicControls = () => {
             onClick={handlePrevClick}
           />
           <IconPlayerTrackPrev size={20} stroke={1.5} />
-          <IconPlayerPlay size={28} stroke={1.5} />
+          <div onClick={handlePlayPauseClick}>
+            {playerState.playInfo.isPaused ? (
+              <IconPlayerPlay size={28} stroke={1.5} />
+            ) : (
+              <IconPlayerPause size={28} stroke={1.5} />
+            )}
+          </div>
           <IconPlayerTrackNext size={20} stroke={1.5} />
           <IconPlayerSkipForward
             size={20}

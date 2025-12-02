@@ -308,7 +308,16 @@ export class MusicPlayer {
   async #clearBufferOperationsQueues() {
     await this.#bufferOperationsQueue.catch(() => { });
     this.#bufferOperationsQueue = Promise.resolve();
+    await this.#waitForBufferReady();
     console.log("Cleared buffer operations");
+  }
+
+  togglePlayPause() {
+    if (this.#audio.paused) {
+      this.#audio.play();
+    } else {
+      this.#audio.pause();
+    }
   }
 
   async #jumpTrack(direction: number) {
@@ -523,6 +532,10 @@ export class MusicPlayer {
       for (let j = 0; j < this.playlist[i].segments.length; j++) {
         this.playlist[i].segments[j].isInBuffer = false;
       }
+    }
+
+    if (this.#sourceBuffer.buffered.length > 0) {
+      console.warn("Buffer not empty after clear");
     }
   }
 
