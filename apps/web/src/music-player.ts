@@ -98,7 +98,7 @@ export class MusicPlayer {
     this.#mediaSource = new MediaSource();
 
     this.#audio.src = URL.createObjectURL(this.#mediaSource);
-    this.#audio.volume = 0.2;
+    this.#audio.volume = 0.03;
     this.#audio.autoplay = true;
 
     this.#mediaSource.addEventListener("sourceopen", () => {
