@@ -18,6 +18,8 @@ type TPlayerState = {
   player: MusicPlayer;
   playInfo?: {
     song: MusicPlayerSong;
+    isMuted: boolean;
+    volume: number;
     currentTime: number;
     isPaused: boolean;
     isBuffering: boolean;

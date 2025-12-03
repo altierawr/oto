@@ -98,7 +98,7 @@ export class MusicPlayer {
     this.#mediaSource = new MediaSource();
 
     this.#audio.src = URL.createObjectURL(this.#mediaSource);
-    this.#audio.volume = 0.02;
+    this.#audio.volume = 0.2;
     this.#audio.autoplay = true;
 
     this.#mediaSource.addEventListener("sourceopen", () => {
@@ -135,6 +135,19 @@ export class MusicPlayer {
           buffer: this.#getBufferedRange(),
         },
       });
+    });
+
+    this.#audio.addEventListener("volumechange", () => {
+      const state = usePlayerState.getState().playInfo;
+
+      if (state) {
+        usePlayerState.setState({
+          playInfo: {
+            ...state,
+            volume: this.#audio.volume,
+          },
+        });
+      }
     });
 
     this.#audio.addEventListener("waiting", () => {
@@ -176,6 +189,36 @@ export class MusicPlayer {
     });
   }
 
+  toggleMute() {
+    this.#audio.muted = !this.#audio.muted;
+
+    const state = usePlayerState.getState().playInfo;
+
+    if (state) {
+      usePlayerState.setState({
+        playInfo: {
+          ...state,
+          isMuted: this.#audio.muted,
+        },
+      });
+    }
+  }
+
+  setVolume(volume: number) {
+    this.#audio.volume = volume;
+
+    const state = usePlayerState.getState().playInfo;
+
+    if (state) {
+      usePlayerState.setState({
+        playInfo: {
+          ...state,
+          volume,
+        },
+      });
+    }
+  }
+
   #handleTrackChange(index: number) {
     if (index === this.#lastNotifiedTrackIndex) {
       return;
@@ -205,6 +248,8 @@ export class MusicPlayer {
       playInfo: existingPlayInfo
         ? {
           ...existingPlayInfo,
+          volume: this.#audio.volume,
+          isMuted: this.#audio.muted,
           timestampOffset: this.playlist[index].timestampOffset,
           seekOffset: this.playlist[index].seekOffset,
           song: this.playlist[index].song,
@@ -214,6 +259,8 @@ export class MusicPlayer {
         : // TODO: some of these defaults are probably incorrect
         {
           currentTime: this.#audio.currentTime,
+          volume: this.#audio.volume,
+          isMuted: this.#audio.muted,
           timestampOffset: 0,
           seekOffset: 0,
           isBuffering: true,
