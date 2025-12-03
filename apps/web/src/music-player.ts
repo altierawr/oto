@@ -807,10 +807,6 @@ export class MusicPlayer {
       if (currentTime >= start && currentTime < end) {
         return end - currentTime;
       }
-
-      if (currentTime >= end) {
-        return 0;
-      }
     }
 
     return 0;
