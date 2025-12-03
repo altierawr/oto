@@ -301,15 +301,30 @@ export class MusicPlayer {
   }
 
   async #reset() {
+    this.#lockAutomaticBufferOperations();
     for (const song of this.playlist) {
       song.abortController?.abort();
     }
 
+    await this.#clearTrackJumpQueues();
+    await this.#clearBufferOperationsQueues();
+    await this.#clearSourceBuffer();
+    if (this.#sourceBuffer) {
+      this.#sourceBuffer.timestampOffset = 0;
+    }
+
     this.#lastNotifiedTrackIndex = null;
+    this.#lastPlayingSongIndex = null;
+
+    this.playlist = [];
+    this.#unlockAutomaticBufferOperations();
   }
 
   async playSongs(songs: Song[], index: number) {
-    this.#reset();
+    this.#audio.pause();
+    await this.#reset();
+
+    console.log("Play songs\n\n\n\n\n\n\n");
 
     this.#lastPlayingSongIndex = index;
     this.playlist = songs.map((s) => ({
@@ -325,20 +340,16 @@ export class MusicPlayer {
 
     this.#handleTrackChange(index);
 
-    await this.#clearSourceBuffer();
-
-    this.#sourceBuffer.addEventListener(
-      "updateend",
-      () => {
-        this.#audio.currentTime = 0;
-      },
-      { once: true },
-    );
-
     this.#maybeLoadPlaylistSong(index, {
-      segmentLoadedCb: (index) => {
-        if (index === 0) {
-          this.#maybeLoadNextSegment();
+      segmentLoadedCb: async (segmentIndex) => {
+        if (segmentIndex === 0) {
+          await this.#maybeLoadNextSegment({
+            force: true,
+            playlistIndex: index,
+            segmentIndex: 0,
+          });
+          this.#audio.currentTime = 0;
+          this.#audio.play();
         }
       },
     });
@@ -356,7 +367,11 @@ export class MusicPlayer {
     await this.#bufferOperationsQueue.catch(() => { });
     this.#bufferOperationsQueue = Promise.resolve();
     await this.#waitForBufferReady();
-    console.log("Cleared buffer operations");
+  }
+
+  async #clearTrackJumpQueues() {
+    await this.#trackJumpsQueue.catch(() => { });
+    this.#trackJumpsQueue = Promise.resolve();
   }
 
   togglePlayPause() {
@@ -939,12 +954,6 @@ export class MusicPlayer {
       try {
         const { done, value } = await reader.read();
         if (done) {
-          console.log(
-            "Finished fetching song",
-            this.playlist[index].song.title,
-          );
-          console.log(this.playlist[index]);
-
           mp4boxfile.flush();
 
           this.playlist[index].abortController = null;
@@ -971,6 +980,13 @@ export class MusicPlayer {
               peLast.seekOffset +
               peLast.accurateDuration;
           }
+
+          console.log(
+            "Finished fetching song",
+            this.playlist[index].song.title,
+          );
+          console.log(this.playlist[index]);
+          console.log({ playlist: this.playlist });
 
           this.#maybeLoadPlaylistSong(index + 1);
 
