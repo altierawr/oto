@@ -48,8 +48,8 @@ export class MusicPlayer {
     const promise = this.#trackJumpsQueue.then(operation);
 
     this.#trackJumpsQueue = promise.then(
-      () => { },
-      () => { },
+      () => {},
+      () => {},
     );
 
     return promise;
@@ -59,8 +59,8 @@ export class MusicPlayer {
     const promise = this.#bufferOperationsQueue.then(operation);
 
     this.#bufferOperationsQueue = promise.then(
-      () => { },
-      () => { },
+      () => {},
+      () => {},
     );
 
     return promise;
@@ -247,29 +247,29 @@ export class MusicPlayer {
     usePlayerState.setState({
       playInfo: existingPlayInfo
         ? {
-          ...existingPlayInfo,
-          volume: this.#audio.volume,
-          isMuted: this.#audio.muted,
-          timestampOffset: this.playlist[index].timestampOffset,
-          seekOffset: this.playlist[index].seekOffset,
-          song: this.playlist[index].song,
-          playlistIndex: index,
-          currentTime: this.#audio.currentTime,
-        }
+            ...existingPlayInfo,
+            volume: this.#audio.volume,
+            isMuted: this.#audio.muted,
+            timestampOffset: this.playlist[index].timestampOffset,
+            seekOffset: this.playlist[index].seekOffset,
+            song: this.playlist[index].song,
+            playlistIndex: index,
+            currentTime: this.#audio.currentTime,
+          }
         : // TODO: some of these defaults are probably incorrect
-        {
-          currentTime: this.#audio.currentTime,
-          volume: this.#audio.volume,
-          isMuted: this.#audio.muted,
-          timestampOffset: 0,
-          seekOffset: 0,
-          isBuffering: true,
-          isPaused: false,
-          song: this.playlist[index].song,
-          buffer: this.#getBufferedRange(),
-          playlist: this.playlist.map((pe) => pe.song),
-          playlistIndex: index,
-        },
+          {
+            currentTime: this.#audio.currentTime,
+            volume: this.#audio.volume,
+            isMuted: this.#audio.muted,
+            timestampOffset: 0,
+            seekOffset: 0,
+            isBuffering: true,
+            isPaused: false,
+            song: this.playlist[index].song,
+            buffer: this.#getBufferedRange(),
+            playlist: this.playlist.map((pe) => pe.song),
+            playlistIndex: index,
+          },
     });
   }
 
@@ -355,22 +355,22 @@ export class MusicPlayer {
     });
   }
 
-  async #lockAutomaticBufferOperations() {
+  #lockAutomaticBufferOperations() {
     this.#isBufferOperationsLocked = true;
   }
 
-  async #unlockAutomaticBufferOperations() {
+  #unlockAutomaticBufferOperations() {
     this.#isBufferOperationsLocked = false;
   }
 
   async #clearBufferOperationsQueues() {
-    await this.#bufferOperationsQueue.catch(() => { });
+    await this.#bufferOperationsQueue.catch(() => {});
     this.#bufferOperationsQueue = Promise.resolve();
     await this.#waitForBufferReady();
   }
 
   async #clearTrackJumpQueues() {
-    await this.#trackJumpsQueue.catch(() => { });
+    await this.#trackJumpsQueue.catch(() => {});
     this.#trackJumpsQueue = Promise.resolve();
   }
 
@@ -391,6 +391,7 @@ export class MusicPlayer {
     }
 
     const targetIndex = currentIndex + direction;
+    console.log("Jumping to", targetIndex);
 
     if (targetIndex < 0 || targetIndex >= this.playlist.length) {
       return;
@@ -418,30 +419,19 @@ export class MusicPlayer {
 
       this.#unlockAutomaticBufferOperations();
       this.#maybeLoadPlaylistSong(targetIndex, {
-        segmentLoadedCb: (index) => {
+        segmentLoadedCb: async (index) => {
           if (index === 0) {
-            this.#maybeLoadNextSegment({
+            await this.#maybeLoadNextSegment({
               playlistIndex: targetIndex,
               segmentIndex: 0,
             });
+            this.#audio.currentTime =
+              this.playlist[targetIndex].timestampOffset || 0;
+            this.#audio.play();
           }
         },
       });
 
-      const listener = () => {
-        if (this.playlist[targetIndex].segments[0]?.isInBuffer) {
-          console.log(
-            "jumping to",
-            this.playlist[targetIndex].timestampOffset || 0,
-          );
-          this.#sourceBuffer.removeEventListener("updateend", listener);
-          this.#audio.currentTime =
-            this.playlist[targetIndex].timestampOffset || 0;
-          this.#audio.play();
-        }
-      };
-
-      this.#sourceBuffer.addEventListener("updateend", listener);
       return;
     }
 
@@ -455,8 +445,68 @@ export class MusicPlayer {
       return;
     }
 
+    if (direction > 0) {
+      this.playlist[currentIndex].abortController?.abort();
+      this.playlist[currentIndex].isDataLoading = false;
+      this.playlist[currentIndex].isDataLoaded = false;
+      this.playlist[currentIndex].segments = [];
+    }
+
+    if (
+      direction > 0 &&
+      this.playlist[currentIndex].accurateDuration === null
+    ) {
+      console.warn(
+        "Jumping to next track but current track hasn't loaded yet, need to reset buffer and offsets",
+      );
+
+      this.#lockAutomaticBufferOperations();
+      this.#audio.pause();
+      await this.#clearBufferOperationsQueues();
+      await this.#clearSourceBuffer();
+
+      console.log("cleared buffer", this.#getBufferedRanges());
+
+      this.playlist[targetIndex].timestampOffset = 0;
+
+      for (let i = 0; i < targetIndex; i++) {
+        this.playlist[i].timestampOffset = null;
+      }
+
+      for (let i = targetIndex; i < this.playlist.length; i++) {
+        const pe = this.playlist[i];
+
+        if (pe.accurateDuration && pe.isDataLoaded && pe.timestampOffset) {
+          this.playlist[i + 1].timestampOffset =
+            pe.timestampOffset + pe.accurateDuration + pe.seekOffset;
+        }
+      }
+
+      console.log({ playlist: this.playlist });
+
+      await this.#maybeLoadNextSegment({
+        playlistIndex: targetIndex,
+        segmentIndex,
+      });
+
+      this.#unlockAutomaticBufferOperations();
+      this.#audio.currentTime = 0;
+      this.#audio.play();
+
+      return;
+    }
+
+    if (direction < 0 && this.playlist[targetIndex].timestampOffset === null) {
+      this.playlist[targetIndex].timestampOffset = 0;
+    }
+
     console.log("Segment is not in buffer but we have the data");
+    console.log("Current song is loaded, OK to jump.");
     console.log("Loading segment", segmentIndex);
+    console.log("Offset is", offset);
+
+    this.#lockAutomaticBufferOperations();
+    await this.#clearBufferOperationsQueues();
 
     // Segment not in buffer but we have the data
     await this.#maybeLoadNextSegment({
@@ -465,6 +515,8 @@ export class MusicPlayer {
     });
 
     this.#audio.currentTime = offset;
+    this.#unlockAutomaticBufferOperations();
+
     this.#audio.play();
   }
 
@@ -784,6 +836,8 @@ export class MusicPlayer {
       segmentIndex,
       "at playlist",
       playlistIndex,
+      "at timestamp offset",
+      this.#sourceBuffer.timestampOffset,
       "buffer:",
       this.#getBufferedRanges(),
       "is updating:",
