@@ -62,8 +62,8 @@ const AudioDebugger = () => {
                   <div
                     key={index}
                     className={clsx(
-                      seg.isInBuffer && "bg-(--green-9)",
-                      !seg.isInBuffer && "bg-(--red-9)",
+                      seg.bufferInfo && "bg-(--green-9)",
+                      !seg.bufferInfo && "bg-(--red-9)",
                     )}
                     style={{
                       position: "absolute",

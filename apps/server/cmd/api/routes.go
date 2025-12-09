@@ -18,8 +18,11 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/track/search", app.searchTracksHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/albums/:id", app.viewAlbumHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/tracks/:id/stream", app.getSongStream)
+	router.HandlerFunc(http.MethodGet, "/v1/tracks/:id/streamurl", app.getSongStreamUrl)
+	router.HandlerFunc(http.MethodGet, "/v1/streams/:id/segments/:segment", app.serveHLS)
+	router.HandlerFunc(http.MethodGet, "/v1/streams/:id/seek", app.seek)
 
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 
-	return router
+	return app.enableCORS(router)
 }

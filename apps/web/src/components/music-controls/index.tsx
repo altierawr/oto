@@ -4,7 +4,14 @@ import {
   IconPlayerSkipBack,
   IconPlayerSkipForward,
 } from "@tabler/icons-react";
-import { Volume, Volume1, Volume2, VolumeOff, VolumeX } from "lucide-react";
+import {
+  TextAlignJustify,
+  Volume,
+  Volume1,
+  Volume2,
+  VolumeOff,
+  VolumeX,
+} from "lucide-react";
 import { usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
 import { useEffect, useRef, useState } from "react";
@@ -93,7 +100,10 @@ const MusicControls = () => {
         />
 
         <div className="flex flex-col justify-center">
-          <p className="font-bold text-sm">{playerState.playInfo.song.title}</p>
+          <p className="font-bold text-sm">
+            {playerState.playInfo.playlistIndex}{" "}
+            {playerState.playInfo.song.title}
+          </p>
           <p className="text-xs text-gray-11">
             {playerState.playInfo.song.artistName}
           </p>
@@ -164,7 +174,8 @@ const MusicControls = () => {
           <p>{formatDuration(playerState.playInfo.song.duration)}</p>
         </div>
       </div>
-      <div className="flex-1 flex justify-end items-center gap-2">
+      <div className="flex-1 flex justify-end items-center gap-6">
+        <TextAlignJustify className="cursor-pointer" strokeWidth={1.5} />
         <div className="flex items-center gap-2">
           <div onClick={handleMuteToggleClick}>
             {playerState.playInfo.isMuted && <VolumeOff strokeWidth={1.5} />}
