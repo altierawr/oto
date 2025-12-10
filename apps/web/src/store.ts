@@ -37,3 +37,14 @@ type TPlayerState = {
 export const usePlayerState = create<TPlayerState>(() => ({
   player: new MusicPlayer(),
 }));
+
+type TGeneralStore = {
+  isSongQueueVisible: boolean;
+  setIsSongQueueVisible: (isSongQueueVisible: boolean) => void;
+};
+
+export const useGeneralStore = create<TGeneralStore>((set) => ({
+  isSongQueueVisible: false,
+  setIsSongQueueVisible: (isSongQueueVisible: boolean) =>
+    set({ isSongQueueVisible }),
+}));

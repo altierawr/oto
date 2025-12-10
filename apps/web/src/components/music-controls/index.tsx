@@ -12,13 +12,14 @@ import {
   VolumeOff,
   VolumeX,
 } from "lucide-react";
-import { usePlayerState } from "../../store";
+import { useGeneralStore, usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
 import { useEffect, useRef, useState } from "react";
 import useLatest from "../../utils/useLatest";
 
 const MusicControls = () => {
   const playerState = usePlayerState();
+  const generalState = useGeneralStore();
   const volumeBarRef = useRef<HTMLDivElement>(null);
   const [isMouseDownOnVolumeChanger, setIsMouseDownOnVolumeChanger] =
     useState(false);
@@ -89,8 +90,12 @@ const MusicControls = () => {
     setIsMouseDownOnVolumeChanger(true);
   };
 
+  const handleQueueClick = () => {
+    generalState.setIsSongQueueVisible(!generalState.isSongQueueVisible);
+  };
+
   return (
-    <div className="w-full p-4 flex justify-between h-[100px] bg-(--gray-3) border-t border-t-(--gray-6)">
+    <div className="w-full p-4 flex justify-between h-[100px] bg-(--gray-2) border-t border-t-(--gray-6)">
       <div className="flex-1 flex gap-3">
         <div
           className="h-full aspect-square bg-cover rounded-lg"
@@ -175,7 +180,11 @@ const MusicControls = () => {
         </div>
       </div>
       <div className="flex-1 flex justify-end items-center gap-6">
-        <TextAlignJustify className="cursor-pointer" strokeWidth={1.5} />
+        <TextAlignJustify
+          className="cursor-pointer"
+          strokeWidth={1.5}
+          onClick={handleQueueClick}
+        />
         <div className="flex items-center gap-2">
           <div onClick={handleMuteToggleClick}>
             {playerState.playInfo.isMuted && <VolumeOff strokeWidth={1.5} />}
