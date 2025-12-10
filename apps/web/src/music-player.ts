@@ -437,7 +437,19 @@ export class MusicPlayer {
   }
 
   async #resetPlaylistEntry(index: number) {
-    // TODO: clean up the stream
+    const streamId = this.playlist[index].streamId;
+    if (streamId !== null) {
+      fetch(`http://localhost:3003/v1/streams/${streamId}/end`)
+        .then(() => {
+          console.info(
+            `Ended stream ${streamId} (song ${this.playlist[index].song.title})`,
+          );
+        })
+        .catch((err) => {
+          console.error("Error ending stream", streamId, ":", err);
+        });
+    }
+
     this.playlist[index].streamId = null;
     this.playlist[index].segments = [];
     this.playlist[index].lastSegmentIndex = null;
@@ -511,6 +523,8 @@ export class MusicPlayer {
       await this.#waitForAudioCanPlay();
       this.#audio.play();
 
+      this.#notifyTrackChange(targetIndex);
+
       return;
     }
 
@@ -569,6 +583,8 @@ export class MusicPlayer {
       this.#audio.currentTime = 0;
       this.#audio.play();
 
+      this.#notifyTrackChange(targetIndex);
+
       return;
     }
 
@@ -613,6 +629,8 @@ export class MusicPlayer {
     this.#audio.currentTime = offset;
     this.#unlockAutomaticBufferOperations();
     this.#unlockFetchOperations();
+
+    this.#notifyTrackChange(targetIndex);
 
     this.#audio.play();
   }

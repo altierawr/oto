@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/altierawr/shidal/internal/jsonlog"
@@ -32,6 +34,13 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		logger.PrintFatal(err, nil)
+	}
+
+	err = os.RemoveAll(filepath.Join(os.TempDir(), "shidal"))
+	if err != nil {
+		logger.PrintError(errors.New("couldn't delete app temp directory"), map[string]string{
+			"error": err.Error(),
+		})
 	}
 
 	var cfg config
