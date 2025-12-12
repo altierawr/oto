@@ -33,7 +33,7 @@ const SongListItem = ({ song, songs, index }: TProps) => {
         />
       </div>
       <div className="grow basis-[300px] overflow-hidden text-ellipsis text-nowrap cursor-default select-none tracking-tight">
-        <p>{song.title}</p>
+        <p className="min-w-[600px]">{song.title}</p>
         <Link to={`/artists/${song.artistId}`}>{song.artistName}</Link>
       </div>
       <div className="shrink-0 basis-[72px] cursor-default select-none">
