@@ -5,6 +5,7 @@
 @import "design/yellow.css";
 @import "design/red.css";
 @import "design/styles.css";
+@import "design/components.css";
 
 @theme {
   --spacing-1: var(--space-1);
