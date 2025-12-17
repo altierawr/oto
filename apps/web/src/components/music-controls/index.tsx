@@ -16,6 +16,7 @@ import { useGeneralStore, usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
 import { useEffect, useRef, useState } from "react";
 import useLatest from "../../utils/useLatest";
+import { Link } from "react-router";
 
 const MusicControls = () => {
   const playerState = usePlayerState();
@@ -105,12 +106,17 @@ const MusicControls = () => {
         />
 
         <div className="flex flex-col justify-center">
-          <p className="font-bold text-sm">
-            {playerState.playInfo.playlistIndex}{" "}
-            {playerState.playInfo.song.title}
-          </p>
+          <p className="font-bold text-sm">{playerState.playInfo.song.title}</p>
           <p className="text-xs text-gray-11">
-            {playerState.playInfo.song.artistName}
+            {playerState.playInfo?.song.artists.map((artist, index) => (
+              <span key={artist.id}>
+                <Link to={`/artists/${artist.id}`}>
+                  {artist.name}
+                  {index < playerState.playInfo!.song.artists.length - 1 &&
+                    ", "}
+                </Link>
+              </span>
+            ))}
           </p>
         </div>
       </div>
@@ -143,6 +149,7 @@ const MusicControls = () => {
               playerState.playInfo.currentTime -
               playerState.playInfo.seekOffset -
               (playerState.playInfo.timestampOffset || 0),
+              "digital",
             )}
           </p>
           <div className="flex-1 h-[13px] py-[4px]" onClick={handleSeekClick}>
@@ -176,7 +183,7 @@ const MusicControls = () => {
               />
             </div>
           </div>
-          <p>{formatDuration(playerState.playInfo.song.duration)}</p>
+          <p>{formatDuration(playerState.playInfo.song.duration, "digital")}</p>
         </div>
       </div>
       <div className="flex-1 flex justify-end items-center gap-6">
