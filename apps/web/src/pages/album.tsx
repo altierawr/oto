@@ -19,7 +19,9 @@ const AlbumPage = () => {
   const player = usePlayerState((s) => s.player);
 
   const handlePlayClick = async () => {
-    player.playSongs(data.album.songs, 0);
+    if (data.album.songs) {
+      player.playSongs(data.album.songs, 0);
+    }
   };
 
   console.log(data.album);
@@ -74,7 +76,7 @@ const AlbumPage = () => {
         </div>
       </div>
       <div className="mt-4"></div>
-      <SongList songs={data.album.songs} />
+      {data.album.songs && <SongList songs={data.album.songs} />}
     </div>
   );
 };

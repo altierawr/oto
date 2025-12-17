@@ -13,14 +13,14 @@ type TidalAlbum struct {
 	UPC             string        `json:"upc,omitempty"`
 	VibrantColor    string        `json:"vibrantColor,omitempty"`
 	VideoCover      string        `json:"videoCover,omitempty"`
-	Songs           []TidalSong   `json:"songs"`
+	Songs           []TidalSong   `json:"songs,omitempty"`
 	Artists         []TidalArtist `json:"artists"`
 }
 
 type TidalArtist struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`
-	Picture string `json:"picture"`
+	Picture string `json:"picture,omitempty"`
 }
 
 type TidalSong struct {

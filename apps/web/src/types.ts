@@ -11,14 +11,14 @@ export type Album = {
   upc?: string;
   vibrantColor?: string;
   videoCover?: string;
-  songs: Song[];
+  songs?: Song[];
   artists: Artist[];
 };
 
 export type Artist = {
   id: number;
   name: string;
-  picture: string;
+  picture?: string;
 };
 
 export type Song = {
