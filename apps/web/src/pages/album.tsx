@@ -1,9 +1,11 @@
-import { useLoaderData, type LoaderFunction } from "react-router";
+import { Link, useLoaderData, type LoaderFunction } from "react-router";
 import { Button, IconButton } from "design";
 import type { Album } from "../types";
 import SongList from "../components/song-list";
 import { Heart, Play, Share } from "lucide-react";
 import { usePlayerState } from "../store";
+import { formatDuration } from "../utils/utils";
+import clsx from "clsx";
 
 const loader: LoaderFunction = async ({ params }) => {
   const data = await fetch(`http://localhost:3003/v1/albums/${params.id}`);
@@ -20,6 +22,9 @@ const AlbumPage = () => {
     player.playSongs(data.album.songs, 0);
   };
 
+  console.log(data.album);
+  console.log(data.album.title.length);
+
   return (
     <div className="max-w-[900px]">
       <div className="flex gap-4">
@@ -31,9 +36,29 @@ const AlbumPage = () => {
         ></div>
 
         <div className="flex flex-col justify-between items-start">
-          <h1 className="text-4xl font-bold tracking-tight">
-            {data.album.title}
-          </h1>
+          <div>
+            <h1
+              className={clsx(
+                "font-bold",
+                "tracking-tight",
+                data.album.title.length <= 45 && "text-5xl",
+                data.album.title.length > 45 && "text-4xl",
+                "line-clamp-2",
+              )}
+            >
+              {data.album.title}
+            </h1>
+            <p className="text-sm">
+              Album by{" "}
+              <Link to={`/artists/${data.album.artists[0].id}`}>
+                {data.album.artists[0].name}
+              </Link>
+            </p>
+            <p className="text-sm">
+              {data.album.releaseDate.slice(0, 4)} • {data.album.numberOfTracks}{" "}
+              songs • {formatDuration(data.album.duration, "written")}
+            </p>
+          </div>
           <div className="flex gap-4">
             <Button color="blue" onClick={handlePlayClick}>
               <Play size={16} fill="currentColor" />

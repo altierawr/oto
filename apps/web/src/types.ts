@@ -1,8 +1,16 @@
 export type Album = {
   id: number;
-  title: string;
   cover: string;
-  videoCover: string;
+  explicit?: boolean;
+  duration: number;
+  numberOfTracks: number;
+  numberOfVolumes: number;
+  releaseDate: string;
+  title: string;
+  type: "ALBUM" | "EP" | "SINGLE";
+  upc?: string;
+  vibrantColor?: string;
+  videoCover?: string;
   songs: Song[];
   artists: Artist[];
 };
@@ -15,14 +23,15 @@ export type Artist = {
 
 export type Song = {
   id: number;
-  title: string;
+  bpm: number;
   duration: number;
-  explicit: boolean;
+  explicit?: boolean;
+  isrc?: string;
+  streamStartDate: string;
+  title: string;
   trackNumber: number;
-  year: string;
-  artistId: number;
-  artistName: string;
-  artistPicture: string;
+  volumeNumber: number;
+  artists: Artist[];
   albumId: number;
   albumTitle: string;
   albumCover: string;

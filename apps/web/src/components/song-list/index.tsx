@@ -11,7 +11,7 @@ const SongList = ({ songs }: TProps) => {
       <div className="w-full flex items-center gap-2 px-4 font-semibold">
         <div className="text-center shrink-0 basis-[24px]">#</div>
         <div className="grow basis-[300px] overflow-hidden text-ellipsis text-nowrap">
-          Title & Artists
+          Title
         </div>
         <div className="shrink-0 basis-[72px]">Duration</div>
         <div className="flex gap-2 items-center shrink-0 basis-[100px] opacity-0"></div>

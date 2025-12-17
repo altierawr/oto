@@ -34,10 +34,17 @@ const SongListItem = ({ song, songs, index }: TProps) => {
       </div>
       <div className="grow basis-[300px] overflow-hidden text-ellipsis text-nowrap cursor-default select-none tracking-tight">
         <p className="min-w-[600px]">{song.title}</p>
-        <Link to={`/artists/${song.artistId}`}>{song.artistName}</Link>
+        {song.artists.map((artist, index) => (
+          <span key={artist.id}>
+            <Link to={`/artists/${artist.id}`}>
+              {artist.name}
+              {index < song.artists.length - 1 && ", "}
+            </Link>
+          </span>
+        ))}
       </div>
       <div className="shrink-0 basis-[72px] cursor-default select-none">
-        {formatDuration(song.duration)}
+        {formatDuration(song.duration, "digital")}
       </div>
       <div className="flex gap-2 items-center shrink-0 basis-[100px]">
         <IconDots size={20} stroke={1.5} />
