@@ -73,7 +73,7 @@ func GetAlbum(id int64) (*types.TidalAlbum, error) {
 	}
 
 	albumQuery := albumUrl.Query()
-	albumQuery.Set("countryCode", "US")
+	albumQuery.Set("countryCode", "FI")
 	albumUrl.RawQuery = albumQuery.Encode()
 
 	albumItemsUrl := &url.URL{
@@ -83,7 +83,8 @@ func GetAlbum(id int64) (*types.TidalAlbum, error) {
 	}
 
 	itemsQuery := albumItemsUrl.Query()
-	itemsQuery.Set("countryCode", "US")
+	itemsQuery.Set("countryCode", "FI")
+	itemsQuery.Set("locale", "en_US")
 	itemsQuery.Set("limit", "100")
 	itemsQuery.Set("offset", "0")
 	albumItemsUrl.RawQuery = itemsQuery.Encode()
