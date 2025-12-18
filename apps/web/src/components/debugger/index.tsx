@@ -10,9 +10,9 @@ const AudioDebugger = () => {
 
   useEffect(() => {
     document.addEventListener("keydown", (e) => {
-      if (e.key === "d") {
+      if (e.key === ";" && e.ctrlKey) {
         setIsVisible(true);
-      } else if (e.key === "f") {
+      } else if (e.key === "'" && e.ctrlKey) {
         setIsVisible(false);
       }
     });
@@ -40,7 +40,7 @@ const AudioDebugger = () => {
     >
       <p>Audio debugger</p>
 
-      <p>Current time: {formatDuration(audio.currentTime)}</p>
+      <p>Current time: {formatDuration(audio.currentTime, "digital")}</p>
 
       <div className="flex flex-col gap-2">
         {player.playlist.map((pe, index) => (
@@ -48,12 +48,16 @@ const AudioDebugger = () => {
             <div>
               <p>Index {index}</p>
               {pe.timestampOffset !== null
-                ? `tOFF: ${pe.timestampOffset?.toFixed(1)}, sOFF: ${pe.seekOffset.toFixed(1)}, total: ${(pe.timestampOffset + pe.seekOffset).toFixed(1)}, offsetPos: ${(audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0)).toFixed(1)} (${formatDuration(audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0))})}`
+                ? `tOFF: ${pe.timestampOffset?.toFixed(1)}, sOFF: ${pe.seekOffset.toFixed(1)}, total: ${(pe.timestampOffset + pe.seekOffset).toFixed(1)}, offsetPos: ${(audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0)).toFixed(1)} (${formatDuration(audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0), "digital")})}`
                 : "Not set"}
             </div>
 
             <div className="flex w-full relative h-[8px]">
               {pe.segments.map((seg, index) => {
+                if (!seg) {
+                  return null;
+                }
+
                 const duration = pe.song.duration;
                 const start = seg.start + pe.seekOffset;
                 const end = seg.end + pe.seekOffset;
