@@ -24,14 +24,15 @@ const SearchResult = ({
 
   return (
     <div
-      className="w-full flex gap-3 min-h-11 rounded-md p-1 transition-colors hover:bg-(--gray-2) active:bg-(--gray-3)"
+      className="w-full flex gap-3 h-11 min-h-11 rounded-md p-1 transition-colors hover:bg-(--gray-2) active:bg-(--gray-3)"
       onDoubleClick={sendToUrl}
     >
       <div
-        className="h-full aspect-square bg-cover rounded-lg hover:outline-1 hover:outline-(--blue-8)"
+        className="h-full aspect-square bg-cover rounded-lg hover:outline-1 hover:outline-(--blue-8) cursor-pointer"
         style={{
           backgroundImage: `url(${imageUrl})`,
         }}
+        onClick={sendToUrl}
       />
 
       <div className="flex flex-col justify-center flex-1">
