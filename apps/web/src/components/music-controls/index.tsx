@@ -101,7 +101,7 @@ const MusicControls = () => {
         <div
           className="h-full aspect-square bg-cover rounded-lg"
           style={{
-            backgroundImage: `url(https://resources.tidal.com/images/${playerState.playInfo.song.albumCover.replace(/-/g, "/")}/1280x1280.jpg)`,
+            backgroundImage: `url(https://resources.tidal.com/images/${playerState.playInfo.song.album.cover.replace(/-/g, "/")}/80x80.jpg)`,
           }}
         />
 

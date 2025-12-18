@@ -194,9 +194,11 @@ func GetAlbum(id int64) (*types.TidalAlbum, error) {
 			TrackNumber:     item.Item.TrackNumber,
 			VolumeNumber:    item.Item.VolumeNumber,
 			Artists:         []types.TidalArtist{},
-			AlbumId:         item.Item.Album.ID,
-			AlbumTitle:      item.Item.Album.Title,
-			AlbumCover:      item.Item.Album.Cover,
+			Album: types.TidalAlbum{
+				ID:    item.Item.Album.ID,
+				Title: item.Item.Album.Title,
+				Cover: item.Item.Album.Cover,
+			},
 		}
 
 		for _, artistItem := range item.Item.Artists {

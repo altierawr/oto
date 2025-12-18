@@ -32,9 +32,35 @@ export type Song = {
   trackNumber: number;
   volumeNumber: number;
   artists: Artist[];
-  albumId: number;
-  albumTitle: string;
-  albumCover: string;
+  album: Album;
+};
+
+export type Playlist = {
+  uuid: string;
+  created: string;
+  description: string;
+  popularity: number;
+  duration: number;
+  lastItemAddedAt: string;
+  lastUpdated: string;
+  numberOfAudioTracks: number;
+  numberOfTracks: number;
+  promotedArtists: Artist[];
+  publicPlaylist: boolean;
+  title: string;
+  squareImage?: string;
+  type: string;
+};
+
+export type SearchResults = {
+  topHits: {
+    type: "ARTISTS" | "ALBUMS" | "TRACKS" | "PLAYLISTS";
+    value: Artist | Album | Song | Playlist;
+  }[];
+  artists: Artist[];
+  albums: Album[];
+  songs: Song[];
+  playlists: Playlist[];
 };
 
 export type MusicPlayerSong = Song & {

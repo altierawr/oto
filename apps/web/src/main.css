@@ -18,6 +18,8 @@
   --spacing-8: var(--space-8);
   --spacing-9: var(--space-9);
   --spacing-10: var(--space-10);
+  --spacing-11: var(--space-11);
+  --spacing-12: var(--space-12);
 }
 
 * {

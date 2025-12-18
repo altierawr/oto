@@ -5,6 +5,8 @@ import { useLocationStore } from "../store";
 import MusicControls from "../components/music-controls";
 import AudioDebugger from "../components/debugger";
 import SongQueue from "../components/song-queue";
+import Navbar from "../components/navbar";
+import { Spacer } from "design";
 
 const Root = () => {
   const location = useLocation();
@@ -34,7 +36,9 @@ const Root = () => {
     <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative">
       <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
         <Sidebar />
-        <div className="flex-1 px-8 pt-8 overflow-y-auto flex justify-center">
+        <div className="flex-1 px-8 overflow-y-auto flex flex-col items-center">
+          <Navbar />
+          <Spacer size="8" />
           <Outlet />
         </div>
       </div>

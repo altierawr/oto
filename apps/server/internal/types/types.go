@@ -4,7 +4,7 @@ type TidalAlbum struct {
 	ID              int           `json:"id"`
 	Cover           string        `json:"cover,omitempty"`
 	Explicit        bool          `json:"explicit,omitempty"`
-	Duration        int    `json:"duration"`
+	Duration        int           `json:"duration"`
 	NumberOfTracks  int           `json:"numberOfTracks"`
 	NumberOfVolumes int           `json:"numberOfVolumes"`
 	ReleaseDate     string        `json:"releaseDate,omitempty"`
@@ -34,9 +34,7 @@ type TidalSong struct {
 	TrackNumber     int           `json:"trackNumber,omitempty"`
 	VolumeNumber    int           `json:"volumeNumber,omitempty"`
 	Artists         []TidalArtist `json:"artists"`
-	AlbumId         int           `json:"albumId"`
-	AlbumTitle      string        `json:"albumTitle"`
-	AlbumCover      string        `json:"albumCover"`
+	Album           TidalAlbum    `json:"album"`
 }
 
 type TidalPlaylist struct {
@@ -52,7 +50,7 @@ type TidalPlaylist struct {
 	PromotedArtists     []TidalArtist `json:"promotedArtists"`
 	PublicPlaylist      bool          `json:"publicPlaylist"`
 	Title               string        `json:"title"`
-	SquareImage         string        `json:"squareImage"`
+	SquareImage         string        `json:"squareImage,omitempty"`
 	Type                string        `json:"type"`
 }
 
@@ -74,3 +72,10 @@ type TidalPlaybackInfo struct {
 	Manifest         string `json:"manifest"`
 }
 
+type TidalSearch struct {
+	Artists   []TidalArtist   `json:"artists"`
+	Albums    []TidalAlbum    `json:"albums"`
+	Songs     []TidalSong     `json:"songs"`
+	Playlists []TidalPlaylist `json:"playlists"`
+	TopHits   []TidalTopHit   `json:"topHits"`
+}

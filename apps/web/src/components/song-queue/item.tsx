@@ -11,18 +11,15 @@ const SongQueueItem = ({ song }: TProps) => {
       <div
         className="h-[50px] aspect-square bg-cover rounded-lg"
         style={{
-          backgroundImage: `url(https://resources.tidal.com/images/${song.albumCover.replace(/-/g, "/")}/80x80.jpg)`,
+          backgroundImage: `url(https://resources.tidal.com/images/${song.album.cover.replace(/-/g, "/")}/80x80.jpg)`,
         }}
       />
 
       <div className="flex flex-col justify-center">
         <p className="font-normal">{song.title}</p>
-        <Link
-          to={`/artists/${song.artistId}`}
-          className="text-sm text-(--gray-11)"
-        >
-          {song.artistName}
-        </Link>
+        {song.artists.map((artist) => (
+          <Link to={`/artists/${artist.id}`}>{artist.name}</Link>
+        ))}
       </div>
     </div>
   );
