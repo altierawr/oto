@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input, Spacer } from "design";
 import SearchHeader, { type SearchTab } from "./header";
 import type { SearchResults } from "../../types";
@@ -16,6 +16,8 @@ const SearchInput = () => {
     null,
   );
   const [isFocused, setIsFocused] = useState(false);
+
+  const resultsListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     clearTimeout(searchTimeout);
@@ -46,12 +48,25 @@ const SearchInput = () => {
     setSearchTimeout(timeout);
   }, [searchValue]);
 
+  const handleSearchValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(e.target.value);
+  };
+
   const handleFocusGain = () => {
     setIsFocused(true);
   };
 
   const handleFocusLoss = () => {
     setIsFocused(false);
+  };
+
+  const handleSearchTabChange = (tab: SearchTab) => {
+    setSearchTab(tab);
+
+    resultsListRef.current?.scrollTo({
+      top: 0,
+      behavior: "instant",
+    });
   };
 
   const isVisible = isFocused && searchValue.trim() !== "";
@@ -62,7 +77,7 @@ const SearchInput = () => {
         placeholder="Search..."
         className="w-full"
         value={searchValue}
-        onChange={(e) => setSearchValue(e.target.value)}
+        onChange={handleSearchValueChange}
         onFocus={handleFocusGain}
         onBlur={handleFocusLoss}
       />
@@ -79,10 +94,13 @@ const SearchInput = () => {
         onFocus={handleFocusGain}
         onBlur={handleFocusLoss}
       >
-        <SearchHeader tab={searchTab} onTabChange={setSearchTab} />
+        <SearchHeader tab={searchTab} onTabChange={handleSearchTabChange} />
         <Spacer size="2" />
 
-        <div className="flex flex-col flex-1 gap-2 overflow-y-auto overflow-x-clip">
+        <div
+          ref={resultsListRef}
+          className="flex flex-col flex-1 gap-2 overflow-y-auto overflow-x-clip"
+        >
           {searchTab === "topHits" &&
             searchResults?.topHits?.map((topHit) => (
               <TopHitSearchResult
