@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 
 	"github.com/altierawr/shidal/internal/types"
 )
@@ -194,11 +195,11 @@ func Search(query string) (*types.TidalSearch, error) {
 
 	for _, item := range tidalSearch.Tracks.Items {
 		song := types.TidalSong{
-			ID:         item.ID,
-			Title:      item.Title,
-			Duration:   item.Duration,
-			ISRC:       item.ISRC,
-			Artists:    []types.TidalArtist{},
+			ID:       item.ID,
+			Title:    item.Title,
+			Duration: item.Duration,
+			ISRC:     item.ISRC,
+			Artists:  []types.TidalArtist{},
 			Album: types.TidalAlbum{
 				ID:    item.Album.ID,
 				Title: item.Album.Title,
@@ -235,12 +236,17 @@ func Search(query string) (*types.TidalSearch, error) {
 			Type:                item.Type,
 		}
 
-		for _, artist := range item.PromotedArtists {
-			playlist.PromotedArtists = append(playlist.PromotedArtists, types.TidalArtist{
-				ID:      artist.ID,
-				Name:    artist.Name,
-				Picture: artist.Picture,
-			})
+		for _, artistItem := range item.PromotedArtists {
+			artist := types.TidalArtist{
+				ID:      artistItem.ID,
+				Name:    artistItem.Name,
+				Picture: artistItem.Picture,
+			}
+
+			// Playlists sometimes include duplicate promoted artists for some reason
+			if !slices.Contains(playlist.PromotedArtists, artist) {
+				playlist.PromotedArtists = append(playlist.PromotedArtists, artist)
+			}
 		}
 
 		result.Playlists = append(result.Playlists, playlist)
