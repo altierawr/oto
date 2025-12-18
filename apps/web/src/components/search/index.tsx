@@ -48,8 +48,6 @@ const SearchInput = () => {
 
   const isVisible = isFocused && searchValue.trim() !== "";
 
-  console.log({ searchResults });
-
   return (
     <div className="relative w-[360px]">
       <Input
