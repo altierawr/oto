@@ -5,6 +5,7 @@ type TProps = {
   primaryText: string | React.ReactNode;
   secondaryText: string | React.ReactNode;
   linkUrl: string;
+  onClose?: () => void;
 };
 
 const SearchResult = ({
@@ -12,11 +13,12 @@ const SearchResult = ({
   primaryText,
   secondaryText,
   linkUrl,
+  onClose,
 }: TProps) => {
   const navigate = useNavigate();
 
   const sendToUrl = () => {
-    document.activeElement.blur();
+    onClose?.();
     navigate(linkUrl);
   };
 

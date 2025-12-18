@@ -4,12 +4,17 @@ import type { Album } from "../../../types";
 
 type TProps = {
   album: Album;
+  onClose?: () => void;
 };
 
-const AlbumSearchResult = ({ album }: TProps) => {
+const AlbumSearchResult = ({ album, onClose }: TProps) => {
   return (
     <SearchResult
-      primaryText={<Link to={`/albums/${album.id}`}>{album.title}</Link>}
+      primaryText={
+        <Link to={`/albums/${album.id}`} onClick={onClose}>
+          {album.title}
+        </Link>
+      }
       secondaryText={
         <>
           <span className="capitalize">
@@ -23,6 +28,7 @@ const AlbumSearchResult = ({ album }: TProps) => {
       }
       imageUrl={`https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/80x80.jpg`}
       linkUrl={`/albums/${album.id}`}
+      onClose={onClose}
     />
   );
 };

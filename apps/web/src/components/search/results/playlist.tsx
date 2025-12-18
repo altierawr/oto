@@ -5,13 +5,16 @@ import type { Playlist } from "../../../types";
 
 type TProps = {
   playlist: Playlist;
+  onClose?: () => void;
 };
 
-const PlaylistSearchResult = ({ playlist }: TProps) => {
+const PlaylistSearchResult = ({ playlist, onClose }: TProps) => {
   return (
     <SearchResult
       primaryText={
-        <Link to={`/playlists/${playlist.uuid}`}>{playlist.title}</Link>
+        <Link to={`/playlists/${playlist.uuid}`} onClick={onClose}>
+          {playlist.title}
+        </Link>
       }
       secondaryText={
         <>
@@ -21,7 +24,9 @@ const PlaylistSearchResult = ({ playlist }: TProps) => {
               Playlist featuring{" "}
               {playlist.promotedArtists.map((artist, index) => (
                 <Fragment key={artist.id}>
-                  <Link to={`/artists/${artist.id}`}>{artist.name}</Link>
+                  <Link to={`/artists/${artist.id}`} onClick={onClose}>
+                    {artist.name}
+                  </Link>
                   {index < playlist.promotedArtists.length - 2 && ", "}
                   {index === playlist.promotedArtists.length - 2 && " & "}
                 </Fragment>
@@ -32,6 +37,7 @@ const PlaylistSearchResult = ({ playlist }: TProps) => {
       }
       imageUrl={`https://resources.tidal.com/images/${playlist.squareImage?.replace(/-/g, "/")}/320x320.jpg`}
       linkUrl={`/albums/${playlist.uuid}`}
+      onClose={onClose}
     />
   );
 };

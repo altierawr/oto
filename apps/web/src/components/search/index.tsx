@@ -11,7 +11,7 @@ import TopHitSearchResult from "./results/top-hit";
 const SearchInput = () => {
   const [searchValue, setSearchValue] = useState("");
   const [searchTimeout, setSearchTimeout] = useState<number | undefined>();
-  const [searchTab, setSearchTab] = useState<SearchTab>("albums");
+  const [searchTab, setSearchTab] = useState<SearchTab>("topHits");
   const [searchResults, setSearchResults] = useState<SearchResults | null>(
     null,
   );
@@ -46,6 +46,14 @@ const SearchInput = () => {
     setSearchTimeout(timeout);
   }, [searchValue]);
 
+  const handleFocusGain = () => {
+    setIsFocused(true);
+  };
+
+  const handleFocusLoss = () => {
+    setIsFocused(false);
+  };
+
   const isVisible = isFocused && searchValue.trim() !== "";
 
   return (
@@ -55,8 +63,8 @@ const SearchInput = () => {
         className="w-full"
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={handleFocusGain}
+        onBlur={handleFocusLoss}
       />
 
       <div
@@ -68,8 +76,8 @@ const SearchInput = () => {
           transform: isVisible ? "translate(0, 0)" : "translate(0, 5px)",
           transition: "opacity 0.15s ease-out, transform 0.15s ease-out",
         }}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={handleFocusGain}
+        onBlur={handleFocusLoss}
       >
         <SearchHeader tab={searchTab} onTabChange={setSearchTab} />
         <Spacer size="2" />
@@ -81,27 +89,44 @@ const SearchInput = () => {
                 // @ts-ignore
                 key={topHit.value.id || topHit.value.uuid}
                 topHit={topHit}
+                onClose={handleFocusLoss}
               />
             ))}
 
           {searchTab === "artists" &&
             searchResults?.artists?.map((artist) => (
-              <ArtistSearchResult key={artist.id} artist={artist} />
+              <ArtistSearchResult
+                key={artist.id}
+                artist={artist}
+                onClose={handleFocusLoss}
+              />
             ))}
 
           {searchTab === "albums" &&
             searchResults?.albums?.map((album) => (
-              <AlbumSearchResult key={album.id} album={album} />
+              <AlbumSearchResult
+                key={album.id}
+                album={album}
+                onClose={handleFocusLoss}
+              />
             ))}
 
           {searchTab === "songs" &&
             searchResults?.songs?.map((song) => (
-              <SongSearchResult key={song.id} song={song} />
+              <SongSearchResult
+                key={song.id}
+                song={song}
+                onClose={handleFocusLoss}
+              />
             ))}
 
           {searchTab === "playlists" &&
             searchResults?.playlists?.map((playlist) => (
-              <PlaylistSearchResult key={playlist.uuid} playlist={playlist} />
+              <PlaylistSearchResult
+                key={playlist.uuid}
+                playlist={playlist}
+                onClose={handleFocusLoss}
+              />
             ))}
         </div>
       </div>

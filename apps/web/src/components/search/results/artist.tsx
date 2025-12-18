@@ -4,15 +4,21 @@ import type { Artist } from "../../../types";
 
 type TProps = {
   artist: Artist;
+  onClose?: () => void;
 };
 
-const ArtistSearchResult = ({ artist }: TProps) => {
+const ArtistSearchResult = ({ artist, onClose }: TProps) => {
   return (
     <SearchResult
-      primaryText={<Link to={`/albums/${artist.id}`}>{artist.name}</Link>}
+      primaryText={
+        <Link to={`/albums/${artist.id}`} onClick={onClose}>
+          {artist.name}
+        </Link>
+      }
       secondaryText="Artist"
       imageUrl={`https://resources.tidal.com/images/${artist.picture?.replace(/-/g, "/")}/320x320.jpg`}
       linkUrl={`/albums/${artist.id}`}
+      onClose={onClose}
     />
   );
 };
