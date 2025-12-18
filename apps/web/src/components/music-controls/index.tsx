@@ -106,7 +106,9 @@ const MusicControls = () => {
         />
 
         <div className="flex flex-col justify-center">
-          <p className="font-bold text-sm">{playerState.playInfo.song.title}</p>
+          <p className="font-bold text-sm line-clamp-2">
+            {playerState.playInfo.song.title}
+          </p>
           <p className="text-xs text-gray-11">
             {playerState.playInfo?.song.artists.map((artist, index) => (
               <span key={artist.id}>
