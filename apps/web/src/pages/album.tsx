@@ -62,16 +62,12 @@ const AlbumPage = () => {
             </p>
           </div>
           <div className="flex gap-4">
-            <Button color="blue" onClick={handlePlayClick}>
+            <Button variant="solid" color="blue" onClick={handlePlayClick}>
               <Play size={16} fill="currentColor" />
               Play Album
             </Button>
-            <IconButton color="gray" variant="soft">
-              <Heart size={16} />
-            </IconButton>
-            <IconButton color="gray" variant="soft">
-              <Share size={16} />
-            </IconButton>
+            <IconButton color="gray" variant="soft" icon={Heart} />
+            <IconButton color="gray" variant="soft" icon={Share} />
           </div>
         </div>
       </div>
