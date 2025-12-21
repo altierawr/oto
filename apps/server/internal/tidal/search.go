@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"slices"
 
 	"github.com/altierawr/shidal/internal/types"
 )
@@ -244,7 +243,15 @@ func Search(query string) (*types.TidalSearch, error) {
 			}
 
 			// Playlists sometimes include duplicate promoted artists for some reason
-			if !slices.Contains(playlist.PromotedArtists, artist) {
+			found := false
+			for _, a := range playlist.PromotedArtists {
+				if a.ID == artist.ID {
+					found = true
+					break
+				}
+			}
+
+			if !found {
 				playlist.PromotedArtists = append(playlist.PromotedArtists, artist)
 			}
 		}

@@ -18,9 +18,10 @@ type TidalAlbum struct {
 }
 
 type TidalArtist struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	Picture string `json:"picture,omitempty"`
+	ID                         int    `json:"id"`
+	Name                       string `json:"name"`
+	Picture                    string `json:"picture,omitempty"`
+	SelectedAlbumCoverFallback string `json:"SelectedAlbumCoverFallback,omitempty"`
 }
 
 type TidalSong struct {
@@ -78,4 +79,18 @@ type TidalSearch struct {
 	Songs     []TidalSong     `json:"songs"`
 	Playlists []TidalPlaylist `json:"playlists"`
 	TopHits   []TidalTopHit   `json:"topHits"`
+}
+
+type TidalArtistPage struct {
+	ID                         int           `json:"id"`
+	Name                       string        `json:"name"`
+	Picture                    string        `json:"picture,omitempty"`
+	SelectedAlbumCoverFallback string        `json:"selectedAlbumCoverFallback,omitempty"`
+	Biography                  string        `json:"biography,omitempty"`
+	TopTracks                  []TidalSong   `json:"topTracks,omitempty"`
+	Albums                     []TidalAlbum  `json:"albums,omitempty"`
+	Compilations               []TidalAlbum  `json:"compilations,omitempty"`
+	TopSingles                 []TidalAlbum  `json:"topSingles,omitempty"`
+	AppearsOn                  []TidalAlbum  `json:"appearsOn,omitempty"`
+	SimilarArtists             []TidalArtist `json:"similarArtists,omitempty"`
 }

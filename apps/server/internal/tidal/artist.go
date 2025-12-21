@@ -1,0 +1,310 @@
+package tidal
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+
+	"github.com/altierawr/shidal/internal/types"
+)
+
+type ModuleItemItem struct {
+	Type string `json:"type"`
+	Data any    `json:"-"`
+}
+
+type ModuleItem struct {
+	ModuleID string           `json:"moduleId,omitempty"`
+	Items    []ModuleItemItem `json:"items"`
+}
+
+func (m *ModuleItem) UnmarshalJSON(data []byte) error {
+	type Alias struct {
+		ModuleID string `json:"moduleId,omitempty"`
+		Items    []struct {
+			Type string          `json:"type"`
+			Data json.RawMessage `json:"data"`
+		} `json:"items"`
+	}
+
+	var alias Alias
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+
+	m.ModuleID = alias.ModuleID
+	m.Items = make([]ModuleItemItem, 0, len(alias.Items))
+
+	// Unmarshal items based on moduleId
+	switch alias.ModuleID {
+	case "ARTIST_TOP_TRACKS":
+		for _, rawItem := range alias.Items {
+			if rawItem.Type != "TRACK" {
+				fmt.Println("top track type is wrong:", rawItem.Type)
+				continue
+			}
+
+			var track TidalArtistTopTrack
+			if err := json.Unmarshal(rawItem.Data, &track); err != nil {
+				return err
+			}
+			m.Items = append(m.Items, ModuleItemItem{
+				Type: rawItem.Type,
+				Data: track,
+			})
+		}
+	case "ARTIST_ALBUMS", "ARTIST_TOP_SINGLES", "ARTIST_APPEARS_ON", "ARTIST_COMPILATIONS":
+		for _, rawItem := range alias.Items {
+			if rawItem.Type != "ALBUM" && rawItem.Type != "EP" && rawItem.Type != "SINGLE" {
+				fmt.Println("artist album type is wrong:", rawItem.Type)
+				continue
+			}
+
+			var album TidalArtistAlbum
+			if err := json.Unmarshal(rawItem.Data, &album); err != nil {
+				return err
+			}
+
+			m.Items = append(m.Items, ModuleItemItem{
+				Type: rawItem.Type,
+				Data: album,
+			})
+		}
+	case "ARTIST_SIMILAR_ARTISTS":
+		for _, rawItem := range alias.Items {
+			if rawItem.Type != "ARTIST" {
+				fmt.Println("artist similar artist type is wrong:", rawItem.Type)
+				continue
+			}
+
+			var artist TidalArtistSimilarArtist
+			if err := json.Unmarshal(rawItem.Data, &artist); err != nil {
+				return err
+			}
+			m.Items = append(m.Items, ModuleItemItem{
+				Type: rawItem.Type,
+				Data: artist,
+			})
+		}
+	case "ARTIST_CREDITS":
+		return nil
+	default:
+		fmt.Println("unknown artist module id:", alias.ModuleID)
+	}
+
+	return nil
+}
+
+type TidalArtistResponse struct {
+	Header struct {
+		Biography struct {
+			Text string `json:"text,omitempty"`
+		} `json:"biography"`
+		FollowersAmount int `json:"followersAmount,omitempty"`
+	} `json:"header"`
+	Item struct {
+		Data struct {
+			ID                         int     `json:"id"`
+			Name                       string  `json:"name"`
+			Picture                    string  `json:"picture"`
+			DoublePopularity           float32 `json:"doublePopularity"`
+			SelectedAlbumCoverFallback string  `json:"selectedAlbumCoverFallback"`
+			VibrantColor               string  `json:"vibrantColor,omitempty"`
+		} `json:"data"`
+	} `json:"item"`
+	Items []ModuleItem `json:"items"`
+}
+
+type TidalArtistTopTrack struct {
+	ID               int     `json:"id"`
+	Bpm              int     `json:"bpm,omitempty"`
+	DoublePopularity float32 `json:"doublePopularity,omitempty"`
+	Duration         int     `json:"duration"`
+	Explicit         bool    `json:"explicit,omitempty"`
+	ISRC             string  `json:"isrc,omitempty"`
+	StreamStartDate  string  `json:"streamStartDate,omitempty"`
+	Title            string  `json:"title"`
+	TrackNumber      int     `json:"trackNumber,omitempty"`
+	VolumeNumber     int     `json:"volumenumber,omitempty"`
+	Artists          []struct {
+		ID      int    `json:"id,omitempty"`
+		Name    string `json:"name,omitempty"`
+		Picture string `json:"picture,omitempty"`
+	} `json:"artists"`
+	Album struct {
+		ID           int    `json:"id"`
+		Cover        string `json:"cover"`
+		ReleaseDate  string `json:"releaseDate"`
+		Title        string `json:"title"`
+		VibrantColor string `json:"vibrantColor,omitempty"`
+		VideoCover   string `json:"videoCover,omitempty"`
+	} `json:"album"`
+}
+
+type TidalArtistAlbum struct {
+	ID              int    `json:"id"`
+	Cover           string `json:"cover,omitempty"`
+	Explicit        bool   `json:"explicit,omitempty"`
+	Duration        int    `json:"duration"`
+	NumberOfTracks  int    `json:"numberOfTracks"`
+	NumberOfVolumes int    `json:"NumberOfVolumes"`
+	ReleaseDate     string `json:"releaseDate,omitempty"`
+	Title           string `json:"title"`
+	Type            string `json:"type"` // SINGLE, EP, ALBUM
+	UPC             string `json:"upc,omitempty"`
+	VibrantColor    string `json:"vibrantColor,omitempty"`
+	VideoCover      string `json:"videoCover,omitempty"`
+	Artists         []struct {
+		ID      int    `json:"id,omitempty"`
+		Name    string `json:"name,omitempty"`
+		Picture string `json:"picture,omitempty"`
+		Type    string `json:"type,omitempty"` // MAIN, FEATURED
+	} `json:"artists"`
+}
+
+type TidalArtistSimilarArtist struct {
+	ID                         int     `json:"id"`
+	DoublePopularity           float32 `json:"doublePopularity"`
+	Name                       string  `json:"name"`
+	Picture                    string  `json:"picture"`
+	SelectedAlbumCoverFallback string  `json:"selectedAlbumCoverFallback"`
+	VibrantColor               string  `json:"vibrantColor,omitempty"`
+}
+
+func GetArtist(id int64) (any, error) {
+	err := refreshTokens()
+	if err != nil {
+		return nil, err
+	}
+
+	artistUrl := &url.URL{
+		Scheme: "https",
+		Host:   "api.tidal.com",
+		Path:   fmt.Sprintf("/v2/artist/%d", id),
+	}
+
+	q := artistUrl.Query()
+	q.Set("locale", "en_US")
+	q.Set("countryCode", "US")
+	q.Set("deviceType", "BROWSER")
+	q.Set("platform", "WEB")
+	artistUrl.RawQuery = q.Encode()
+
+	req, _ := http.NewRequest(http.MethodGet, artistUrl.String(), nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
+	req.Header.Set("x-tidal-client-version", "2025.11.3")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var artistResp TidalArtistResponse
+	if err = json.Unmarshal(body, &artistResp); err != nil {
+		return nil, err
+	}
+
+	page := types.TidalArtistPage{
+		ID:                         artistResp.Item.Data.ID,
+		Name:                       artistResp.Item.Data.Name,
+		Picture:                    artistResp.Item.Data.Picture,
+		SelectedAlbumCoverFallback: artistResp.Item.Data.SelectedAlbumCoverFallback,
+		Biography:                  artistResp.Header.Biography.Text,
+		TopTracks:                  []types.TidalSong{},
+		Albums:                     []types.TidalAlbum{},
+		Compilations:               []types.TidalAlbum{},
+		TopSingles:                 []types.TidalAlbum{},
+		AppearsOn:                  []types.TidalAlbum{},
+		SimilarArtists:             []types.TidalArtist{},
+	}
+
+	for _, item := range artistResp.Items {
+		switch item.ModuleID {
+		case "ARTIST_TOP_TRACKS":
+			for _, topTrack := range item.Items {
+				track, ok := topTrack.Data.(TidalArtistTopTrack)
+				if !ok {
+					fmt.Println("couldnt cast top track")
+					continue
+				}
+
+				song := types.TidalSong{
+					ID:              track.ID,
+					Bpm:             track.Bpm,
+					Duration:        track.Duration,
+					Explicit:        track.Explicit,
+					ISRC:            track.ISRC,
+					Title:           track.Title,
+					VolumeNumber:    track.VolumeNumber,
+					StreamStartDate: track.StreamStartDate,
+					TrackNumber:     track.TrackNumber,
+					Album: types.TidalAlbum{
+						ID:           track.Album.ID,
+						Cover:        track.Album.Cover,
+						ReleaseDate:  track.Album.ReleaseDate,
+						Title:        track.Album.Title,
+						VibrantColor: track.Album.VibrantColor,
+						VideoCover:   track.Album.VideoCover,
+					},
+					Artists: []types.TidalArtist{},
+				}
+
+				for _, artist := range track.Artists {
+					song.Artists = append(song.Artists, types.TidalArtist{
+						ID:      artist.ID,
+						Name:    artist.Name,
+						Picture: artist.Picture,
+					})
+				}
+
+				page.TopTracks = append(page.TopTracks, song)
+			}
+
+	case "ARTIST_ALBUMS", "ARTIST_TOP_SINGLES", "ARTIST_APPEARS_ON", "ARTIST_COMPILATIONS":
+			for _, untypedAlbum := range item.Items {
+				album, ok := untypedAlbum.Data.(TidalArtistAlbum)
+				if !ok {
+					fmt.Println("couldnt cast top track")
+					continue
+				}
+
+				a := types.TidalAlbum{
+					ID:              album.ID,
+					Cover:           album.Cover,
+					Explicit:        album.Explicit,
+					Duration:        album.Duration,
+					NumberOfTracks:  album.NumberOfTracks,
+					NumberOfVolumes: album.NumberOfVolumes,
+					ReleaseDate:     album.ReleaseDate,
+					Title:           album.Title,
+					Type:            album.Type,
+					UPC:             album.UPC,
+					VibrantColor:    album.VibrantColor,
+					VideoCover:      album.VideoCover,
+					Artists:         []types.TidalArtist{},
+				}
+
+				switch item.ModuleID {
+				case "ARTIST_ALBUMS":
+					page.Albums = append(page.Albums, a)
+				case "ARTIST_COMPILATIONS":
+					page.Compilations = append(page.Compilations, a)
+				case "ARTIST_TOP_SINGLES":
+					page.TopSingles = append(page.TopSingles, a)
+				case "ARTIST_APPEARS_ON":
+					page.AppearsOn = append(page.AppearsOn, a)
+				}
+			}
+		}
+	}
+
+	return page, nil
+}
