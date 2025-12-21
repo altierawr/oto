@@ -11,13 +11,13 @@ const ArtistSearchResult = ({ artist, onClose }: TProps) => {
   return (
     <SearchResult
       primaryText={
-        <Link to={`/albums/${artist.id}`} onClick={onClose}>
+        <Link to={`/artists/${artist.id}`} onClick={onClose}>
           {artist.name}
         </Link>
       }
       secondaryText="Artist"
       imageUrl={`https://resources.tidal.com/images/${artist.picture?.replace(/-/g, "/")}/320x320.jpg`}
-      linkUrl={`/albums/${artist.id}`}
+      linkUrl={`/artists/${artist.id}`}
       onClose={onClose}
     />
   );
