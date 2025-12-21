@@ -92,7 +92,7 @@ const SearchInput = () => {
 
       <div
         tabIndex={0}
-        className="absolute left-0 top-full mt-2 w-full h-[500px] bg-(--gray-0) rounded-md flex flex-col pt-3 pb-1 border border-(--gray-6)"
+        className="absolute z-1 left-0 top-full mt-2 w-full h-[500px] bg-(--gray-0) rounded-md flex flex-col pt-3 pb-1 border border-(--gray-6)"
         style={{
           pointerEvents: isVisible ? "unset" : "none",
           opacity: isVisible ? "1" : "0",
