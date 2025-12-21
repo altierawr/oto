@@ -21,6 +21,17 @@ export type Artist = {
   picture?: string;
 };
 
+export type ArtistPage = Artist & {
+  selectedAlbumCoverFallback?: string;
+  biography?: string;
+  albums?: Album[];
+  compilations?: Album[];
+  appearsOn?: Album[];
+  topSingles?: Album[];
+  topTracks?: Song[];
+  similarArtists?: Artist[];
+};
+
 export type Song = {
   id: number;
   bpm: number;

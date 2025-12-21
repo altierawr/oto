@@ -1,12 +1,18 @@
 import { createBrowserRouter } from "react-router";
-import AlbumPage, { loader as albumPageLoader } from "./pages/album";
 import Root from "./pages/root";
+import AlbumPage, { loader as albumPageLoader } from "./pages/album";
+import ArtistPage, { loader as artistPageLoader } from "./pages/artist";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Root />,
     children: [
+      {
+        path: "artists/:id",
+        element: <ArtistPage />,
+        loader: artistPageLoader,
+      },
       {
         path: "albums/:id",
         element: <AlbumPage />,
