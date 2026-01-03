@@ -35,11 +35,11 @@ const SongListItem = ({ song, songs, index }: TProps) => {
       <div className="grow basis-[300px] overflow-hidden text-ellipsis text-nowrap cursor-default select-none tracking-tight">
         <p className="min-w-[600px]">{song.title}</p>
         {song.artists.map((artist, index) => (
-          <span key={artist.id}>
-            <Link to={`/artists/${artist.id}`}>
+          <span key={artist.id} className="text-(--gray-11)">
+            <Link to={`/artists/${artist.id}`} className="text-(--gray-11)!">
               {artist.name}
-              {index < song.artists.length - 1 && ", "}
             </Link>
+            {index < song.artists.length - 1 && ", "}
           </span>
         ))}
       </div>

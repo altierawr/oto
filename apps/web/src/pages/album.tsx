@@ -24,9 +24,6 @@ const AlbumPage = () => {
     }
   };
 
-  console.log(data.album);
-  console.log(data.album.title.length);
-
   return (
     <div className="max-w-[900px]">
       <div className="flex gap-4">
@@ -52,7 +49,10 @@ const AlbumPage = () => {
             </h1>
             <p className="text-sm">
               Album by{" "}
-              <Link to={`/artists/${data.album.artists[0].id}`}>
+              <Link
+                to={`/artists/${data.album.artists[0].id}`}
+                className="text-(--blue-11)"
+              >
                 {data.album.artists[0].name}
               </Link>
             </p>

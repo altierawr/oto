@@ -3,21 +3,21 @@ import SidebarLink from "./sidebar-link";
 
 const Sidebar = () => {
   return (
-    <div className="h-full w-[220px] border-r border-(--gray-6) pt-8 px-2 sticky">
+    <div className="h-full w-[220px] pt-8 px-2 sticky">
       <SidebarLink
-        icon={<IconHome stroke={1.5} />}
+        icon={<IconHome size={20} stroke={1.5} />}
         text="Home"
         url="/"
         location="home"
       />
       <SidebarLink
-        icon={<IconUser stroke={1.5} />}
+        icon={<IconUser size={20} stroke={1.5} />}
         text="Artists"
         url="/artists"
         location="artists"
       />
       <SidebarLink
-        icon={<IconAlbum stroke={1.5} />}
+        icon={<IconAlbum size={20} stroke={1.5} />}
         text="Albums"
         url="/albums"
         location="albums"

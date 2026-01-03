@@ -112,11 +112,8 @@ const MusicControls = () => {
           <p className="text-xs text-gray-11">
             {playerState.playInfo?.song.artists.map((artist, index) => (
               <span key={artist.id}>
-                <Link to={`/artists/${artist.id}`}>
-                  {artist.name}
-                  {index < playerState.playInfo!.song.artists.length - 1 &&
-                    ", "}
-                </Link>
+                <Link to={`/artists/${artist.id}`}>{artist.name}</Link>
+                {index < playerState.playInfo!.song.artists.length - 1 && ", "}
               </span>
             ))}
           </p>
