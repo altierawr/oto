@@ -292,6 +292,15 @@ func GetArtist(id int64) (any, error) {
 					Artists:         []types.TidalArtist{},
 				}
 
+
+				for _, artist := range album.Artists {
+					a.Artists = append(a.Artists, types.TidalArtist{
+						ID:      artist.ID,
+						Name:    artist.Name,
+						Picture: artist.Picture,
+					})
+				}
+
 				switch item.ModuleID {
 				case "ARTIST_ALBUMS":
 					page.Albums = append(page.Albums, a)
