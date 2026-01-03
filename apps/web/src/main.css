@@ -22,6 +22,10 @@
   --spacing-12: var(--space-12);
 }
 
+@utility no-scrollbar {
+  @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+}
+
 * {
   box-sizing: border-box;
   font-family: "Geist";

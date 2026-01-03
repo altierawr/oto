@@ -3,15 +3,16 @@ import { Link } from "react-router";
 import type { ArtistPage } from "../types";
 import { Button, IconButton, Spacer } from "design";
 import { Heart, Play, Share } from "lucide-react";
+import AlbumsScroller from "../components/scrollers/albums";
 
 const parseTidalRichTextIntoComponent = (text: string) => {
-  const regex = /\[wimpLink artistId="(\d+)"\](.*?)\[\/wimpLink\]/g;
+  const regex = /\[wimpLink (artistId|albumId)="(\d+)"\](.*?)\[\/wimpLink\]/g;
   const parts = [];
   let lastIndex = 0;
   let match;
 
   while ((match = regex.exec(text)) !== null) {
-    const [_, artistId, linkText] = match;
+    const [_, idType, id, linkText] = match;
     const matchStart = match.index;
 
     // Add text before the link
@@ -19,12 +20,15 @@ const parseTidalRichTextIntoComponent = (text: string) => {
       parts.push(text.slice(lastIndex, matchStart));
     }
 
+    // Determine the path based on idType
+    const path = idType === "artistId" ? `/artists/${id}` : `/albums/${id}`;
+
     // Add the Link component
     parts.push(
       <Link
-        key={`link-${artistId}-${matchStart}`}
-        to={`/artists/${artistId}`}
         className="text-(--blue-11)"
+        key={`link-${idType}-${id}-${matchStart}`}
+        to={path}
       >
         {linkText}
       </Link>,
@@ -38,7 +42,7 @@ const parseTidalRichTextIntoComponent = (text: string) => {
     parts.push(text.slice(lastIndex));
   }
 
-  return <>{parts}</>;
+  return <span>{parts}</span>;
 };
 
 const loader: LoaderFunction = async ({ params }) => {
@@ -54,11 +58,11 @@ const ArtistPage = () => {
   console.log({ data });
 
   return (
-    <div className="w-full flex flex-col">
+    <>
       <div
         className="w-full h-[140px] bg-cover bg-center rounded-xl overflow-hidden"
         style={{
-          backgroundImage: `url(https://resources.tidal.com/images/${data.artist.albums?.[0].cover.replace(/-/g, "/")}/1280x1280.jpg)`,
+          backgroundImage: `url(https://resources.tidal.com/images/${data.artist.albums?.[1].cover.replace(/-/g, "/")}/1280x1280.jpg)`,
         }}
       >
         <div
@@ -78,7 +82,9 @@ const ArtistPage = () => {
           }}
         />
         <div className="flex flex-col items-start overflow-hidden flex-1 pb-3">
-          <h1 className="text-4xl font-bold">{data.artist.name}</h1>
+          <h1 className="text-4xl font-bold text-(--gray-12)">
+            {data.artist.name}
+          </h1>
           {data.artist.biography && (
             <p className="text-(--gray-11) text-xs line-clamp-2">
               {parseTidalRichTextIntoComponent(
@@ -102,14 +108,33 @@ const ArtistPage = () => {
         </div>
       </div>
 
-      <Spacer size="12" />
+      <Spacer size="8" />
 
       {data.artist.albums && (
-        <>
-          <h2 className="font-bold text-3xl">Albums</h2>
-        </>
+        <AlbumsScroller title="Latest Albums" albums={data.artist.albums} />
       )}
-    </div>
+
+      <Spacer size="8" />
+
+      {data.artist.topSingles && (
+        <AlbumsScroller title="Top Singles" albums={data.artist.topSingles} />
+      )}
+
+      <Spacer size="8" />
+
+      {data.artist.appearsOn && (
+        <AlbumsScroller title="Appears on" albums={data.artist.appearsOn} />
+      )}
+
+      <Spacer size="8" />
+
+      {data.artist.compilations && (
+        <AlbumsScroller
+          title="Compilations"
+          albums={data.artist.compilations}
+        />
+      )}
+    </>
   );
 };
 
