@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { Button, IconButton, Spacer } from "design";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState, type PropsWithChildren } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 enum ScrollDirection {
   LEFT,
@@ -29,7 +29,6 @@ const Root = ({
   const navigate = useNavigate();
 
   const tryToScroll = (direction: ScrollDirection, amount: number = 1) => {
-    console.log("scrolling by", amount);
     if (latestScrollPos === undefined || !ref.current) {
       return;
     }
@@ -204,16 +203,15 @@ const Item = ({ children }: PropsWithChildren) => {
 
 type TImageProps = {
   url: string;
-  onClick?: () => void;
+  linkUrl: string;
 };
 
-const Image = ({ url, onClick }: TImageProps) => {
+const Image = ({ url, linkUrl }: TImageProps) => {
   return (
-    <div
-      className="w-full aspect-square rounded-md cursor-pointer hover:p-0.5 transition-all"
-      onClick={onClick}
-    >
-      <img className="w-full h-full object-cover rounded-md" src={url} />
+    <div className="w-full aspect-square rounded-md cursor-pointer hover:p-0.5 transition-all">
+      <Link to={linkUrl}>
+        <img className="w-full h-full object-cover rounded-md" src={url} />
+      </Link>
     </div>
   );
 };

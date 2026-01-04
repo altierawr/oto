@@ -1,6 +1,6 @@
 import type { Album } from "../../types";
 import { HorizontalMediaScroller } from "../horizonal-media-scroller";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 
 type TProps = {
   title: string;
@@ -9,8 +9,6 @@ type TProps = {
 };
 
 const AlbumsScroller = ({ title, viewAllUrl, albums }: TProps) => {
-  const navigate = useNavigate();
-
   return (
     <>
       <HorizontalMediaScroller.Root
@@ -22,7 +20,7 @@ const AlbumsScroller = ({ title, viewAllUrl, albums }: TProps) => {
           <HorizontalMediaScroller.Item key={album.id}>
             <HorizontalMediaScroller.Image
               url={`https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`}
-              onClick={() => navigate(`/albums/${album.id}`)}
+              linkUrl={`/albums/${album.id}`}
             />
             <HorizontalMediaScroller.Title>
               <Link to={`/albums/${album.id}`}>{album.title}</Link>
