@@ -1,16 +1,72 @@
 import clsx from "clsx";
+import { Button, IconButton, Spacer } from "design";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState, type PropsWithChildren } from "react";
+import { useNavigate } from "react-router";
+
+enum ScrollDirection {
+  LEFT,
+  RIGHT,
+}
 
 type TClassNameProps = {
+  title: string;
+  viewAllUrl?: string;
   className?: string;
 };
 
-const Root = ({ children, className }: PropsWithChildren<TClassNameProps>) => {
+const Root = ({
+  title,
+  viewAllUrl,
+  children,
+  className,
+}: PropsWithChildren<TClassNameProps>) => {
   const ref = useRef<HTMLDivElement>(null);
   const [scrollIndex, setScrollIndex] = useState(0);
   const [latestScrollPos, setLatestScrollPos] = useState<number | undefined>(
     ref.current?.scrollLeft,
   );
+  const navigate = useNavigate();
+
+  const tryToScroll = (direction: ScrollDirection, amount: number = 1) => {
+    console.log("scrolling by", amount);
+    if (latestScrollPos === undefined || !ref.current) {
+      return;
+    }
+
+    const isLeft = direction === ScrollDirection.LEFT;
+    const isRight = direction === ScrollDirection.RIGHT;
+
+    let idx = scrollIndex;
+    let scrollPos = latestScrollPos;
+    for (let i = 0; i < amount; i++) {
+      if (
+        (isLeft && scrollPos <= 0) ||
+        (isRight &&
+          ref.current.scrollWidth - ref.current.clientWidth - scrollPos <= 1)
+      ) {
+        break;
+      }
+
+      scrollPos = Math.max(
+        0,
+        scrollPos +
+        (isRight ? 1 : -1) * (ref.current.children[0].clientWidth + 20),
+      );
+
+      idx += direction === ScrollDirection.LEFT ? -1 : 1;
+    }
+
+    if (idx !== scrollIndex) {
+      ref.current.scrollTo({
+        left: scrollPos,
+        behavior: "smooth",
+      });
+
+      setLatestScrollPos(scrollPos);
+      setScrollIndex(idx);
+    }
+  };
 
   useEffect(() => {
     if (!ref.current) {
@@ -58,34 +114,9 @@ const Root = ({ children, className }: PropsWithChildren<TClassNameProps>) => {
       if (e.shiftKey) {
         e.preventDefault();
 
-        // We are fully scrolled
-        if (
-          (e.deltaY < 0 && latestScrollPos <= 0) ||
-          (e.deltaY > 0 &&
-            ref.current.scrollWidth -
-            ref.current.clientWidth -
-            latestScrollPos <=
-            1)
-        ) {
-          return;
-        }
-
-        let i = scrollIndex + (e.deltaY > 0 ? 1 : -1);
-
-        const scrollPos = Math.max(
-          0,
-          latestScrollPos +
-          (e.deltaY > 0 ? 1 : -1) *
-          (ref.current.children[0].clientWidth + 20),
+        tryToScroll(
+          e.deltaY > 0 ? ScrollDirection.RIGHT : ScrollDirection.LEFT,
         );
-
-        ref.current.scrollTo({
-          left: scrollPos,
-          behavior: "smooth",
-        });
-
-        setLatestScrollPos(scrollPos);
-        setScrollIndex(i);
       }
     };
 
@@ -96,16 +127,70 @@ const Root = ({ children, className }: PropsWithChildren<TClassNameProps>) => {
     };
   }, [ref, scrollIndex, latestScrollPos]);
 
+  const handlePrevClick = () => {
+    tryToScroll(ScrollDirection.LEFT, 5);
+  };
+
+  const handleNextClick = () => {
+    tryToScroll(ScrollDirection.RIGHT, 5);
+  };
+
+  const handleViewAllClick = () => {
+    if (viewAllUrl) {
+      navigate(viewAllUrl);
+    }
+  };
+
   return (
-    <div
-      ref={ref}
-      className={clsx(
-        className,
-        "grid grid-flow-col auto-cols-[145px] gap-5 pb-2 overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-stretch",
-      )}
-    >
-      {children}
-    </div>
+    <>
+      <div className="flex justify-between items-center">
+        <h2 className="font-bold text-2xl">{title}</h2>
+        <div
+          className="gap-2 items-center"
+          style={{
+            display:
+              ref.current && ref.current.scrollWidth <= ref.current.clientWidth
+                ? "none"
+                : "flex",
+          }}
+        >
+          <IconButton
+            variant="soft"
+            color="gray"
+            icon={ChevronLeft}
+            size="xs"
+            onClick={handlePrevClick}
+          />
+          <IconButton
+            variant="soft"
+            color="gray"
+            icon={ChevronRight}
+            size="xs"
+            onClick={handleNextClick}
+          />
+          <Button
+            variant="soft"
+            color="gray"
+            size="xs"
+            onClick={handleViewAllClick}
+          >
+            View All
+          </Button>
+        </div>
+      </div>
+
+      <Spacer size="2" />
+
+      <div
+        ref={ref}
+        className={clsx(
+          className,
+          "grid grid-flow-col auto-cols-[145px] gap-5 pb-2 overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-stretch",
+        )}
+      >
+        {children}
+      </div>
+    </>
   );
 };
 

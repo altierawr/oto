@@ -111,19 +111,31 @@ const ArtistPage = () => {
       <Spacer size="8" />
 
       {data.artist.albums && (
-        <AlbumsScroller title="Latest Albums" albums={data.artist.albums} />
+        <AlbumsScroller
+          title="Latest Albums"
+          albums={data.artist.albums}
+          viewAllUrl={`/artists/${data.artist.id}/albums`}
+        />
       )}
 
       <Spacer size="8" />
 
       {data.artist.topSingles && (
-        <AlbumsScroller title="Top Singles" albums={data.artist.topSingles} />
+        <AlbumsScroller
+          title="Top Singles"
+          albums={data.artist.topSingles}
+          viewAllUrl={`/artists/${data.artist.id}/singles`}
+        />
       )}
 
       <Spacer size="8" />
 
       {data.artist.appearsOn && (
-        <AlbumsScroller title="Appears on" albums={data.artist.appearsOn} />
+        <AlbumsScroller
+          title="Appears on"
+          albums={data.artist.appearsOn}
+          viewAllUrl={`/artists/${data.artist.id}/appears`}
+        />
       )}
 
       <Spacer size="8" />
@@ -132,6 +144,7 @@ const ArtistPage = () => {
         <AlbumsScroller
           title="Compilations"
           albums={data.artist.compilations}
+          viewAllUrl={`/artists/${data.artist.id}/compilations`}
         />
       )}
     </>

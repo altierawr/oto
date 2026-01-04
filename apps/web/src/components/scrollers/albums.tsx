@@ -1,21 +1,23 @@
-import { Spacer } from "design";
 import type { Album } from "../../types";
 import { HorizontalMediaScroller } from "../horizonal-media-scroller";
 import { Link, useNavigate } from "react-router";
 
 type TProps = {
   title: string;
+  viewAllUrl: string;
   albums: Album[];
 };
 
-const AlbumsScroller = ({ title, albums }: TProps) => {
+const AlbumsScroller = ({ title, viewAllUrl, albums }: TProps) => {
   const navigate = useNavigate();
 
   return (
     <>
-      <h2 className="font-bold text-2xl">{title}</h2>
-      <Spacer size="2" />
-      <HorizontalMediaScroller.Root className="col-[breakout]! px-8 scroll-px-8">
+      <HorizontalMediaScroller.Root
+        title={title}
+        viewAllUrl={viewAllUrl}
+        className="col-[breakout]! px-8 scroll-px-8"
+      >
         {albums.map((album) => (
           <HorizontalMediaScroller.Item key={album.id}>
             <HorizontalMediaScroller.Image
