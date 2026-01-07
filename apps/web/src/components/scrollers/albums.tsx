@@ -14,7 +14,7 @@ const AlbumsScroller = ({ title, viewAllUrl, albums }: TProps) => {
       <HorizontalMediaScroller.Root
         title={title}
         viewAllUrl={viewAllUrl}
-        className="col-[breakout]! px-8 scroll-px-8"
+        className="col-[breakout]! px-6 scroll-px-6"
       >
         {albums.map((album) => (
           <HorizontalMediaScroller.Item key={album.id}>
