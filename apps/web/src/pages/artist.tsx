@@ -1,9 +1,12 @@
 import { useLoaderData, type LoaderFunction } from "react-router";
 import { Link } from "react-router";
 import type { ArtistPage } from "../types";
-import { Button, IconButton, Spacer } from "design";
+import { Button, IconButton, Spacer, Tabs } from "design";
 import { Heart, Play, Share } from "lucide-react";
 import AlbumsScroller from "../components/scrollers/albums";
+import LatestRelease from "../components/albums/latest-release";
+import TrackGrid from "../components/tracks/track-grid";
+import ArtistTopTracksGrid from "../components/artist/top-tracks-grid";
 
 const parseTidalRichTextIntoComponent = (text: string) => {
   const regex = /\[wimpLink (artistId|albumId)="(\d+)"\](.*?)\[\/wimpLink\]/g;
@@ -74,7 +77,7 @@ const ArtistPage = () => {
       </div>
       <div className="flex gap-4 items-end">
         <div
-          className="w-[180px] aspect-square rounded-[45px] border-4 border-(--gray-0) bg-cover ml-10 -mt-[40px] z-0"
+          className="w-[180px] aspect-square rounded-[45px] border-4 border-(--gray-0) bg-cover ml-6 -mt-[40px] z-0"
           style={{
             backgroundImage: data.artist.picture
               ? `url(https://resources.tidal.com/images/${data.artist.picture?.replace(/-/g, "/")}/320x320.jpg)`
@@ -97,7 +100,7 @@ const ArtistPage = () => {
             </p>
           )}
           <Spacer size="2" />
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             <Button variant="solid" color="blue" size="sm">
               <Play size={16} fill="currentColor" />
               Play Mix
@@ -108,45 +111,87 @@ const ArtistPage = () => {
         </div>
       </div>
 
-      <Spacer size="8" />
+      <Spacer size="4" />
 
-      {data.artist.albums && (
-        <AlbumsScroller
-          title="Latest Albums"
-          albums={data.artist.albums}
-          viewAllUrl={`/artists/${data.artist.id}/albums`}
-        />
-      )}
+      <Tabs.Root
+        defaultValue="overview"
+        className="grid grid-cols-subgrid col-[breakout]! *:col-[content]"
+      >
+        <Tabs.List className="bg-(--gray-1)!">
+          <Tabs.Tab value="overview">Overview</Tabs.Tab>
+          <Tabs.TabSeparator />
+          <Tabs.Tab value="albums">Albums</Tabs.Tab>
+          <Tabs.TabSeparator />
+          <Tabs.Tab value="singles">Singles & EPs</Tabs.Tab>
+          <Tabs.TabSeparator />
+          <Tabs.Tab value="compilations">Compilations</Tabs.Tab>
+          <Tabs.TabSeparator />
+          <Tabs.Tab value="topSongs">Top Songs</Tabs.Tab>
+          <Tabs.TabSeparator />
+          <Tabs.Tab value="appearsOn">Appears on</Tabs.Tab>
+        </Tabs.List>
 
-      <Spacer size="8" />
+        <Spacer size="6" />
 
-      {data.artist.topSingles && (
-        <AlbumsScroller
-          title="Top Singles"
-          albums={data.artist.topSingles}
-          viewAllUrl={`/artists/${data.artist.id}/singles`}
-        />
-      )}
+        <Tabs.Panel
+          value="overview"
+          className="grid grid-cols-subgrid col-[breakout]! *:col-[content]"
+        >
+          <div className="flex gap-10 col-[breakout]! pl-6">
+            {data.artist.albums && data.artist.albums.length > 0 && (
+              <div className="flex-1">
+                <LatestRelease album={data.artist.albums[0]} />
+              </div>
+            )}
+            {data.artist.topTracks && (
+              <ArtistTopTracksGrid
+                artist={data.artist}
+                initialTopTracks={data.artist.topTracks}
+              />
+            )}
+          </div>
 
-      <Spacer size="8" />
+          <Spacer size="8" />
 
-      {data.artist.appearsOn && (
-        <AlbumsScroller
-          title="Appears on"
-          albums={data.artist.appearsOn}
-          viewAllUrl={`/artists/${data.artist.id}/appears`}
-        />
-      )}
+          {data.artist.albums && (
+            <AlbumsScroller
+              title="Latest Albums"
+              albums={data.artist.albums.slice(1, data.artist.albums.length)}
+              viewAllUrl={`/artists/${data.artist.id}/albums`}
+            />
+          )}
 
-      <Spacer size="8" />
+          <Spacer size="8" />
 
-      {data.artist.compilations && (
-        <AlbumsScroller
-          title="Compilations"
-          albums={data.artist.compilations}
-          viewAllUrl={`/artists/${data.artist.id}/compilations`}
-        />
-      )}
+          {data.artist.topSingles && (
+            <AlbumsScroller
+              title="Top Singles"
+              albums={data.artist.topSingles}
+              viewAllUrl={`/artists/${data.artist.id}/singles`}
+            />
+          )}
+
+          <Spacer size="8" />
+
+          {data.artist.appearsOn && (
+            <AlbumsScroller
+              title="Appears on"
+              albums={data.artist.appearsOn}
+              viewAllUrl={`/artists/${data.artist.id}/appears`}
+            />
+          )}
+
+          <Spacer size="8" />
+
+          {data.artist.compilations && (
+            <AlbumsScroller
+              title="Compilations"
+              albums={data.artist.compilations}
+              viewAllUrl={`/artists/${data.artist.id}/compilations`}
+            />
+          )}
+        </Tabs.Panel>
+      </Tabs.Root>
     </>
   );
 };

@@ -4,17 +4,17 @@ type TidalAlbum struct {
 	ID              int           `json:"id"`
 	Cover           string        `json:"cover,omitempty"`
 	Explicit        bool          `json:"explicit,omitempty"`
-	Duration        int           `json:"duration"`
-	NumberOfTracks  int           `json:"numberOfTracks"`
-	NumberOfVolumes int           `json:"numberOfVolumes"`
+	Duration        int           `json:"duration,omitempty"`
+	NumberOfTracks  int           `json:"numberOfTracks,omitempty"`
+	NumberOfVolumes int           `json:"numberOfVolumes,omitempty"`
 	ReleaseDate     string        `json:"releaseDate,omitempty"`
 	Title           string        `json:"title"`
-	Type            string        `json:"type"` // SINGLE, EP, ALBUM
+	Type            string        `json:"type,omitempty"` // SINGLE, EP, ALBUM
 	UPC             string        `json:"upc,omitempty"`
 	VibrantColor    string        `json:"vibrantColor,omitempty"`
 	VideoCover      string        `json:"videoCover,omitempty"`
 	Songs           []TidalSong   `json:"songs,omitempty"`
-	Artists         []TidalArtist `json:"artists"`
+	Artists         []TidalArtist `json:"artists,omitempty"`
 }
 
 type TidalArtist struct {

@@ -194,7 +194,7 @@ func GetArtist(id int64) (any, error) {
 
 	req, _ := http.NewRequest(http.MethodGet, artistUrl.String(), nil)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
-	req.Header.Set("x-tidal-client-version", "2025.11.3")
+	req.Header.Set("x-tidal-client-version", "2026.1.5")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -268,7 +268,7 @@ func GetArtist(id int64) (any, error) {
 				page.TopTracks = append(page.TopTracks, song)
 			}
 
-	case "ARTIST_ALBUMS", "ARTIST_TOP_SINGLES", "ARTIST_APPEARS_ON", "ARTIST_COMPILATIONS":
+		case "ARTIST_ALBUMS", "ARTIST_TOP_SINGLES", "ARTIST_APPEARS_ON", "ARTIST_COMPILATIONS":
 			for _, untypedAlbum := range item.Items {
 				album, ok := untypedAlbum.Data.(TidalArtistAlbum)
 				if !ok {
@@ -291,7 +291,6 @@ func GetArtist(id int64) (any, error) {
 					VideoCover:      album.VideoCover,
 					Artists:         []types.TidalArtist{},
 				}
-
 
 				for _, artist := range album.Artists {
 					a.Artists = append(a.Artists, types.TidalArtist{
@@ -316,4 +315,113 @@ func GetArtist(id int64) (any, error) {
 	}
 
 	return page, nil
+}
+
+type TidalArtistTopTracksResponse struct {
+	Items []struct {
+		Type string `json:"type"`
+		Data struct {
+			ID               int     `json:"id"`
+			DoublePopularity float32 `json:"doublePopularity,omitempty"`
+			Duration         int     `json:"duration"`
+			Explicit         bool    `json:"explicit,omitempty"`
+			ISRC             string  `json:"isrc,omitempty"`
+			StreamStartDate  string  `json:"streamStartDate,omitempty"`
+			TrackNumber      int     `json:"trackNumber,omitempty"`
+			VolumeNumber     int     `json:"volumenumber,omitempty"`
+			Title            string  `json:"title"`
+			Artists          []struct {
+				ID      int    `json:"id,omitempty"`
+				Name    string `json:"name,omitempty"`
+				Picture string `json:"picture,omitempty"`
+			} `json:"artists"`
+			Album struct {
+				ID           int    `json:"id"`
+				Cover        string `json:"cover"`
+				ReleaseDate  string `json:"releaseDate,omitempty"`
+				Title        string `json:"title"`
+				VibrantColor string `json:"vibrantColor"`
+				VideoCover   string `json:"videoCover"`
+			} `json:"album"`
+		} `json:"data"`
+	} `json:"items"`
+}
+
+func GetArtistTopTracks(id int64) (*[]types.TidalSong, error) {
+	err := refreshTokens()
+	if err != nil {
+		return nil, err
+	}
+
+	artistUrl := &url.URL{
+		Scheme: "https",
+		Host:   "api.tidal.com",
+		Path:   "/v2/artist/ARTIST_TOP_TRACKS/view-all",
+	}
+
+	q := artistUrl.Query()
+	q.Set("locale", "en_US")
+	q.Set("itemId", fmt.Sprintf("%d", id))
+	q.Set("countryCode", "US")
+	q.Set("deviceType", "BROWSER")
+	q.Set("platform", "WEB")
+	q.Set("limit", "50")
+	q.Set("offset", "0")
+	artistUrl.RawQuery = q.Encode()
+
+	fmt.Println(artistUrl.String())
+
+	req, _ := http.NewRequest(http.MethodGet, artistUrl.String(), nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
+	req.Header.Set("x-tidal-client-version", "2026.1.5")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result TidalArtistTopTracksResponse
+	if err = json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+
+	tracks := []types.TidalSong{}	
+
+	for _, item := range result.Items {
+		song := types.TidalSong{
+			ID:              item.Data.ID,
+			Duration:        item.Data.Duration,
+			Explicit:        item.Data.Explicit,
+			ISRC:            item.Data.ISRC,
+			StreamStartDate: item.Data.StreamStartDate,
+			Title:           item.Data.Title,
+			TrackNumber:     item.Data.TrackNumber,
+			VolumeNumber:    item.Data.VolumeNumber,
+			Artists:         []types.TidalArtist{},
+			Album: types.TidalAlbum{
+				ID:    item.Data.Album.ID,
+				Cover: item.Data.Album.Cover,
+				Title: item.Data.Album.Title,
+				ReleaseDate: item.Data.Album.ReleaseDate,
+			},
+		}
+
+		for _, artistItem := range item.Data.Artists {
+			song.Artists = append(song.Artists, types.TidalArtist{
+				ID:      artistItem.ID,
+				Name:    artistItem.Name,
+				Picture: artistItem.Picture,
+			})
+		}
+
+		tracks = append(tracks, song)
+	}
+
+	return &tracks, nil
 }
