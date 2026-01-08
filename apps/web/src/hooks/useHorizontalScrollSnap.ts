@@ -1,0 +1,148 @@
+import { useEffect, useRef, useState } from "react";
+
+enum ScrollDirection {
+  LEFT,
+  RIGHT,
+}
+
+type UseScrollSnapOptions = {
+  gap?: number;
+  scrollAmount?: number;
+};
+
+const useHorizontalScrollSnap = (options: UseScrollSnapOptions = {}) => {
+  const { gap = 20, scrollAmount = 5 } = options;
+
+  const ref = useRef<HTMLDivElement>(null);
+  const [scrollIndex, setScrollIndex] = useState(0);
+  const [latestScrollPos, setLatestScrollPos] = useState<number | undefined>(
+    ref.current?.scrollLeft,
+  );
+
+  const tryToScroll = (direction: ScrollDirection, amount: number = 1) => {
+    if (latestScrollPos === undefined || !ref.current) {
+      return;
+    }
+
+    const isLeft = direction === ScrollDirection.LEFT;
+    const isRight = direction === ScrollDirection.RIGHT;
+
+    let idx = scrollIndex;
+    let scrollPos = latestScrollPos;
+
+    for (let i = 0; i < amount; i++) {
+      if (
+        (isLeft && scrollPos <= 0) ||
+        (isRight &&
+          ref.current.scrollWidth - ref.current.clientWidth - scrollPos <= 1)
+      ) {
+        break;
+      }
+
+      const itemScrollWidth = ref.current.children[0].clientWidth;
+      scrollPos = Math.max(
+        0,
+        scrollPos + (isRight ? 1 : -1) * (itemScrollWidth + gap),
+      );
+
+      idx += direction === ScrollDirection.LEFT ? -1 : 1;
+    }
+
+    if (idx !== scrollIndex) {
+      ref.current.scrollTo({
+        left: scrollPos,
+        behavior: "smooth",
+      });
+
+      setLatestScrollPos(scrollPos);
+      setScrollIndex(idx);
+    }
+  };
+
+  useEffect(() => {
+    if (!ref.current) {
+      return;
+    }
+
+    if (latestScrollPos === undefined) {
+      if (ref.current.children.length > 0) {
+        const items = ref.current.children;
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i] as HTMLDivElement;
+          const itemScrollWidth = item.clientWidth;
+          const itemScrollLeft = i * (itemScrollWidth + gap);
+
+          if (
+            ref.current.scrollLeft === itemScrollLeft ||
+            (i > 0 &&
+              ref.current.scrollLeft > (i - 1) * (itemScrollWidth + gap) &&
+              ref.current.scrollLeft < itemScrollLeft)
+          ) {
+            setLatestScrollPos(itemScrollLeft);
+            setScrollIndex(i);
+            return;
+          }
+        }
+
+        const i = ref.current.children.length - 1;
+        const itemScrollWidth = ref.current.children[0].clientWidth;
+        setLatestScrollPos(i * (itemScrollWidth + gap));
+        setScrollIndex(i);
+      } else {
+        setLatestScrollPos(0);
+      }
+    }
+
+    const listener = (e: WheelEvent) => {
+      if (
+        !ref.current ||
+        ref.current.children.length === 0 ||
+        latestScrollPos === undefined
+      ) {
+        return;
+      }
+
+      if (e.shiftKey) {
+        e.preventDefault();
+
+        tryToScroll(
+          e.deltaY > 0 ? ScrollDirection.RIGHT : ScrollDirection.LEFT,
+        );
+      }
+    };
+
+    ref.current.addEventListener("wheel", listener);
+
+    return () => {
+      ref.current?.removeEventListener("wheel", listener);
+    };
+  }, [ref, scrollIndex, latestScrollPos, gap]);
+
+  const scrollLeft = () => {
+    tryToScroll(ScrollDirection.LEFT, scrollAmount);
+  };
+
+  const scrollRight = () => {
+    tryToScroll(ScrollDirection.RIGHT, scrollAmount);
+  };
+
+  const canScrollLeft = latestScrollPos !== undefined && latestScrollPos > 0;
+  const canScrollRight = ref.current
+    ? ref.current.scrollWidth -
+    ref.current.clientWidth -
+    (latestScrollPos || 0) >
+    1
+    : false;
+
+  return {
+    ref,
+    scrollLeft,
+    scrollRight,
+    canScrollLeft,
+    canScrollRight,
+    scrollIndex,
+  };
+};
+
+export default useHorizontalScrollSnap;

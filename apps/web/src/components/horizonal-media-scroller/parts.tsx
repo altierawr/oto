@@ -1,13 +1,9 @@
 import clsx from "clsx";
 import { Button, IconButton, Spacer } from "design";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState, type PropsWithChildren } from "react";
+import { type PropsWithChildren } from "react";
 import { Link, useNavigate } from "react-router";
-
-enum ScrollDirection {
-  LEFT,
-  RIGHT,
-}
+import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 
 type TClassNameProps = {
   title: string;
@@ -21,118 +17,12 @@ const Root = ({
   children,
   className,
 }: PropsWithChildren<TClassNameProps>) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [scrollIndex, setScrollIndex] = useState(0);
-  const [latestScrollPos, setLatestScrollPos] = useState<number | undefined>(
-    ref.current?.scrollLeft,
-  );
   const navigate = useNavigate();
-
-  const tryToScroll = (direction: ScrollDirection, amount: number = 1) => {
-    if (latestScrollPos === undefined || !ref.current) {
-      return;
-    }
-
-    const isLeft = direction === ScrollDirection.LEFT;
-    const isRight = direction === ScrollDirection.RIGHT;
-
-    let idx = scrollIndex;
-    let scrollPos = latestScrollPos;
-    for (let i = 0; i < amount; i++) {
-      if (
-        (isLeft && scrollPos <= 0) ||
-        (isRight &&
-          ref.current.scrollWidth - ref.current.clientWidth - scrollPos <= 1)
-      ) {
-        break;
-      }
-
-      scrollPos = Math.max(
-        0,
-        scrollPos +
-        (isRight ? 1 : -1) * (ref.current.children[0].clientWidth + 20),
-      );
-
-      idx += direction === ScrollDirection.LEFT ? -1 : 1;
-    }
-
-    if (idx !== scrollIndex) {
-      ref.current.scrollTo({
-        left: scrollPos,
-        behavior: "smooth",
-      });
-
-      setLatestScrollPos(scrollPos);
-      setScrollIndex(idx);
-    }
-  };
-
-  useEffect(() => {
-    if (!ref.current) {
-      return;
-    }
-
-    if (latestScrollPos === undefined) {
-      if (ref.current.children.length > 0) {
-        const items = ref.current.children;
-
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i] as HTMLDivElement;
-
-          const itemScrollLeft = i * (item.clientWidth + 20);
-          if (
-            ref.current.scrollLeft === itemScrollLeft ||
-            (i > 0 &&
-              ref.current.scrollLeft > (i - 1) * (item.clientWidth + 20) &&
-              ref.current.scrollLeft < itemScrollLeft)
-          ) {
-            setLatestScrollPos(itemScrollLeft);
-            setScrollIndex(i);
-            return;
-          }
-        }
-
-        const i = ref.current.children.length - 1;
-
-        setLatestScrollPos(i * (ref.current.children[0].clientWidth + 20));
-        setScrollIndex(i);
-      } else {
-        setLatestScrollPos(0);
-      }
-    }
-
-    const listener = (e: WheelEvent) => {
-      if (
-        !ref.current ||
-        ref.current.children.length === 0 ||
-        latestScrollPos === undefined
-      ) {
-        return;
-      }
-
-      if (e.shiftKey) {
-        e.preventDefault();
-
-        tryToScroll(
-          e.deltaY > 0 ? ScrollDirection.RIGHT : ScrollDirection.LEFT,
-        );
-      }
-    };
-
-    ref.current.addEventListener("wheel", listener);
-
-    return () => {
-      ref.current?.removeEventListener("wheel", listener);
-    };
-  }, [ref, scrollIndex, latestScrollPos]);
-
-  const handlePrevClick = () => {
-    tryToScroll(ScrollDirection.LEFT, 5);
-  };
-
-  const handleNextClick = () => {
-    tryToScroll(ScrollDirection.RIGHT, 5);
-  };
+  const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } =
+    useHorizontalScrollSnap({
+      gap: 20,
+      scrollAmount: 5,
+    });
 
   const handleViewAllClick = () => {
     if (viewAllUrl) {
@@ -158,14 +48,16 @@ const Root = ({
             color="gray"
             icon={ChevronLeft}
             size="xs"
-            onClick={handlePrevClick}
+            isDisabled={!canScrollLeft}
+            onClick={scrollLeft}
           />
           <IconButton
             variant="soft"
             color="gray"
             icon={ChevronRight}
             size="xs"
-            onClick={handleNextClick}
+            isDisabled={!canScrollRight}
+            onClick={scrollRight}
           />
           <Button
             variant="soft"
