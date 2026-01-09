@@ -15,11 +15,17 @@ const ArtistTopTracksGrid = ({ artist, initialTopTracks }: TProps) => {
         `http://localhost:3003/v1/artists/${artist.id}/toptracks`,
       );
       const json = await resp.json();
+
       return json.tracks;
     },
   });
 
-  return <TrackGrid tracks={query.data || initialTopTracks} />;
+  return (
+    <TrackGrid
+      tracks={query.data || initialTopTracks}
+      isLoading={query.isLoading}
+    />
+  );
 };
 
 export default ArtistTopTracksGrid;

@@ -6,13 +6,16 @@ import MusicControls from "../components/music-controls";
 import AudioDebugger from "../components/debugger";
 import SongQueue from "../components/song-queue";
 import Navbar from "../components/navbar";
-import ScrollReset from "../components/scroll-restoration/scroll-restoration";
+import useScrollRestoration from "../hooks/useScrollRestoration";
 
 const Root = () => {
   const location = useLocation();
   const setLocation = useLocationStore((state) => state.setLocation);
   const [hasSetInitialLocation, setHasSetInitialLocation] = useState(false);
   const scrollRef = useRef<HTMLElement>(null);
+  useScrollRestoration({
+    scrollRef,
+  });
 
   useEffect(() => {
     if (hasSetInitialLocation) {
@@ -35,7 +38,6 @@ const Root = () => {
 
   return (
     <>
-      <ScrollReset scrollRef={scrollRef} />
       <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative">
         <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
           <Sidebar />

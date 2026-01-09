@@ -6,12 +6,14 @@ import { Link, useNavigate } from "react-router";
 import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 
 type TClassNameProps = {
+  id: string;
   title: string;
   viewAllUrl?: string;
   className?: string;
 };
 
 const Root = ({
+  id,
   title,
   viewAllUrl,
   children,
@@ -20,6 +22,7 @@ const Root = ({
   const navigate = useNavigate();
   const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } =
     useHorizontalScrollSnap({
+      id,
       gap: 20,
       scrollAmount: 5,
     });

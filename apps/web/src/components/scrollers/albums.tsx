@@ -3,15 +3,17 @@ import { HorizontalMediaScroller } from "../horizonal-media-scroller";
 import { Link } from "react-router";
 
 type TProps = {
+  id: string;
   title: string;
   viewAllUrl: string;
   albums: Album[];
 };
 
-const AlbumsScroller = ({ title, viewAllUrl, albums }: TProps) => {
+const AlbumsScroller = ({ id, title, viewAllUrl, albums }: TProps) => {
   return (
     <>
       <HorizontalMediaScroller.Root
+        id={id}
         title={title}
         viewAllUrl={viewAllUrl}
         className="col-[breakout]! px-6 scroll-px-6"

@@ -1,26 +1,40 @@
 import { useEffect, useRef, useState } from "react";
+import useScrollRestoration, { ScrollDimension } from "./useScrollRestoration";
+import { useLocation } from "react-router";
 
 enum ScrollDirection {
   LEFT,
   RIGHT,
 }
 
-type UseScrollSnapOptions = {
+type TProps = {
+  id: string;
   gap?: number;
   scrollAmount?: number;
+  isLoading?: boolean;
 };
 
-const useHorizontalScrollSnap = (options: UseScrollSnapOptions = {}) => {
-  const { gap = 20, scrollAmount = 5 } = options;
-
+const useHorizontalScrollSnap = ({
+  id,
+  gap = 20,
+  scrollAmount = 5,
+  isLoading,
+}: TProps) => {
+  const { pathname } = useLocation();
   const ref = useRef<HTMLDivElement>(null);
   const [scrollIndex, setScrollIndex] = useState(0);
   const [latestScrollPos, setLatestScrollPos] = useState<number | undefined>(
-    ref.current?.scrollLeft,
+    ref.current ? ref.current.scrollLeft : undefined,
   );
 
+  useScrollRestoration({
+    scrollRef: ref,
+    id,
+    dimension: ScrollDimension.HORIZONTAL,
+  });
+
   const tryToScroll = (direction: ScrollDirection, amount: number = 1) => {
-    if (latestScrollPos === undefined || !ref.current) {
+    if (latestScrollPos === undefined || !ref.current || isLoading) {
       return;
     }
 
@@ -117,7 +131,7 @@ const useHorizontalScrollSnap = (options: UseScrollSnapOptions = {}) => {
     return () => {
       ref.current?.removeEventListener("wheel", listener);
     };
-  }, [ref, scrollIndex, latestScrollPos, gap]);
+  }, [ref, scrollIndex, latestScrollPos, gap, pathname, isLoading]);
 
   const scrollLeft = () => {
     tryToScroll(ScrollDirection.LEFT, scrollAmount);
