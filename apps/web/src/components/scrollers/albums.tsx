@@ -1,3 +1,4 @@
+import { usePlayerState } from "../../store";
 import type { Album } from "../../types";
 import { HorizontalMediaScroller } from "../horizonal-media-scroller";
 import { Link } from "react-router";
@@ -10,6 +11,15 @@ type TProps = {
 };
 
 const AlbumsScroller = ({ id, title, viewAllUrl, albums }: TProps) => {
+  const player = usePlayerState((s) => s.player);
+
+  const handlePlayClick = (album: Album) => {
+    // TODO: Add support to player for playing albums that don't have the songs client-side already
+    if (album.songs) {
+      player.playSongs(album.songs, 0);
+    }
+  };
+
   return (
     <>
       <HorizontalMediaScroller.Root
@@ -23,6 +33,7 @@ const AlbumsScroller = ({ id, title, viewAllUrl, albums }: TProps) => {
             <HorizontalMediaScroller.Image
               url={`https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`}
               linkUrl={`/albums/${album.id}`}
+              onPlayClick={() => handlePlayClick(album)}
             />
             <HorizontalMediaScroller.Title>
               <Link to={`/albums/${album.id}`}>{album.title}</Link>

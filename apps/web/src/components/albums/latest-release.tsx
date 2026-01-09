@@ -1,6 +1,7 @@
 import { Spacer } from "design";
 import type { Album } from "../../types";
 import { Link } from "react-router";
+import CoverBlock, { CoverBlockVariant } from "../cover-block";
 
 type TProps = {
   album: Album;
@@ -9,12 +10,13 @@ type TProps = {
 const LatestRelease = ({ album }: TProps) => {
   return (
     <div className="w-full h-full flex gap-4">
-      <div
-        className="bg-cover aspect-square rounded-md h-full"
-        style={{
-          backgroundImage: `url(https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/1280x1280.jpg)`,
-        }}
-      />
+      <div className="h-full aspect-square">
+        <CoverBlock
+          variant={CoverBlockVariant.FULL}
+          imageUrl={`https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`}
+          linkUrl={`/albums/${album.id}`}
+        />
+      </div>
       <div className="flex-1 flex flex-col">
         <p className="text-sm uppercase font-medium">Latest release</p>
         <Spacer size="2" />

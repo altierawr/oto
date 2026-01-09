@@ -6,6 +6,7 @@ import { Heart, Play, Share } from "lucide-react";
 import { usePlayerState } from "../store";
 import { formatDuration } from "../utils/utils";
 import clsx from "clsx";
+import CoverBlock, { CoverBlockVariant } from "../components/cover-block";
 
 const loader: LoaderFunction = async ({ params }) => {
   const data = await fetch(`http://localhost:3003/v1/albums/${params.id}`);
@@ -27,12 +28,12 @@ const AlbumPage = () => {
   return (
     <div className="max-w-[900px]">
       <div className="flex gap-4">
-        <div
-          className="min-w-[200px] aspect-square bg-cover rounded-lg"
-          style={{
-            backgroundImage: `url(https://resources.tidal.com/images/${data.album.cover.replace(/-/g, "/")}/1280x1280.jpg)`,
-          }}
-        ></div>
+        <div className="min-w-[200px] aspect-square">
+          <CoverBlock
+            variant={CoverBlockVariant.COVER_ONLY}
+            imageUrl={`https://resources.tidal.com/images/${data.album.cover.replace(/-/g, "/")}/1280x1280.jpg`}
+          />
+        </div>
 
         <div className="flex flex-col justify-between items-start">
           <div>

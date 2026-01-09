@@ -4,6 +4,8 @@ import { Link } from "react-router";
 import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "design";
+import CoverBlock, { CoverBlockVariant } from "../cover-block";
+import { usePlayerState } from "../../store";
 
 type TProps = {
   tracks: Song[];
@@ -12,6 +14,7 @@ type TProps = {
 };
 
 const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
+  const player = usePlayerState((s) => s.player);
   const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } =
     useHorizontalScrollSnap({
       id: "artistTopTracks",
@@ -32,7 +35,7 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
       </div>
       <div
         className={clsx(
-          "absolute right-0 top-1/2 -translate-y-1/2 grid place-content-center w-8 h-full bg-[rgba(0,0,0,0.9)]",
+          "absolute right-0 top-1/2 -translate-y-1/2 grid place-content-center w-8 h-full bg-[rgba(0,0,0,0.0)] backdrop-blur-sm",
           isLoading && "hidden",
         )}
         onClick={scrollRight}
@@ -60,10 +63,13 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
               "border-b",
             )}
           >
-            <img
-              src={`https://resources.tidal.com/images/${track.album.cover.replace(/-/g, "/")}/80x80.jpg`}
-              className="h-[40px] object-cover aspect-square rounded-md"
-            />
+            <div className="h-[40px] aspect-square">
+              <CoverBlock
+                variant={CoverBlockVariant.PLAY_ONLY}
+                imageUrl={`https://resources.tidal.com/images/${track.album.cover.replace(/-/g, "/")}/80x80.jpg`}
+                onPlayClick={() => player.playSongs(tracks, idx)}
+              />
+            </div>
 
             <div className="flex-1">
               <p className="font-normal line-clamp-1 text-sm">
