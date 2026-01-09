@@ -8,15 +8,15 @@ import { Skeleton } from "design";
 type TProps = {
   tracks: Song[];
   isLoading?: boolean;
+  expectedNrMaxItems?: number;
 };
 
-const TrackGrid = ({ tracks, isLoading }: TProps) => {
+const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
   const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } =
     useHorizontalScrollSnap({
       id: "artistTopTracks",
       gap: 20,
       scrollAmount: 1,
-      isLoading,
     });
 
   return (
@@ -82,11 +82,11 @@ const TrackGrid = ({ tracks, isLoading }: TProps) => {
         ))}
 
         {isLoading &&
-          [...Array(11)].map((_, idx) => (
+          [...Array(expectedNrMaxItems - tracks.length)].map((_, idx) => (
             <div
               key={idx}
               className={clsx(
-                "flex gap-3 py-2 border-t border-(--gray-3)",
+                "flex gap-3 py-2 border-t border-(--gray-3) snap-start",
                 (idx + 1 + tracks.length) % 3 === 0 && "border-b",
               )}
             >
