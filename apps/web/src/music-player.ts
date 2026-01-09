@@ -42,6 +42,7 @@ export class MusicPlayer {
   #segmentFetchQueue: Promise<void> = Promise.resolve();
   #isBufferOperationsLocked = false;
   #isFetchOperationsLocked = false;
+  #isResetting = false;
 
   constructor() {
     this.playlist = [];
@@ -133,6 +134,10 @@ export class MusicPlayer {
     });
 
     this.#audio.addEventListener("timeupdate", async () => {
+      if (this.#isResetting) {
+        return;
+      }
+
       const track = this.#getCurrentlyPlayingSongIndex();
       if (track !== null) {
         this.#handleTrackChange(track);
@@ -342,12 +347,19 @@ export class MusicPlayer {
   }
 
   async #reset() {
+    this.#isResetting = true;
     this.#lockAutomaticBufferOperations();
 
     await this.#clearTrackJumpQueues();
     await this.#clearBufferOperationsQueues();
     await this.#clearFetchQueues();
+
+    for (let i = 0; i < this.playlist.length; i++) {
+      this.#resetPlaylistEntry(i);
+    }
+
     await this.#clearSourceBuffer();
+
     if (this.#sourceBuffer) {
       this.#sourceBuffer.timestampOffset = 0;
     }
@@ -356,7 +368,9 @@ export class MusicPlayer {
     this.#lastPlayingSongIndex = null;
 
     this.playlist = [];
+
     this.#unlockAutomaticBufferOperations();
+    this.#isResetting = false;
   }
 
   async playSongs(songs: Song[], index: number) {
@@ -379,8 +393,16 @@ export class MusicPlayer {
 
     this.#handleTrackChange(index);
 
-    await this.#maybeFetchNextSegment();
-    await this.#maybeLoadNextSegment();
+    await this.#maybeFetchNextSegment({
+      playlistIndex: index,
+      segmentIndex: 0,
+    });
+    await this.#maybeLoadNextSegment({
+      playlistIndex: index,
+      segmentIndex: 0,
+    });
+
+    this.#audio.currentTime = 0;
 
     await this.#waitForAudioCanPlay();
     this.#audio.play();
@@ -1159,7 +1181,7 @@ export class MusicPlayer {
 
     if (segmentIndex === null) {
       console.log("Couldn't find segment index, probably not loaded");
-      return;
+      return null;
     }
 
     let nrSegments = 0;
