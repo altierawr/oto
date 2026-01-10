@@ -41,6 +41,7 @@ const Root = () => {
       <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative">
         <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
           <Sidebar />
+
           <main
             ref={scrollRef}
             className="flex-1 overflow-y-auto grid *:col-[content] items-start content-start auto-rows-max"

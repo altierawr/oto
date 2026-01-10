@@ -114,7 +114,7 @@ const SearchInput = () => {
             removeScrollbarVerticalMargins
             includeScrollbarLeftMargin
           >
-            <div ref={resultsListRef}>
+            <div>
               {searchTab === "topHits" &&
                 searchResults?.topHits?.map((topHit) => (
                   <TopHitSearchResult
