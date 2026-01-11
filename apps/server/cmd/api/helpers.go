@@ -25,6 +25,22 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 	return id, nil
 }
 
+func (app *application) readIntQueryOrZero(r *http.Request, name string) (int, error) {
+	queryStr := r.URL.Query().Get("page")
+	result := 0
+
+	if queryStr != "" {
+		pageNr, err := strconv.Atoi(queryStr)
+		if err != nil {
+			return 0, err
+		}
+
+		result = pageNr
+	}
+
+	return result, nil
+}
+
 func (app *application) readIntParam(r *http.Request, name string) (int64, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 

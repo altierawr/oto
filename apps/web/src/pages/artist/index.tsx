@@ -1,12 +1,17 @@
-import { useLoaderData, type LoaderFunction } from "react-router";
+import {
+  Outlet,
+  useLoaderData,
+  useNavigate,
+  useParams,
+  type LoaderFunction,
+} from "react-router";
 import { Fragment } from "react";
 import { Link } from "react-router";
-import type { ArtistPage } from "../types";
+import type { ArtistPage } from "../../types";
 import { Button, IconButton, Spacer, Tabs } from "design";
 import { Heart, Play, Share } from "lucide-react";
-import AlbumsScroller from "../components/scrollers/albums";
-import LatestRelease from "../components/albums/latest-release";
-import ArtistTopTracksGrid from "../components/artist/top-tracks-grid";
+import ArtistPageOverview from "./overview";
+import type { TabsTab } from "@base-ui/react";
 
 const parseTidalRichTextIntoComponent = (text: string) => {
   const regex = /\[wimpLink (artistId|albumId)="(\d+)"\](.*?)\[\/wimpLink\]/g;
@@ -56,9 +61,33 @@ const loader: LoaderFunction = async ({ params }) => {
 };
 
 const ArtistPage = () => {
+  const { id } = useParams();
   const data = useLoaderData() as { artist: ArtistPage };
+  const navigate = useNavigate();
 
   console.log({ data });
+
+  const isChildRoute = location.pathname !== `/artists/${id}`;
+
+  const getActiveTab = () => {
+    const path = location.pathname.endsWith("/")
+      ? location.pathname.slice(0, location.pathname.length - 1)
+      : location.pathname;
+
+    if (path.endsWith(`${id}`)) {
+      return "overview";
+    } else {
+      return path.slice(path.lastIndexOf("/") + 1);
+    }
+  };
+
+  const handleTabChange = (value: TabsTab.Value) => {
+    if (value === "overview") {
+      navigate(`/artists/${id}`);
+    } else {
+      navigate(`/artists/${id}/${value}`);
+    }
+  };
 
   return (
     <>
@@ -116,21 +145,20 @@ const ArtistPage = () => {
         <Spacer size="4" />
 
         <Tabs.Root
-          defaultValue="overview"
           className="grid grid-cols-subgrid col-[breakout]! *:col-[content]"
+          value={getActiveTab()}
+          onValueChange={handleTabChange}
         >
           <Tabs.List className="bg-(--gray-1)!">
             <Tabs.Tab value="overview">Overview</Tabs.Tab>
             <Tabs.TabSeparator />
             <Tabs.Tab value="albums">Albums</Tabs.Tab>
             <Tabs.TabSeparator />
-            <Tabs.Tab value="singles">Singles & EPs</Tabs.Tab>
+            <Tabs.Tab value="singles-eps">Singles & EPs</Tabs.Tab>
             <Tabs.TabSeparator />
             <Tabs.Tab value="compilations">Compilations</Tabs.Tab>
             <Tabs.TabSeparator />
-            <Tabs.Tab value="topSongs">Top Songs</Tabs.Tab>
-            <Tabs.TabSeparator />
-            <Tabs.Tab value="appearsOn">Appears on</Tabs.Tab>
+            <Tabs.Tab value="appears-on">Appears on</Tabs.Tab>
           </Tabs.List>
 
           <Spacer size="6" />
@@ -139,63 +167,23 @@ const ArtistPage = () => {
             value="overview"
             className="grid grid-cols-subgrid col-[breakout]! *:col-[content]"
           >
-            <div className="flex gap-10 col-[breakout]! pl-6">
-              {data.artist.albums && data.artist.albums.length > 0 && (
-                <div className="flex-1">
-                  <LatestRelease album={data.artist.albums[0]} />
-                </div>
-              )}
-              {data.artist.topTracks && (
-                <ArtistTopTracksGrid
-                  artist={data.artist}
-                  initialTopTracks={data.artist.topTracks}
-                />
-              )}
-            </div>
+            {!isChildRoute && <ArtistPageOverview />}
+          </Tabs.Panel>
 
-            <Spacer size="8" />
+          <Tabs.Panel value="albums">
+            <Outlet />
+          </Tabs.Panel>
 
-            {data.artist.albums && (
-              <AlbumsScroller
-                id="latestAlbums"
-                title="Latest Albums"
-                albums={data.artist.albums.slice(1, data.artist.albums.length)}
-                viewAllUrl={`/artists/${data.artist.id}/albums`}
-              />
-            )}
+          <Tabs.Panel value="singles-eps">
+            <Outlet />
+          </Tabs.Panel>
 
-            <Spacer size="8" />
+          <Tabs.Panel value="compilations">
+            <Outlet />
+          </Tabs.Panel>
 
-            {data.artist.topSingles && (
-              <AlbumsScroller
-                id="topSingles"
-                title="Top Singles"
-                albums={data.artist.topSingles}
-                viewAllUrl={`/artists/${data.artist.id}/singles`}
-              />
-            )}
-
-            <Spacer size="8" />
-
-            {data.artist.appearsOn && (
-              <AlbumsScroller
-                id="appearsOn"
-                title="Appears on"
-                albums={data.artist.appearsOn}
-                viewAllUrl={`/artists/${data.artist.id}/appears`}
-              />
-            )}
-
-            <Spacer size="8" />
-
-            {data.artist.compilations && (
-              <AlbumsScroller
-                id="compilations"
-                title="Compilations"
-                albums={data.artist.compilations}
-                viewAllUrl={`/artists/${data.artist.id}/compilations`}
-              />
-            )}
+          <Tabs.Panel value="appears-on">
+            <Outlet />
           </Tabs.Panel>
         </Tabs.Root>
       </Fragment>

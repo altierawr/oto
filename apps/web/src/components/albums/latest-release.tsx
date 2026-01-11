@@ -1,7 +1,7 @@
 import { Spacer } from "design";
 import type { Album } from "../../types";
 import { Link } from "react-router";
-import CoverBlock, { CoverBlockVariant } from "../cover-block";
+import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
 
 type TProps = {
   album: Album;

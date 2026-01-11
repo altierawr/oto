@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "design";
-import CoverBlock, { CoverBlockVariant } from "../cover-block";
+import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
 import { usePlayerState } from "../../store";
 
 type TProps = {
@@ -75,7 +75,7 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
               <p className="font-normal line-clamp-1 text-sm">
                 <Link to={`/albums/${track.album.id}`}>{track.title}</Link>
               </p>
-              <p className="text-xs text-gray-11 line-clamp-1">
+              <p className="text-xs text-(--gray-11) line-clamp-1">
                 {track.artists.map((artist, index) => (
                   <span key={artist.id}>
                     <Link to={`/artists/${artist.id}`}>{artist.name}</Link>

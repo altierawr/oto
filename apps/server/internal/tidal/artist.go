@@ -10,6 +10,8 @@ import (
 	"github.com/altierawr/shidal/internal/types"
 )
 
+var artistPageSize = 50
+
 type ModuleItemItem struct {
 	Type string `json:"type"`
 	Data any    `json:"-"`
@@ -171,6 +173,31 @@ type TidalArtistSimilarArtist struct {
 	Picture                    string  `json:"picture"`
 	SelectedAlbumCoverFallback string  `json:"selectedAlbumCoverFallback"`
 	VibrantColor               string  `json:"vibrantColor,omitempty"`
+}
+
+type TidalArtistAlbumTypeResponse struct {
+	Items []struct {
+		Type string `json:"type"`
+		Data struct {
+			ID              int    `json:"id"`
+			Cover           string `json:"cover,omitempty"`
+			Explicit        bool   `json:"explicit,omitempty"`
+			Duration        int    `json:"duration,omitempty"`
+			NumberOfTracks  int    `json:"numberOfTracks"`
+			NumberOfVolumes int    `json:"NumberOfVolumes"`
+			ReleaseDate     string `json:"releaseDate,omitempty"`
+			Title           string `json:"title"`
+			Type            string `json:"type,omitempty"` // SINGLE, EP, ALBUM
+			UPC             string `json:"upc,omitempty"`
+			VibrantColor    string `json:"vibrantColor,omitempty"`
+			VideoCover      string `json:"videoCover,omitempty"`
+			Artists         []struct {
+				ID      int    `json:"id,omitempty"`
+				Name    string `json:"name,omitempty"`
+				Picture string `json:"picture,omitempty"`
+			} `json:"artists"`
+		} `json:"data"`
+	} `json:"items"`
 }
 
 func GetArtist(id int64) (any, error) {
@@ -347,7 +374,12 @@ type TidalArtistTopTracksResponse struct {
 	} `json:"items"`
 }
 
-func GetArtistTopTracks(id int64) (*[]types.TidalSong, error) {
+type ArtistTopTracksResult struct {
+	Items             []types.TidalSong `json:"items"`
+	MaybeHasMorePages bool              `json:"maybeHasMorePages"`
+}
+
+func GetArtistTopTracks(id int64, page int) (*ArtistTopTracksResult, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -365,11 +397,9 @@ func GetArtistTopTracks(id int64) (*[]types.TidalSong, error) {
 	q.Set("countryCode", "US")
 	q.Set("deviceType", "BROWSER")
 	q.Set("platform", "WEB")
-	q.Set("limit", "50")
-	q.Set("offset", "0")
+	q.Set("limit", fmt.Sprintf("%d", artistPageSize))
+	q.Set("offset", fmt.Sprintf("%d", page*artistPageSize))
 	artistUrl.RawQuery = q.Encode()
-
-	fmt.Println(artistUrl.String())
 
 	req, _ := http.NewRequest(http.MethodGet, artistUrl.String(), nil)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
@@ -391,7 +421,7 @@ func GetArtistTopTracks(id int64) (*[]types.TidalSong, error) {
 		return nil, err
 	}
 
-	tracks := []types.TidalSong{}	
+	tracks := []types.TidalSong{}
 
 	for _, item := range result.Items {
 		song := types.TidalSong{
@@ -405,9 +435,9 @@ func GetArtistTopTracks(id int64) (*[]types.TidalSong, error) {
 			VolumeNumber:    item.Data.VolumeNumber,
 			Artists:         []types.TidalArtist{},
 			Album: types.TidalAlbum{
-				ID:    item.Data.Album.ID,
-				Cover: item.Data.Album.Cover,
-				Title: item.Data.Album.Title,
+				ID:          item.Data.Album.ID,
+				Cover:       item.Data.Album.Cover,
+				Title:       item.Data.Album.Title,
 				ReleaseDate: item.Data.Album.ReleaseDate,
 			},
 		}
@@ -423,5 +453,340 @@ func GetArtistTopTracks(id int64) (*[]types.TidalSong, error) {
 		tracks = append(tracks, song)
 	}
 
-	return &tracks, nil
+	return &ArtistTopTracksResult{
+		Items:             tracks,
+		MaybeHasMorePages: len(tracks) == artistPageSize,
+	}, nil
+}
+
+type ArtistAlbumsResult struct {
+	Items             []types.TidalAlbum `json:"items"`
+	MaybeHasMorePages bool               `json:"maybeHasMorePages"`
+}
+
+func GetArtistAlbums(id int64, page int) (*ArtistAlbumsResult, error) {
+	err := refreshTokens()
+	if err != nil {
+		return nil, err
+	}
+
+	artistUrl := &url.URL{
+		Scheme: "https",
+		Host:   "api.tidal.com",
+		Path:   "/v2/artist/ARTIST_ALBUMS/view-all",
+	}
+
+	q := artistUrl.Query()
+	q.Set("locale", "en_US")
+	q.Set("itemId", fmt.Sprintf("%d", id))
+	q.Set("countryCode", "US")
+	q.Set("deviceType", "BROWSER")
+	q.Set("platform", "WEB")
+	q.Set("limit", fmt.Sprintf("%d", artistPageSize))
+	q.Set("offset", fmt.Sprintf("%d", page*artistPageSize))
+	artistUrl.RawQuery = q.Encode()
+
+	req, _ := http.NewRequest(http.MethodGet, artistUrl.String(), nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
+	req.Header.Set("x-tidal-client-version", "2026.1.5")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result TidalArtistAlbumTypeResponse
+	if err = json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+
+	albums := []types.TidalAlbum{}
+
+	for _, item := range result.Items {
+		album := types.TidalAlbum{
+			ID:              item.Data.ID,
+			Cover:           item.Data.Cover,
+			Explicit:        item.Data.Explicit,
+			Duration:        item.Data.Duration,
+			NumberOfTracks:  item.Data.NumberOfTracks,
+			NumberOfVolumes: item.Data.NumberOfVolumes,
+			ReleaseDate:     item.Data.ReleaseDate,
+			Title:           item.Data.Title,
+			Type:            item.Data.Type,
+			UPC:             item.Data.UPC,
+			VibrantColor:    item.Data.VibrantColor,
+			VideoCover:      item.Data.VideoCover,
+			Artists:         []types.TidalArtist{},
+		}
+
+		for _, item := range item.Data.Artists {
+			album.Artists = append(album.Artists, types.TidalArtist{
+				ID:      item.ID,
+				Name:    item.Name,
+				Picture: item.Picture,
+			})
+		}
+
+		albums = append(albums, album)
+	}
+
+	return &ArtistAlbumsResult{
+		Items:             albums,
+		MaybeHasMorePages: len(albums) == artistPageSize,
+	}, nil
+}
+
+type ArtistSinglesAndEpsResult struct {
+	Items             []types.TidalAlbum `json:"items"`
+	MaybeHasMorePages bool               `json:"maybeHasMorePages"`
+}
+
+func GetArtistSinglesAndEps(id int64, page int) (*ArtistSinglesAndEpsResult, error) {
+	err := refreshTokens()
+	if err != nil {
+		return nil, err
+	}
+
+	artistUrl := &url.URL{
+		Scheme: "https",
+		Host:   "api.tidal.com",
+		Path:   "/v2/artist/ARTIST_TOP_SINGLES/view-all",
+	}
+
+	q := artistUrl.Query()
+	q.Set("locale", "en_US")
+	q.Set("itemId", fmt.Sprintf("%d", id))
+	q.Set("countryCode", "US")
+	q.Set("deviceType", "BROWSER")
+	q.Set("platform", "WEB")
+	q.Set("limit", fmt.Sprintf("%d", artistPageSize))
+	q.Set("offset", fmt.Sprintf("%d", page*artistPageSize))
+	artistUrl.RawQuery = q.Encode()
+
+	req, _ := http.NewRequest(http.MethodGet, artistUrl.String(), nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
+	req.Header.Set("x-tidal-client-version", "2026.1.5")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result TidalArtistAlbumTypeResponse
+	if err = json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+
+	albums := []types.TidalAlbum{}
+
+	for _, item := range result.Items {
+		album := types.TidalAlbum{
+			ID:              item.Data.ID,
+			Cover:           item.Data.Cover,
+			Explicit:        item.Data.Explicit,
+			Duration:        item.Data.Duration,
+			NumberOfTracks:  item.Data.NumberOfTracks,
+			NumberOfVolumes: item.Data.NumberOfVolumes,
+			ReleaseDate:     item.Data.ReleaseDate,
+			Title:           item.Data.Title,
+			Type:            item.Data.Type,
+			UPC:             item.Data.UPC,
+			VibrantColor:    item.Data.VibrantColor,
+			VideoCover:      item.Data.VideoCover,
+			Artists:         []types.TidalArtist{},
+		}
+
+		for _, item := range item.Data.Artists {
+			album.Artists = append(album.Artists, types.TidalArtist{
+				ID:      item.ID,
+				Name:    item.Name,
+				Picture: item.Picture,
+			})
+		}
+
+		albums = append(albums, album)
+	}
+
+	return &ArtistSinglesAndEpsResult{
+		Items:             albums,
+		MaybeHasMorePages: len(albums) == artistPageSize,
+	}, nil
+}
+
+type ArtistCompilationsResult struct {
+	Items             []types.TidalAlbum `json:"items"`
+	MaybeHasMorePages bool               `json:"maybeHasMorePages"`
+}
+
+func GetArtistCompilations(id int64, page int) (*ArtistCompilationsResult, error) {
+	err := refreshTokens()
+	if err != nil {
+		return nil, err
+	}
+
+	artistUrl := &url.URL{
+		Scheme: "https",
+		Host:   "api.tidal.com",
+		Path:   "/v2/artist/ARTIST_COMPILATIONS/view-all",
+	}
+
+	q := artistUrl.Query()
+	q.Set("locale", "en_US")
+	q.Set("itemId", fmt.Sprintf("%d", id))
+	q.Set("countryCode", "US")
+	q.Set("deviceType", "BROWSER")
+	q.Set("platform", "WEB")
+	q.Set("limit", fmt.Sprintf("%d", artistPageSize))
+	q.Set("offset", fmt.Sprintf("%d", page*artistPageSize))
+	artistUrl.RawQuery = q.Encode()
+
+	req, _ := http.NewRequest(http.MethodGet, artistUrl.String(), nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
+	req.Header.Set("x-tidal-client-version", "2026.1.5")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result TidalArtistAlbumTypeResponse
+	if err = json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+
+	albums := []types.TidalAlbum{}
+
+	for _, item := range result.Items {
+		album := types.TidalAlbum{
+			ID:              item.Data.ID,
+			Cover:           item.Data.Cover,
+			Explicit:        item.Data.Explicit,
+			Duration:        item.Data.Duration,
+			NumberOfTracks:  item.Data.NumberOfTracks,
+			NumberOfVolumes: item.Data.NumberOfVolumes,
+			ReleaseDate:     item.Data.ReleaseDate,
+			Title:           item.Data.Title,
+			Type:            item.Data.Type,
+			UPC:             item.Data.UPC,
+			VibrantColor:    item.Data.VibrantColor,
+			VideoCover:      item.Data.VideoCover,
+			Artists:         []types.TidalArtist{},
+		}
+
+		for _, item := range item.Data.Artists {
+			album.Artists = append(album.Artists, types.TidalArtist{
+				ID:      item.ID,
+				Name:    item.Name,
+				Picture: item.Picture,
+			})
+		}
+
+		albums = append(albums, album)
+	}
+
+	return &ArtistCompilationsResult{
+		Items:             albums,
+		MaybeHasMorePages: len(albums) == artistPageSize,
+	}, nil
+}
+
+type ArtistAppearsOnResult struct {
+	Items             []types.TidalAlbum `json:"items"`
+	MaybeHasMorePages bool               `json:"maybeHasMorePages"`
+}
+
+func GetArtistAppearsOn(id int64, page int) (*ArtistAppearsOnResult, error) {
+	err := refreshTokens()
+	if err != nil {
+		return nil, err
+	}
+
+	artistUrl := &url.URL{
+		Scheme: "https",
+		Host:   "api.tidal.com",
+		Path:   "/v2/artist/ARTIST_APPEARS_ON/view-all",
+	}
+
+	q := artistUrl.Query()
+	q.Set("locale", "en_US")
+	q.Set("itemId", fmt.Sprintf("%d", id))
+	q.Set("countryCode", "US")
+	q.Set("deviceType", "BROWSER")
+	q.Set("platform", "WEB")
+	q.Set("limit", fmt.Sprintf("%d", artistPageSize))
+	q.Set("offset", fmt.Sprintf("%d", page*artistPageSize))
+	artistUrl.RawQuery = q.Encode()
+
+	req, _ := http.NewRequest(http.MethodGet, artistUrl.String(), nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
+	req.Header.Set("x-tidal-client-version", "2026.1.5")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result TidalArtistAlbumTypeResponse
+	if err = json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+
+	albums := []types.TidalAlbum{}
+
+	for _, item := range result.Items {
+		album := types.TidalAlbum{
+			ID:              item.Data.ID,
+			Cover:           item.Data.Cover,
+			Explicit:        item.Data.Explicit,
+			Duration:        item.Data.Duration,
+			NumberOfTracks:  item.Data.NumberOfTracks,
+			NumberOfVolumes: item.Data.NumberOfVolumes,
+			ReleaseDate:     item.Data.ReleaseDate,
+			Title:           item.Data.Title,
+			Type:            item.Data.Type,
+			UPC:             item.Data.UPC,
+			VibrantColor:    item.Data.VibrantColor,
+			VideoCover:      item.Data.VideoCover,
+			Artists:         []types.TidalArtist{},
+		}
+
+		for _, item := range item.Data.Artists {
+			album.Artists = append(album.Artists, types.TidalArtist{
+				ID:      item.ID,
+				Name:    item.Name,
+				Picture: item.Picture,
+			})
+		}
+
+		albums = append(albums, album)
+	}
+
+	return &ArtistAppearsOnResult{
+		Items:             albums,
+		MaybeHasMorePages: len(albums) == artistPageSize,
+	}, nil
 }

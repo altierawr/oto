@@ -6,7 +6,9 @@ import { Heart, Play, Share } from "lucide-react";
 import { usePlayerState } from "../store";
 import { formatDuration } from "../utils/utils";
 import clsx from "clsx";
-import CoverBlock, { CoverBlockVariant } from "../components/cover-block";
+import CoverBlock, {
+  CoverBlockVariant,
+} from "../components/music-blocks/cover-block";
 
 const loader: LoaderFunction = async ({ params }) => {
   const data = await fetch(`http://localhost:3003/v1/albums/${params.id}`);

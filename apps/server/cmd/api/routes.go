@@ -20,6 +20,10 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/artists/:id", app.viewArtistHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/artists/:id/toptracks", app.viewArtistTopTracksHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/artists/:id/albums", app.viewArtistAlbumsHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/artists/:id/singles-eps", app.viewArtistSinglesAndEpsHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/artists/:id/compilations", app.viewArtistCompilationsHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/artists/:id/appears-on", app.viewArtistAppearsOnHandler)
 
 	router.HandlerFunc(http.MethodGet, "/v1/albums/:id", app.viewAlbumHandler)
 

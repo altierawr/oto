@@ -22,7 +22,7 @@ const ArtistTopTracksGrid = ({ artist, initialTopTracks }: TProps) => {
 
   return (
     <TrackGrid
-      tracks={query.data || initialTopTracks}
+      tracks={query.data?.items || initialTopTracks}
       isLoading={query.isLoading}
     />
   );
