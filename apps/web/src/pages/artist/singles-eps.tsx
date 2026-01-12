@@ -16,7 +16,7 @@ const ArtistPageSinglesAndEps = () => {
       );
       const json = await resp.json();
 
-      return json.result;
+      return json;
     },
   });
 

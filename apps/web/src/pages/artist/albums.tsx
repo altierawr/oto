@@ -16,7 +16,7 @@ const ArtistPageAlbums = () => {
       );
       const json = await resp.json();
 
-      return json.albums;
+      return json;
     },
   });
 

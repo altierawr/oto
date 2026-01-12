@@ -19,7 +19,7 @@ func (app *application) viewArtistHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.writeJSON(w, 200, envelope{"artist": artist}, nil)
+	err = app.writeJSON(w, 200, artist, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -44,7 +44,7 @@ func (app *application) viewArtistTopTracksHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
-	err = app.writeJSON(w, 200, envelope{"tracks": tracks}, nil)
+	err = app.writeJSON(w, 200, tracks, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -69,7 +69,7 @@ func (app *application) viewArtistAlbumsHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err = app.writeJSON(w, 200, envelope{"albums": albums}, nil)
+	err = app.writeJSON(w, 200, albums, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -94,7 +94,7 @@ func (app *application) viewArtistSinglesAndEpsHandler(w http.ResponseWriter, r 
 		return
 	}
 
-	err = app.writeJSON(w, 200, envelope{"result": albums}, nil)
+	err = app.writeJSON(w, 200, albums, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -119,7 +119,7 @@ func (app *application) viewArtistCompilationsHandler(w http.ResponseWriter, r *
 		return
 	}
 
-	err = app.writeJSON(w, 200, envelope{"result": compilations}, nil)
+	err = app.writeJSON(w, 200, compilations, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -144,7 +144,7 @@ func (app *application) viewArtistAppearsOnHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
-	err = app.writeJSON(w, 200, envelope{"result": albums}, nil)
+	err = app.writeJSON(w, 200, albums, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

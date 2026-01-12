@@ -16,7 +16,7 @@ const ArtistTopTracksGrid = ({ artist, initialTopTracks }: TProps) => {
       );
       const json = await resp.json();
 
-      return json.tracks;
+      return json;
     },
   });
 

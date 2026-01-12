@@ -16,7 +16,7 @@ const ArtistPageAppearsOn = () => {
       );
       const json = await resp.json();
 
-      return json.result;
+      return json;
     },
   });
 

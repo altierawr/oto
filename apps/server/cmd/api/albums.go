@@ -19,7 +19,7 @@ func (app *application) viewAlbumHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = app.writeJSON(w, 200, envelope{"album": album}, nil)
+	err = app.writeJSON(w, 200, album, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

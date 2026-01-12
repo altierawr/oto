@@ -243,7 +243,6 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 		return
 	}
 
-
 	parts := strings.Split(tempDir, "-")
 	streamId := parts[len(parts)-1]
 

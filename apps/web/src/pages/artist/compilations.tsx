@@ -16,7 +16,7 @@ const ArtistPageCompilations = () => {
       );
       const json = await resp.json();
 
-      return json.result;
+      return json;
     },
   });
 

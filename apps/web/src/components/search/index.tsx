@@ -47,7 +47,7 @@ const SearchInput = () => {
       const result = await resp.json();
 
       setIsFetching(false);
-      setSearchResults(result.result);
+      setSearchResults(result);
     }, 500);
 
     setIsFetching(true);

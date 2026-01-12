@@ -20,7 +20,7 @@ func (app *application) searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.writeJSON(w, 200, envelope{"result": result}, nil)
+	err = app.writeJSON(w, 200, result, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

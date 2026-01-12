@@ -14,7 +14,7 @@ const loader: LoaderFunction = async ({ params }) => {
   const data = await fetch(`http://localhost:3003/v1/albums/${params.id}`);
   const json = await data.json();
 
-  return json;
+  return { album: json };
 };
 
 const AlbumPage = () => {

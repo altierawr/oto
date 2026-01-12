@@ -57,7 +57,7 @@ const loader: LoaderFunction = async ({ params }) => {
   const data = await fetch(`http://localhost:3003/v1/artists/${params.id}`);
   const json = await data.json();
 
-  return json;
+  return { artist: json };
 };
 
 const ArtistPage = () => {
