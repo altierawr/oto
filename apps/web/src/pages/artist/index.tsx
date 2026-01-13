@@ -7,7 +7,7 @@ import {
 } from "react-router";
 import { Fragment } from "react";
 import { Link } from "react-router";
-import type { ArtistPage } from "../../types";
+import type { ArtistPage as TArtistPage } from "../../types";
 import { Button, IconButton, Spacer, Tabs } from "design";
 import { Heart, Play, Share } from "lucide-react";
 import ArtistPageOverview from "./overview";
@@ -55,14 +55,14 @@ const parseTidalRichTextIntoComponent = (text: string) => {
 
 const loader: LoaderFunction = async ({ params }) => {
   const data = await fetch(`http://localhost:3003/v1/artists/${params.id}`);
-  const json = await data.json();
+  const json: TArtistPage = await data.json();
 
   return { artist: json };
 };
 
 const ArtistPage = () => {
   const { id } = useParams();
-  const data = useLoaderData() as { artist: ArtistPage };
+  const data = useLoaderData() as { artist: TArtistPage };
   const navigate = useNavigate();
 
   console.log({ data });
@@ -96,7 +96,11 @@ const ArtistPage = () => {
         <div
           className="w-full h-[140px] bg-cover bg-center rounded-xl overflow-hidden"
           style={{
-            backgroundImage: `url(https://resources.tidal.com/images/${data.artist.albums?.[1].cover.replace(/-/g, "/")}/1280x1280.jpg)`,
+            backgroundImage: `url(https://resources.tidal.com/images/${(
+              data.artist.albums?.[1]?.cover ||
+              data.artist.picture ||
+              data.artist.selectedAlbumCoverFallback
+            )?.replace(/-/g, "/")}/1280x1280.jpg)`,
           }}
         >
           <div

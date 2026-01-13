@@ -11,11 +11,7 @@ type TProps = {
 const SongSearchResult = ({ song, onClose }: TProps) => {
   return (
     <SearchResult
-      primaryText={
-        <Link to={`/albums/${song.album.id}`} onClick={onClose}>
-          {song.title}
-        </Link>
-      }
+      primaryText={song.title}
       secondaryText={
         <>
           Song by{" "}
@@ -30,8 +26,12 @@ const SongSearchResult = ({ song, onClose }: TProps) => {
           ))}
         </>
       }
-      imageUrl={`https://resources.tidal.com/images/${song.album.cover.replace(/-/g, "/")}/80x80.jpg`}
-      linkUrl={`/albums/${song.album.id}`}
+      imageUrl={
+        song.album?.cover
+          ? `https://resources.tidal.com/images/${song.album.cover.replace(/-/g, "/")}/80x80.jpg`
+          : ""
+      }
+      linkUrl={song.album?.id ? `/albums/${song.album.id}` : undefined}
       onClose={onClose}
     />
   );

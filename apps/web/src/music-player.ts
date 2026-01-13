@@ -1,7 +1,7 @@
 import { usePlayerState } from "./store";
 import * as mp4box from "mp4box";
 
-import type { Song } from "./types";
+import type { Song, StreamResponse, SeekResponse } from "./types";
 
 type PlaylistSong = {
   song: Song;
@@ -780,15 +780,9 @@ export class MusicPlayer {
     // Segment exists on server, we can fetch it now
     if (resp.status === 200) {
       console.log("Segment exists on server, fetching it");
-      const json = await resp.json();
+      const json: SeekResponse = await resp.json();
 
       console.log("stream id", pe.streamId);
-
-      if (!json.segment) {
-        console.error("Segment is missing from request");
-        this.#unlockFetchOperations();
-        return;
-      }
 
       console.log("segment to jump to is", json.segment);
       await this.#maybeFetchNextSegment({
@@ -825,7 +819,7 @@ export class MusicPlayer {
     // New stream
     if (resp.status === 201) {
       console.warn("Segment doesn't exist on server, starting new stream");
-      const json = await resp.json();
+      const json: StreamResponse = await resp.json();
 
       if (!json.streamId) {
         console.error("no stream id in response");
@@ -1351,7 +1345,7 @@ export class MusicPlayer {
         return;
       }
 
-      const json = await streamResp.json();
+      const json: StreamResponse = await streamResp.json();
       this.playlist[playlistIndex].streamId = json.streamId;
       console.log("stream id", json.streamId);
       pe = this.playlist[playlistIndex];

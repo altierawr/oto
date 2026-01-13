@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Artist, Song } from "../../types";
+import type { Artist, Song, PaginatedResponse } from "../../types";
 import TrackGrid from "../tracks/track-grid";
 
 type TProps = {
@@ -14,7 +14,7 @@ const ArtistTopTracksGrid = ({ artist, initialTopTracks }: TProps) => {
       const resp = await fetch(
         `http://localhost:3003/v1/artists/${artist.id}/toptracks`,
       );
-      const json = await resp.json();
+      const json: PaginatedResponse<Song> = await resp.json();
 
       return json;
     },

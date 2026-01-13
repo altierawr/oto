@@ -66,14 +66,21 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
             <div className="h-[40px] aspect-square">
               <CoverBlock
                 variant={CoverBlockVariant.PLAY_ONLY}
-                imageUrl={`https://resources.tidal.com/images/${track.album.cover.replace(/-/g, "/")}/80x80.jpg`}
+                imageUrl={
+                  track.album?.cover
+                    ? `https://resources.tidal.com/images/${track.album.cover.replace(/-/g, "/")}/80x80.jpg`
+                    : ""
+                }
                 onPlayClick={() => player.playSongs(tracks, idx)}
               />
             </div>
 
             <div className="flex-1">
               <p className="font-normal line-clamp-1 text-sm">
-                <Link to={`/albums/${track.album.id}`}>{track.title}</Link>
+                {track.album && (
+                  <Link to={`/albums/${track.album?.id}`}>{track.title}</Link>
+                )}
+                {!track.album && track.title}
               </p>
               <p className="text-xs text-(--gray-11) line-clamp-1">
                 {track.artists.map((artist, index) => (

@@ -1,10 +1,10 @@
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 type TProps = {
   imageUrl: string;
-  primaryText: string | React.ReactNode;
+  primaryText: string;
   secondaryText: string | React.ReactNode;
-  linkUrl: string;
+  linkUrl?: string;
   onClose?: () => void;
 };
 
@@ -19,7 +19,10 @@ const SearchResult = ({
 
   const sendToUrl = () => {
     onClose?.();
-    navigate(linkUrl);
+
+    if (linkUrl) {
+      navigate(linkUrl);
+    }
   };
 
   return (
@@ -36,7 +39,14 @@ const SearchResult = ({
       />
 
       <div className="flex flex-col justify-center flex-1">
-        <p className="font-semibold text-sm line-clamp-1">{primaryText}</p>
+        <p className="font-semibold text-sm line-clamp-1">
+          {linkUrl && (
+            <Link to={linkUrl} onClick={onClose}>
+              {primaryText}
+            </Link>
+          )}
+          {!linkUrl && primaryText}
+        </p>
         <p className="text-xs text-(--gray-11) line-clamp-1">{secondaryText}</p>
       </div>
     </div>

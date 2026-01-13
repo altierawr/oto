@@ -12,7 +12,7 @@ import CoverBlock, {
 
 const loader: LoaderFunction = async ({ params }) => {
   const data = await fetch(`http://localhost:3003/v1/albums/${params.id}`);
-  const json = await data.json();
+  const json: Album = await data.json();
 
   return { album: json };
 };
@@ -33,7 +33,11 @@ const AlbumPage = () => {
         <div className="min-w-[200px] aspect-square">
           <CoverBlock
             variant={CoverBlockVariant.COVER_ONLY}
-            imageUrl={`https://resources.tidal.com/images/${data.album.cover.replace(/-/g, "/")}/1280x1280.jpg`}
+            imageUrl={
+              data.album.cover
+                ? `https://resources.tidal.com/images/${data.album.cover.replace(/-/g, "/")}/1280x1280.jpg`
+                : ""
+            }
           />
         </div>
 
@@ -52,16 +56,19 @@ const AlbumPage = () => {
             </h1>
             <p className="text-sm">
               Album by{" "}
-              <Link
-                to={`/artists/${data.album.artists[0].id}`}
-                className="text-(--blue-11)"
-              >
-                {data.album.artists[0].name}
-              </Link>
+              {data.album.artists?.[0] && (
+                <Link
+                  to={`/artists/${data.album.artists[0].id}`}
+                  className="text-(--blue-11)"
+                >
+                  {data.album.artists[0].name}
+                </Link>
+              )}
             </p>
             <p className="text-sm">
-              {data.album.releaseDate.slice(0, 4)} • {data.album.numberOfTracks}{" "}
-              songs • {formatDuration(data.album.duration, "written")}
+              {data.album.releaseDate?.slice(0, 4)} •{" "}
+              {data.album.numberOfTracks} songs •{" "}
+              {formatDuration(data.album.duration || 0, "written")}
             </p>
           </div>
           <div className="flex gap-4">

@@ -11,7 +11,10 @@ const SongQueueItem = ({ song }: TProps) => {
       <div
         className="h-[50px] aspect-square bg-cover rounded-lg"
         style={{
-          backgroundImage: `url(https://resources.tidal.com/images/${song.album.cover.replace(/-/g, "/")}/80x80.jpg)`,
+          backgroundImage: `url(${song.album?.cover
+              ? `https://resources.tidal.com/images/${song.album.cover.replace(/-/g, "/")}/80x80.jpg`
+              : ""
+            })`,
         }}
       />
 

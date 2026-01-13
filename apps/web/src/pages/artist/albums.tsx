@@ -1,7 +1,6 @@
 import { useRouteLoaderData } from "react-router";
-import type { ArtistPage } from "../../types";
+import type { ArtistPage, Album, PaginatedResponse } from "../../types";
 import { useQuery } from "@tanstack/react-query";
-import type { Album } from "../../types";
 import MusicBlockGrid from "../../components/music-blocks/music-block-grid";
 import MusicBlock from "../../components/music-blocks/music-block";
 import { Loader } from "design";
@@ -14,7 +13,7 @@ const ArtistPageAlbums = () => {
       const resp = await fetch(
         `http://localhost:3003/v1/artists/${data.artist.id}/albums`,
       );
-      const json = await resp.json();
+      const json: PaginatedResponse<Album> = await resp.json();
 
       return json;
     },
@@ -30,7 +29,11 @@ const ArtistPageAlbums = () => {
               key={album.id}
               title={album.title}
               linkUrl={`/albums/${album.id}`}
-              imageUrl={`https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`}
+              imageUrl={
+                album.cover
+                  ? `https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`
+                  : ""
+              }
               date={album.releaseDate}
             />
           ))}

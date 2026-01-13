@@ -101,7 +101,10 @@ const MusicControls = () => {
         <div
           className="h-full aspect-square bg-cover rounded-lg"
           style={{
-            backgroundImage: `url(https://resources.tidal.com/images/${playerState.playInfo.song.album.cover.replace(/-/g, "/")}/80x80.jpg)`,
+            backgroundImage: `url(${playerState.playInfo.song.album?.cover
+                ? `https://resources.tidal.com/images/${playerState.playInfo.song.album.cover.replace(/-/g, "/")}/80x80.jpg`
+                : ""
+              })`,
           }}
         />
 
@@ -157,8 +160,8 @@ const MusicControls = () => {
                 <div
                   style={{
                     width: `${((playerState.playInfo.buffer.to -
-                        playerState.playInfo.buffer.from) /
-                        playerState.playInfo.song.duration) *
+                      playerState.playInfo.buffer.from) /
+                      playerState.playInfo.song.duration) *
                       100
                       }%`,
                     left: `${((playerState.playInfo.buffer.from - playerState.playInfo.seekOffset - (playerState.playInfo.timestampOffset || 0)) / playerState.playInfo.song.duration) * 100}%`,
@@ -172,9 +175,9 @@ const MusicControls = () => {
                   width: "4px",
                   top: "-4px",
                   left: `${((playerState.playInfo.currentTime -
-                      playerState.playInfo.seekOffset -
-                      (playerState.playInfo.timestampOffset || 0)) /
-                      playerState.playInfo.song.duration) *
+                    playerState.playInfo.seekOffset -
+                    (playerState.playInfo.timestampOffset || 0)) /
+                    playerState.playInfo.song.duration) *
                     100
                     }%`,
                 }}

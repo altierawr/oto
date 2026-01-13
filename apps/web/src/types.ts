@@ -1,18 +1,18 @@
 export type Album = {
   id: number;
-  cover: string;
+  cover?: string;
   explicit?: boolean;
-  duration: number;
-  numberOfTracks: number;
-  numberOfVolumes: number;
-  releaseDate: string;
+  duration?: number;
+  numberOfTracks?: number;
+  numberOfVolumes?: number;
+  releaseDate?: string;
   title: string;
-  type: "ALBUM" | "EP" | "SINGLE";
+  type?: "ALBUM" | "EP" | "SINGLE";
   upc?: string;
   vibrantColor?: string;
   videoCover?: string;
   songs?: Song[];
-  artists: Artist[];
+  artists?: Artist[];
 };
 
 export type Artist = {
@@ -43,7 +43,7 @@ export type Song = {
   trackNumber: number;
   volumeNumber: number;
   artists: Artist[];
-  album: Album;
+  album?: Album;
 };
 
 export type Playlist = {
@@ -76,4 +76,17 @@ export type SearchResults = {
 
 export type MusicPlayerSong = Song & {
   progress?: number;
+};
+
+export type PaginatedResponse<T> = {
+  items: T[];
+  maybeHasMorePages: boolean;
+};
+
+export type StreamResponse = {
+  streamId: string;
+};
+
+export type SeekResponse = {
+  segment: number;
 };

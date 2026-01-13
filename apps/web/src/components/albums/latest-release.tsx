@@ -13,7 +13,11 @@ const LatestRelease = ({ album }: TProps) => {
       <div className="h-full aspect-square">
         <CoverBlock
           variant={CoverBlockVariant.FULL}
-          imageUrl={`https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`}
+          imageUrl={
+            album.cover
+              ? `https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`
+              : ""
+          }
           linkUrl={`/albums/${album.id}`}
         />
       </div>

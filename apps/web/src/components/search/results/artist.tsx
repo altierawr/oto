@@ -1,4 +1,3 @@
-import { Link } from "react-router";
 import SearchResult from ".";
 import type { Artist } from "../../../types";
 
@@ -10,11 +9,7 @@ type TProps = {
 const ArtistSearchResult = ({ artist, onClose }: TProps) => {
   return (
     <SearchResult
-      primaryText={
-        <Link to={`/artists/${artist.id}`} onClick={onClose}>
-          {artist.name}
-        </Link>
-      }
+      primaryText={artist.name}
       secondaryText="Artist"
       imageUrl={`https://resources.tidal.com/images/${artist.picture?.replace(/-/g, "/")}/320x320.jpg`}
       linkUrl={`/artists/${artist.id}`}

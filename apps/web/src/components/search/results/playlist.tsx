@@ -11,11 +11,7 @@ type TProps = {
 const PlaylistSearchResult = ({ playlist, onClose }: TProps) => {
   return (
     <SearchResult
-      primaryText={
-        <Link to={`/playlists/${playlist.uuid}`} onClick={onClose}>
-          {playlist.title}
-        </Link>
-      }
+      primaryText={playlist.title}
       secondaryText={
         <>
           {playlist.promotedArtists.length === 0 && "Playlist"}
@@ -36,7 +32,7 @@ const PlaylistSearchResult = ({ playlist, onClose }: TProps) => {
         </>
       }
       imageUrl={`https://resources.tidal.com/images/${playlist.squareImage?.replace(/-/g, "/")}/320x320.jpg`}
-      linkUrl={`/albums/${playlist.uuid}`}
+      linkUrl={`/playlists/${playlist.uuid}`}
       onClose={onClose}
     />
   );

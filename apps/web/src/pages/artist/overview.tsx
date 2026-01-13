@@ -12,8 +12,8 @@ const ArtistPageOverview = () => {
     ...(data.artist.albums || []),
     ...(data.artist.topSingles || []),
   ].sort((a, b) => {
-    const ad = new Date(a.releaseDate);
-    const bd = new Date(b.releaseDate);
+    const ad = new Date(a.releaseDate || 0);
+    const bd = new Date(b.releaseDate || 0);
 
     if (ad > bd) return -1;
     if (bd > ad) return 1;
