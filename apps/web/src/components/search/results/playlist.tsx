@@ -2,6 +2,7 @@ import { Fragment } from "react/jsx-runtime";
 import { Link } from "react-router";
 import SearchResult from ".";
 import type { Playlist } from "../../../types";
+import { getTidalCoverUrl } from "../../../utils/image";
 
 type TProps = {
   playlist: Playlist;
@@ -31,7 +32,7 @@ const PlaylistSearchResult = ({ playlist, onClose }: TProps) => {
           )}
         </>
       }
-      imageUrl={`https://resources.tidal.com/images/${playlist.squareImage?.replace(/-/g, "/")}/320x320.jpg`}
+      imageUrl={getTidalCoverUrl(playlist.squareImage, 320)}
       linkUrl={`/playlists/${playlist.uuid}`}
       onClose={onClose}
     />

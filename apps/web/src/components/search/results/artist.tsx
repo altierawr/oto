@@ -1,5 +1,6 @@
 import SearchResult from ".";
 import type { Artist } from "../../../types";
+import { getTidalCoverUrl } from "../../../utils/image";
 
 type TProps = {
   artist: Artist;
@@ -11,7 +12,7 @@ const ArtistSearchResult = ({ artist, onClose }: TProps) => {
     <SearchResult
       primaryText={artist.name}
       secondaryText="Artist"
-      imageUrl={`https://resources.tidal.com/images/${artist.picture?.replace(/-/g, "/")}/320x320.jpg`}
+      imageUrl={getTidalCoverUrl(artist.picture, 320)}
       linkUrl={`/artists/${artist.id}`}
       onClose={onClose}
     />

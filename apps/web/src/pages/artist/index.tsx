@@ -12,6 +12,7 @@ import { Button, IconButton, Spacer, Tabs } from "design";
 import { Heart, Play, Share } from "lucide-react";
 import ArtistPageOverview from "./overview";
 import type { TabsTab } from "@base-ui/react";
+import { getTidalCoverUrl } from "../../utils/image";
 
 const parseTidalRichTextIntoComponent = (text: string) => {
   const regex = /\[wimpLink (artistId|albumId)="(\d+)"\](.*?)\[\/wimpLink\]/g;
@@ -96,11 +97,12 @@ const ArtistPage = () => {
         <div
           className="w-full h-[140px] bg-cover bg-center rounded-xl overflow-hidden"
           style={{
-            backgroundImage: `url(https://resources.tidal.com/images/${(
+            backgroundImage: `url(${getTidalCoverUrl(
               data.artist.albums?.[1]?.cover ||
-              data.artist.picture ||
-              data.artist.selectedAlbumCoverFallback
-            )?.replace(/-/g, "/")}/1280x1280.jpg)`,
+                data.artist.picture ||
+                data.artist.selectedAlbumCoverFallback,
+              1280,
+            )})`,
           }}
         >
           <div
@@ -115,8 +117,8 @@ const ArtistPage = () => {
             className="w-[180px] aspect-square rounded-[45px] border-4 border-(--gray-0) bg-cover ml-6 -mt-[40px] z-0"
             style={{
               backgroundImage: data.artist.picture
-                ? `url(https://resources.tidal.com/images/${data.artist.picture?.replace(/-/g, "/")}/320x320.jpg)`
-                : `url(https://resources.tidal.com/images/${data.artist.selectedAlbumCoverFallback?.replace(/-/g, "/")}/1280x1280.jpg)`,
+                ? `url(${getTidalCoverUrl(data.artist.picture, 320)})`
+                : `url(${getTidalCoverUrl(data.artist.selectedAlbumCoverFallback, 1280)})`,
             }}
           />
           <div className="flex flex-col items-start overflow-hidden flex-1 pb-3">
@@ -129,7 +131,7 @@ const ArtistPage = () => {
                   data.artist.biography?.slice(
                     0,
                     data.artist.biography.indexOf("<br/>") ||
-                    data.artist.biography?.length,
+                      data.artist.biography?.length,
                   ),
                 )}
               </p>

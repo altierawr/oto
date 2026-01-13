@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import type { Song } from "../../types";
+import { getTidalCoverUrl } from "../../utils/image";
 
 type TProps = {
   song: Song;
@@ -11,10 +12,9 @@ const SongQueueItem = ({ song }: TProps) => {
       <div
         className="h-[50px] aspect-square bg-cover rounded-lg"
         style={{
-          backgroundImage: `url(${song.album?.cover
-              ? `https://resources.tidal.com/images/${song.album.cover.replace(/-/g, "/")}/80x80.jpg`
-              : ""
-            })`,
+          backgroundImage: `url(${
+            song.album?.cover ? getTidalCoverUrl(song.album.cover, 80) : ""
+          })`,
         }}
       />
 

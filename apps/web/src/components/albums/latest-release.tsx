@@ -1,5 +1,6 @@
 import { Spacer } from "design";
 import type { Album } from "../../types";
+import { getTidalCoverUrl } from "../../utils/image";
 import { Link } from "react-router";
 import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
 
@@ -13,11 +14,7 @@ const LatestRelease = ({ album }: TProps) => {
       <div className="h-full aspect-square">
         <CoverBlock
           variant={CoverBlockVariant.FULL}
-          imageUrl={
-            album.cover
-              ? `https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`
-              : ""
-          }
+          imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}
           linkUrl={`/albums/${album.id}`}
         />
       </div>

@@ -16,6 +16,7 @@ import { useGeneralStore, usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
 import { useEffect, useRef, useState } from "react";
 import useLatest from "../../utils/useLatest";
+import { getTidalCoverUrl } from "../../utils/image";
 import { Link } from "react-router";
 
 const MusicControls = () => {
@@ -101,10 +102,11 @@ const MusicControls = () => {
         <div
           className="h-full aspect-square bg-cover rounded-lg"
           style={{
-            backgroundImage: `url(${playerState.playInfo.song.album?.cover
-                ? `https://resources.tidal.com/images/${playerState.playInfo.song.album.cover.replace(/-/g, "/")}/80x80.jpg`
+            backgroundImage: `url(${
+              playerState.playInfo.song.album?.cover
+                ? getTidalCoverUrl(playerState.playInfo.song.album.cover, 80)
                 : ""
-              })`,
+            })`,
           }}
         />
 
@@ -149,8 +151,8 @@ const MusicControls = () => {
           <p className="w-[30px]">
             {formatDuration(
               playerState.playInfo.currentTime -
-              playerState.playInfo.seekOffset -
-              (playerState.playInfo.timestampOffset || 0),
+                playerState.playInfo.seekOffset -
+                (playerState.playInfo.timestampOffset || 0),
               "digital",
             )}
           </p>
@@ -159,11 +161,12 @@ const MusicControls = () => {
               {playerState.playInfo.buffer && (
                 <div
                   style={{
-                    width: `${((playerState.playInfo.buffer.to -
-                      playerState.playInfo.buffer.from) /
-                      playerState.playInfo.song.duration) *
+                    width: `${
+                      ((playerState.playInfo.buffer.to -
+                        playerState.playInfo.buffer.from) /
+                        playerState.playInfo.song.duration) *
                       100
-                      }%`,
+                    }%`,
                     left: `${((playerState.playInfo.buffer.from - playerState.playInfo.seekOffset - (playerState.playInfo.timestampOffset || 0)) / playerState.playInfo.song.duration) * 100}%`,
                   }}
                   className="h-full absolute top-0 bg-(--blue-9)"
@@ -174,12 +177,13 @@ const MusicControls = () => {
                 style={{
                   width: "4px",
                   top: "-4px",
-                  left: `${((playerState.playInfo.currentTime -
-                    playerState.playInfo.seekOffset -
-                    (playerState.playInfo.timestampOffset || 0)) /
-                    playerState.playInfo.song.duration) *
+                  left: `${
+                    ((playerState.playInfo.currentTime -
+                      playerState.playInfo.seekOffset -
+                      (playerState.playInfo.timestampOffset || 0)) /
+                      playerState.playInfo.song.duration) *
                     100
-                    }%`,
+                  }%`,
                 }}
                 className="h-[12px] absolute left-0 bg-(--red-9)"
               />

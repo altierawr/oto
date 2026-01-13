@@ -1,5 +1,6 @@
 import { usePlayerState } from "../../store";
 import type { Album } from "../../types";
+import { getTidalCoverUrl } from "../../utils/image";
 import HorizontalMediaScroller from "../horizonal-media-scroller";
 import MusicBlock from "../music-blocks/music-block";
 
@@ -42,11 +43,7 @@ const AlbumsScroller = ({
             key={album.id}
             title={album.title}
             linkUrl={`/albums/${album.id}`}
-            imageUrl={
-              album.cover
-                ? `https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`
-                : ""
-            }
+            imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}
             artists={showArtists ? album.artists : undefined}
             date={showDate ? album.releaseDate : undefined}
             onPlayClick={() => handlePlayClick(album)}

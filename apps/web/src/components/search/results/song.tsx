@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import SearchResult from ".";
 import type { Song } from "../../../types";
+import { getTidalCoverUrl } from "../../../utils/image";
 import { Fragment } from "react/jsx-runtime";
 
 type TProps = {
@@ -26,11 +27,7 @@ const SongSearchResult = ({ song, onClose }: TProps) => {
           ))}
         </>
       }
-      imageUrl={
-        song.album?.cover
-          ? `https://resources.tidal.com/images/${song.album.cover.replace(/-/g, "/")}/80x80.jpg`
-          : ""
-      }
+      imageUrl={song.album?.cover ? getTidalCoverUrl(song.album.cover, 80) : ""}
       linkUrl={song.album?.id ? `/albums/${song.album.id}` : undefined}
       onClose={onClose}
     />

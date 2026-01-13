@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import type { Song } from "../../types";
+import { getTidalCoverUrl } from "../../utils/image";
 import { Link } from "react-router";
 import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -60,7 +61,7 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
               "flex gap-3 items-center border-t border-(--gray-3) py-2 snap-start",
               ((idx + 1) % 3 === 0 ||
                 (idx === tracks.length - 1 && !isLoading)) &&
-              "border-b",
+                "border-b",
             )}
           >
             <div className="h-[40px] aspect-square">
@@ -68,7 +69,7 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
                 variant={CoverBlockVariant.PLAY_ONLY}
                 imageUrl={
                   track.album?.cover
-                    ? `https://resources.tidal.com/images/${track.album.cover.replace(/-/g, "/")}/80x80.jpg`
+                    ? getTidalCoverUrl(track.album.cover, 80)
                     : ""
                 }
                 onPlayClick={() => player.playSongs(tracks, idx)}

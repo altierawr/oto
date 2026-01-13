@@ -1,5 +1,6 @@
 import { useRouteLoaderData } from "react-router";
 import type { ArtistPage, Album, PaginatedResponse } from "../../types";
+import { getTidalCoverUrl } from "../../utils/image";
 import { useQuery } from "@tanstack/react-query";
 import MusicBlockGrid from "../../components/music-blocks/music-block-grid";
 import MusicBlock from "../../components/music-blocks/music-block";
@@ -29,11 +30,7 @@ const ArtistPageAlbums = () => {
               key={album.id}
               title={album.title}
               linkUrl={`/albums/${album.id}`}
-              imageUrl={
-                album.cover
-                  ? `https://resources.tidal.com/images/${album.cover.replace(/-/g, "/")}/320x320.jpg`
-                  : ""
-              }
+              imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}
               date={album.releaseDate}
             />
           ))}

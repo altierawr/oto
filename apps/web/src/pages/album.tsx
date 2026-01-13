@@ -6,6 +6,7 @@ import { Heart, Play, Share } from "lucide-react";
 import { usePlayerState } from "../store";
 import { formatDuration } from "../utils/utils";
 import clsx from "clsx";
+import { getTidalCoverUrl } from "../utils/image";
 import CoverBlock, {
   CoverBlockVariant,
 } from "../components/music-blocks/cover-block";
@@ -34,9 +35,7 @@ const AlbumPage = () => {
           <CoverBlock
             variant={CoverBlockVariant.COVER_ONLY}
             imageUrl={
-              data.album.cover
-                ? `https://resources.tidal.com/images/${data.album.cover.replace(/-/g, "/")}/1280x1280.jpg`
-                : ""
+              data.album.cover ? getTidalCoverUrl(data.album.cover, 1280) : ""
             }
           />
         </div>
