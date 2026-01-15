@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useGeneralStore, usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEventHandler } from "react";
 import useLatest from "../../utils/useLatest";
 import { getTidalCoverUrl } from "../../utils/image";
 import { Link } from "react-router";
@@ -30,29 +30,35 @@ const MusicControls = () => {
     isMouseDownOnVolumeChanger,
   );
 
+  const volumeBarMouseListener = (
+    e: { clientX: number },
+    force: boolean = false,
+  ) => {
+    if (
+      !volumeBarRef.current ||
+      (!force && !latestIsMouseDownOnVolumeChanger.current)
+    ) {
+      return;
+    }
+
+    const rect = volumeBarRef.current.getBoundingClientRect();
+
+    const percent = (e.clientX - rect.left) / rect.width;
+
+    playerState.player.setVolume(Math.max(0, Math.min(percent, 1)));
+  };
+
   useEffect(() => {
     const mouseUpListener = () => {
       setIsMouseDownOnVolumeChanger(false);
     };
 
-    const mouseMoveListener = (e: MouseEvent) => {
-      if (!volumeBarRef.current || !latestIsMouseDownOnVolumeChanger.current) {
-        return;
-      }
-
-      const rect = volumeBarRef.current.getBoundingClientRect();
-
-      const percent = (e.clientX - rect.left) / rect.width;
-
-      playerState.player.setVolume(Math.max(0, Math.min(percent, 1)));
-    };
-
     document.addEventListener("mouseup", mouseUpListener);
-    document.addEventListener("mousemove", mouseMoveListener);
+    document.addEventListener("mousemove", volumeBarMouseListener);
 
     return () => {
       document.removeEventListener("mouseup", mouseUpListener);
-      document.removeEventListener("mousemove", mouseMoveListener);
+      document.removeEventListener("mousemove", volumeBarMouseListener);
     };
   }, []);
 
@@ -88,7 +94,9 @@ const MusicControls = () => {
     playerState.player.toggleMute();
   };
 
-  const handleVolumeBarMouseDown = () => {
+  const handleVolumeBarMouseDown: MouseEventHandler<HTMLDivElement> = (e) => {
+    console.log("mouse down", e.clientX);
+    volumeBarMouseListener(e, true);
     setIsMouseDownOnVolumeChanger(true);
   };
 
@@ -104,7 +112,7 @@ const MusicControls = () => {
           style={{
             backgroundImage: `url(${
               playerState.playInfo.song.album?.cover
-                ? getTidalCoverUrl(playerState.playInfo.song.album.cover, 80)
+                ? getTidalCoverUrl(playerState.playInfo.song.album.cover, 320)
                 : ""
             })`,
           }}
@@ -222,13 +230,22 @@ const MusicControls = () => {
           </div>
           <div
             ref={volumeBarRef}
-            className="w-[100px] h-[5px] relative rounded-full overflow-clip bg-(--gray-5)"
+            className="w-[100px] h-[20px] flex items-center relative cursor-pointer"
             onMouseDown={handleVolumeBarMouseDown}
           >
+            <div className="bg-(--gray-5) w-full h-[6px] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-(--gray-12)"
+                style={{
+                  width: `${playerState.playInfo.volume * 100}%`,
+                }}
+              />
+            </div>
+
             <div
-              className="absolute top-0 left-0 h-full bg-(--gray-9)"
+              className="w-[7px] h-[16px] top-[50%] -translate-y-[50%] -translate-x-[50%] rounded-full bg-(--gray-12) absolute border border-(--gray-0)"
               style={{
-                width: `${playerState.playInfo.volume * 100}%`,
+                left: `${playerState.playInfo.volume * 100}%`,
               }}
             />
           </div>
