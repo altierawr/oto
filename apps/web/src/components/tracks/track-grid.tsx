@@ -27,7 +27,7 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
     <div className="relative overflow-x-hidden pl-10">
       <div
         className={clsx(
-          "absolute left-0 top-1/2 -translate-y-1/2 grid place-content-center rounded-md px-1 py-5 hover:bg-(--gray-3) transition-colors",
+          "absolute z-1 left-0 top-1/2 -translate-y-1/2 grid place-content-center rounded-md px-1 py-5 hover:bg-(--gray-3) transition-colors",
           (!canScrollLeft || isLoading) && "hidden",
         )}
         onClick={scrollLeft}
@@ -36,7 +36,7 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
       </div>
       <div
         className={clsx(
-          "absolute right-0 top-1/2 -translate-y-1/2 grid place-content-center w-8 h-full bg-[rgba(0,0,0,0.0)] backdrop-blur-sm",
+          "absolute z-1 right-0 top-1/2 -translate-y-1/2 grid place-content-center w-8 h-full bg-[rgba(0,0,0,0.9)]",
           isLoading && "hidden",
         )}
         onClick={scrollRight}
