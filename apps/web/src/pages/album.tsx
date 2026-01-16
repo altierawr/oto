@@ -1,5 +1,5 @@
 import { Link, useLoaderData, type LoaderFunction } from "react-router";
-import { Button, IconButton } from "design";
+import { Button, IconButton, Spacer } from "design";
 import type { Album } from "../types";
 import SongList from "../components/song-list";
 import { Heart, Play, Share } from "lucide-react";
@@ -10,6 +10,7 @@ import { getTidalCoverUrl } from "../utils/image";
 import CoverBlock, {
   CoverBlockVariant,
 } from "../components/music-blocks/cover-block";
+import { Fragment } from "react/jsx-runtime";
 
 const loader: LoaderFunction = async ({ params }) => {
   const data = await fetch(`http://localhost:3003/v1/albums/${params.id}`);
@@ -27,6 +28,13 @@ const AlbumPage = () => {
       player.playSongs(data.album.songs, 0);
     }
   };
+
+  const songsByVolume = data.album.songs
+    ? Object.groupBy(data.album.songs, (s) => s.volumeNumber)
+    : undefined;
+  const songsByVolumeKeys = songsByVolume
+    ? Object.keys(songsByVolume)
+    : undefined;
 
   return (
     <div className="max-w-[900px]">
@@ -81,7 +89,15 @@ const AlbumPage = () => {
         </div>
       </div>
       <div className="mt-4"></div>
-      {data.album.songs && <SongList songs={data.album.songs} />}
+      {songsByVolumeKeys?.map((key) => (
+        <Fragment key={key}>
+          {songsByVolumeKeys.length > 1 && (
+            <h2 className="mb-2 text-lg font-bold">Volume {key}</h2>
+          )}
+          <SongList songs={songsByVolume![parseInt(key)]!} />
+          <Spacer size="8" />
+        </Fragment>
+      ))}
     </div>
   );
 };

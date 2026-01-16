@@ -1,5 +1,9 @@
+import clsx from "clsx";
 import type { Song } from "../../types";
 import SongListItem from "./item";
+import styles from "./song-list.module.css";
+import { Spacer } from "design";
+import { Fragment } from "react/jsx-runtime";
 
 type TProps = {
   songs: Song[];
@@ -7,21 +11,26 @@ type TProps = {
 
 const SongList = ({ songs }: TProps) => {
   return (
-    <div className="flex flex-col gap-2 text-sm">
-      <div className="w-full flex items-center gap-2 px-4 font-semibold">
-        <div className="text-center shrink-0 basis-[24px]">#</div>
-        <div className="grow basis-[300px] overflow-hidden text-ellipsis text-nowrap">
+    <div className={clsx("grid", styles.songList)}>
+      <div className="py-4 rounded-md font-semibold bg-(--gray-1)">
+        <div className="text-center text-xs">#</div>
+        <div className="overflow-hidden text-ellipsis text-nowrap uppercase text-xs">
           Title
         </div>
-        <div className="shrink-0 basis-[72px]">Duration</div>
-        <div className="flex gap-2 items-center shrink-0 basis-[100px] opacity-0"></div>
+        <div className="text-xs uppercase">Duration</div>
+        <div className=""></div>
       </div>
 
-      <div className="flex flex-col">
-        {songs.map((song, i) => (
-          <SongListItem key={song.id} song={song} songs={songs} index={i} />
-        ))}
-      </div>
+      <Spacer size="1" />
+
+      {songs.map((song, idx) => (
+        <Fragment key={song.id}>
+          <SongListItem song={song} songs={songs} />
+          {idx < songs.length - 1 && (
+            <div className="w-full h-px bg-(--gray-2) my-1" />
+          )}
+        </Fragment>
+      ))}
     </div>
   );
 };

@@ -1,0 +1,8 @@
+.songList > * {
+    display: grid;
+    grid-template-columns: 24px 1fr 72px 100px;
+    grid-auto-flow: column;
+    align-items: center;
+    padding-inline: var(--spacing-4);
+    gap: var(--spacing-2);
+}
