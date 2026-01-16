@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import type { Song } from "../../types";
 import { formatDuration } from "../../utils/utils";
-import { IconPlayerPlay } from "@tabler/icons-react";
+import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
 import { usePlayerState } from "../../store";
 import { Heart, ListPlus, MoreHorizontal } from "lucide-react";
 import { useSearchParams } from "react-router";
@@ -24,10 +24,14 @@ const SongListItem = ({ song, songs }: TProps) => {
     ? parseInt(highlightedTrackIdStr)
     : null;
 
-  const player = usePlayerState((s) => s.player);
+  const { player, playInfo } = usePlayerState();
 
   const handleClick = async () => {
-    player.playSongs(songs, song.trackNumber - 1);
+    if (isPlaying) {
+      player.togglePlayPause();
+    } else {
+      player.playSongs(songs, song.trackNumber - 1);
+    }
   };
 
   useEffect(() => {
@@ -44,6 +48,7 @@ const SongListItem = ({ song, songs }: TProps) => {
   }, [song, highlightedTrackId, ref, hasScrolled]);
 
   const isHighlighted = !hasScrolled && song.id === highlightedTrackId;
+  const isPlaying = playInfo?.song.id === song.id;
 
   return (
     <div
@@ -60,18 +65,45 @@ const SongListItem = ({ song, songs }: TProps) => {
         className="text-center shrink-0 basis-[24px] cursor-pointer"
         onClick={handleClick}
       >
-        <span className="group-hover:hidden">{song.trackNumber}</span>
-        <IconPlayerPlay
-          className="hidden group-hover:block"
-          size={20}
-          fill="currentColor"
-        />
+        <span
+          className={clsx(
+            !isPlaying && "group-hover:hidden",
+            isPlaying && "hidden",
+          )}
+        >
+          {song.trackNumber}
+        </span>
+        <div className={clsx(isPlaying && "text-(--blue-11)")}>
+          {(!isPlaying || (isPlaying && playInfo?.isPaused)) && (
+            <IconPlayerPlay
+              className={clsx(!isPlaying && "hidden group-hover:block")}
+              size={20}
+              fill="currentColor"
+            />
+          )}
+
+          {isPlaying && playInfo && !playInfo.isPaused && (
+            <IconPlayerPause size={20} fill="currentColor" />
+          )}
+        </div>
       </div>
       <div className="overflow-hidden text-ellipsis text-nowrap cursor-default select-none tracking-tight">
-        <p className="">{song.title}</p>
+        <p className={clsx(isPlaying && "text-(--blue-11)")}>{song.title}</p>
         {song.artists.map((artist, index) => (
-          <span key={artist.id} className="text-(--gray-11)">
-            <Link to={`/artists/${artist.id}`} className="text-(--gray-11)!">
+          <span
+            key={artist.id}
+            className={clsx(
+              "text-(--gray-11)",
+              isPlaying && "text-(--blue-11)!",
+            )}
+          >
+            <Link
+              to={`/artists/${artist.id}`}
+              className={clsx(
+                "text-(--gray-11)",
+                isPlaying && "text-(--blue-11)!",
+              )}
+            >
               {artist.name}
             </Link>
             {index < song.artists.length - 1 && ", "}
