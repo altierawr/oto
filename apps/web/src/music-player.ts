@@ -1038,7 +1038,6 @@ export class MusicPlayer {
     }
 
     if (playlistIndex >= this.playlist.length) {
-      console.info("Reached end of playlist, can't append more");
       return;
     }
 
@@ -1316,6 +1315,7 @@ export class MusicPlayer {
     }
 
     while (
+      playlistIndex < this.playlist.length &&
       pe.segments[segmentIndex] &&
       (pe.lastSegmentIndex === null || segmentIndex <= pe.lastSegmentIndex)
     ) {
@@ -1330,7 +1330,6 @@ export class MusicPlayer {
     }
 
     if (playlistIndex >= this.playlist.length) {
-      console.warn("Playlist index outside of playlist range, can't fetch");
       return;
     }
 
