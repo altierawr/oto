@@ -19,7 +19,7 @@ const SongListItem = ({ song, songs }: TProps) => {
   const player = usePlayerState((s) => s.player);
 
   const handleClick = async () => {
-    player.playSongs(songs, song.trackNumber);
+    player.playSongs(songs, song.trackNumber - 1);
   };
 
   return (
