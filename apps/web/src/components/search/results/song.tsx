@@ -3,6 +3,8 @@ import SearchResult from ".";
 import type { Song } from "../../../types";
 import { getTidalCoverUrl } from "../../../utils/image";
 import { Fragment } from "react/jsx-runtime";
+import { CoverBlockVariant } from "../../music-blocks/cover-block";
+import { usePlayerState } from "../../../store";
 
 type TProps = {
   song: Song;
@@ -10,6 +12,17 @@ type TProps = {
 };
 
 const SongSearchResult = ({ song, onClose }: TProps) => {
+  const { player, playInfo } = usePlayerState();
+  const isPlaying = playInfo?.song.id === song.id;
+
+  const handlePlayClick = () => {
+    if (isPlaying) {
+      player.togglePlayPause();
+    } else {
+      player.playSongs([song], 0);
+    }
+  };
+
   return (
     <SearchResult
       primaryText={song.title}
@@ -31,6 +44,9 @@ const SongSearchResult = ({ song, onClose }: TProps) => {
       linkUrl={
         song.album?.id ? `/albums/${song.album.id}?track=${song.id}` : undefined
       }
+      coverBlockVariant={CoverBlockVariant.PLAY_ONLY}
+      isPlaying={isPlaying}
+      onPlayClick={handlePlayClick}
       onClose={onClose}
     />
   );

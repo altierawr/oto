@@ -8,6 +8,7 @@ import SongSearchResult from "./results/song";
 import PlaylistSearchResult from "./results/playlist";
 import TopHitSearchResult from "./results/top-hit";
 import { Search } from "lucide-react";
+import { useLocation } from "react-router";
 
 const SearchInput = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -18,6 +19,7 @@ const SearchInput = () => {
   );
   const [isFocused, setIsFocused] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const { pathname } = useLocation();
 
   const resultsListRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +55,10 @@ const SearchInput = () => {
     setIsFetching(true);
     setSearchTimeout(timeout);
   }, [searchValue]);
+
+  useEffect(() => {
+    setIsFocused(false);
+  }, [pathname]);
 
   const handleSearchValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);

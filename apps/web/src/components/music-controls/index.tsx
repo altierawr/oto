@@ -18,6 +18,7 @@ import { useEffect, useRef, useState, type MouseEventHandler } from "react";
 import useLatest from "../../utils/useLatest";
 import { getTidalCoverUrl } from "../../utils/image";
 import { Link } from "react-router";
+import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
 
 const MusicControls = () => {
   const playerState = usePlayerState();
@@ -104,29 +105,37 @@ const MusicControls = () => {
     generalState.setIsSongQueueVisible(!generalState.isSongQueueVisible);
   };
 
+  const playingSong = playerState.playInfo.song;
+
   return (
     <div className="w-full p-4 flex justify-between h-[100px] border-t border-t-(--gray-6)">
-      <div className="flex-1 flex gap-3">
-        <div
-          className="h-full aspect-square bg-cover rounded-lg"
-          style={{
-            backgroundImage: `url(${
-              playerState.playInfo.song.album?.cover
-                ? getTidalCoverUrl(playerState.playInfo.song.album.cover, 320)
-                : ""
-            })`,
-          }}
-        />
+      <div className="flex-1 flex gap-3 items-center">
+        {playingSong.album && (
+          <div className="h-full aspect-square">
+            <CoverBlock
+              variant={CoverBlockVariant.COVER_ONLY}
+              imageUrl={getTidalCoverUrl(playingSong.album.cover, 320)}
+              linkUrl={`/albums/${playingSong.album.id}`}
+            />
+          </div>
+        )}
 
         <div className="flex flex-col justify-center">
           <p className="font-bold text-sm line-clamp-2">
-            {playerState.playInfo.song.title}
+            {playingSong.album && (
+              <Link
+                to={`/albums/${playingSong.album.id}?track=${playingSong.id}`}
+              >
+                {playingSong.title}
+              </Link>
+            )}
+            {!playingSong.album && playingSong.title}
           </p>
           <p className="text-xs text-gray-11">
             {playerState.playInfo?.song.artists.map((artist, index) => (
               <span key={artist.id}>
                 <Link to={`/artists/${artist.id}`}>{artist.name}</Link>
-                {index < playerState.playInfo!.song.artists.length - 1 && ", "}
+                {index < playingSong.artists.length - 1 && ", "}
               </span>
             ))}
           </p>
@@ -172,10 +181,10 @@ const MusicControls = () => {
                     width: `${
                       ((playerState.playInfo.buffer.to -
                         playerState.playInfo.buffer.from) /
-                        playerState.playInfo.song.duration) *
+                        playingSong.duration) *
                       100
                     }%`,
-                    left: `${((playerState.playInfo.buffer.from - playerState.playInfo.seekOffset - (playerState.playInfo.timestampOffset || 0)) / playerState.playInfo.song.duration) * 100}%`,
+                    left: `${((playerState.playInfo.buffer.from - playerState.playInfo.seekOffset - (playerState.playInfo.timestampOffset || 0)) / playingSong.duration) * 100}%`,
                   }}
                   className="h-full absolute top-0 bg-(--blue-9)"
                 />
@@ -189,7 +198,7 @@ const MusicControls = () => {
                     ((playerState.playInfo.currentTime -
                       playerState.playInfo.seekOffset -
                       (playerState.playInfo.timestampOffset || 0)) /
-                      playerState.playInfo.song.duration) *
+                      playingSong.duration) *
                     100
                   }%`,
                 }}
@@ -197,7 +206,7 @@ const MusicControls = () => {
               />
             </div>
           </div>
-          <p>{formatDuration(playerState.playInfo.song.duration, "digital")}</p>
+          <p>{formatDuration(playingSong.duration, "digital")}</p>
         </div>
       </div>
       <div className="flex-1 flex justify-end items-center gap-6">

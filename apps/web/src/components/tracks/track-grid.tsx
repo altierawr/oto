@@ -1,12 +1,9 @@
 import clsx from "clsx";
 import type { Song } from "../../types";
-import { getTidalCoverUrl } from "../../utils/image";
-import { Link } from "react-router";
 import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "design";
-import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
-import { usePlayerState } from "../../store";
+import TrackGridItem from "./item";
 
 type TProps = {
   tracks: Song[];
@@ -15,7 +12,6 @@ type TProps = {
 };
 
 const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
-  const player = usePlayerState((s) => s.player);
   const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } =
     useHorizontalScrollSnap({
       id: "artistTopTracks",
@@ -55,46 +51,13 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
         className="grid grid-flow-col auto-cols-[320px] grid-rows-[58px_58px_58px] gap-x-5 w-full overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-start content-start"
       >
         {tracks.map((track, idx) => (
-          <div
+          <TrackGridItem
             key={track.id}
-            className={clsx(
-              "flex gap-3 items-center border-t border-(--gray-3) py-2 snap-start",
-              ((idx + 1) % 3 === 0 ||
-                (idx === tracks.length - 1 && !isLoading)) &&
-                "border-b",
-            )}
-          >
-            <div className="h-[40px] aspect-square">
-              <CoverBlock
-                variant={CoverBlockVariant.PLAY_ONLY}
-                imageUrl={
-                  track.album?.cover
-                    ? getTidalCoverUrl(track.album.cover, 80)
-                    : ""
-                }
-                onPlayClick={() => player.playSongs(tracks, idx)}
-              />
-            </div>
-
-            <div className="flex-1">
-              <p className="font-normal line-clamp-1 text-sm">
-                {track.album && (
-                  <Link to={`/albums/${track.album.id}?track=${track.id}`}>
-                    {track.title}
-                  </Link>
-                )}
-                {!track.album && track.title}
-              </p>
-              <p className="text-xs text-(--gray-11) line-clamp-1">
-                {track.artists.map((artist, index) => (
-                  <span key={artist.id}>
-                    <Link to={`/artists/${artist.id}`}>{artist.name}</Link>
-                    {index < track.artists.length - 1 && ", "}
-                  </span>
-                ))}
-              </p>
-            </div>
-          </div>
+            track={track}
+            tracks={tracks}
+            trackIndex={idx}
+            isLoading={isLoading}
+          />
         ))}
 
         {isLoading &&

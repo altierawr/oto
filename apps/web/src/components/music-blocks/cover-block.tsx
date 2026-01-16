@@ -1,7 +1,8 @@
 import clsx from "clsx";
-import { MoreVertical, Play } from "lucide-react";
-import type { MouseEventHandler } from "react";
+import { MoreVertical, Pause, Play } from "lucide-react";
+import type { MouseEvent, MouseEventHandler } from "react";
 import { Link } from "react-router";
+import { usePlayerState } from "../../store";
 
 export enum CoverBlockVariant {
   COVER_ONLY,
@@ -13,33 +14,71 @@ type TProps = {
   variant: CoverBlockVariant;
   imageUrl: string;
   linkUrl?: string;
-  onPlayClick?: () => void;
+  isPlaying?: boolean;
+  onPlayClick?: (e: MouseEvent) => void;
 };
 
-const CoverBlock = ({ variant, imageUrl, linkUrl, onPlayClick }: TProps) => {
+const CoverBlock = ({
+  variant,
+  imageUrl,
+  linkUrl,
+  isPlaying,
+  onPlayClick,
+}: TProps) => {
+  const { playInfo } = usePlayerState();
+
   if (variant === CoverBlockVariant.FULL && linkUrl === undefined) {
     console.error("CoverBlock variant is FULL but link url is missing!");
   }
 
   const handlePlayClick: MouseEventHandler = (e) => {
     e.preventDefault();
-    onPlayClick?.();
+    e.stopPropagation();
+    onPlayClick?.(e);
   };
 
   return (
     <>
       {variant === CoverBlockVariant.COVER_ONLY && (
-        <Block imageUrl={imageUrl} />
+        <>
+          {linkUrl && (
+            <Link to={linkUrl}>
+              <div className="w-full aspect-square relative rounded-md overflow-hidden cursor-pointer group">
+                <Block imageUrl={imageUrl} />
+                <div
+                  className={clsx(
+                    "absolute w-full h-full inset-0 opacity-0 hover:opacity-100 bg-[rgba(0,0,0,0.4)] transition-opacity",
+                    isPlaying && "opacity-100",
+                  )}
+                />
+              </div>
+            </Link>
+          )}
+
+          {!linkUrl && <Block imageUrl={imageUrl} />}
+        </>
       )}
 
       {variant === CoverBlockVariant.PLAY_ONLY && (
         <div
           className="w-full aspect-square relative rounded-md overflow-hidden cursor-pointer group"
           onClick={handlePlayClick}
+          onDoubleClick={(e) => e.stopPropagation()}
         >
           <Block imageUrl={imageUrl} showHoverZoom />
-          <div className="absolute w-full h-full inset-0 opacity-0 hover:opacity-100 bg-[rgba(0,0,0,0.6)] transition-opacity grid place-items-center">
-            <Play size={18} fill="currentColor" />
+          <div
+            className={clsx(
+              "absolute w-full h-full inset-0 opacity-0 hover:opacity-100 bg-[rgba(0,0,0,0.6)] transition-opacity grid place-items-center",
+              isPlaying && "opacity-100",
+            )}
+          >
+            {(!isPlaying || (isPlaying && playInfo?.isPaused)) && (
+              <Play size={18} fill="currentColor" />
+            )}
+
+            {isPlaying && playInfo && !playInfo.isPaused && (
+              <Pause size={18} fill="currentColor" />
+            )}
           </div>
         </div>
       )}
