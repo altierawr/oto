@@ -101,7 +101,7 @@ const ArtistPage = () => {
               data.artist.albums?.[1]?.cover ||
                 data.artist.picture ||
                 data.artist.selectedAlbumCoverFallback,
-              1280,
+              80,
             )})`,
           }}
         >
@@ -117,7 +117,7 @@ const ArtistPage = () => {
             className="w-[180px] aspect-square rounded-[45px] border-4 border-(--gray-0) bg-cover ml-6 -mt-[40px] z-0"
             style={{
               backgroundImage: data.artist.picture
-                ? `url(${getTidalCoverUrl(data.artist.picture, 320)})`
+                ? `url(${getTidalCoverUrl(data.artist.picture, 1280)})`
                 : `url(${getTidalCoverUrl(data.artist.selectedAlbumCoverFallback, 1280)})`,
             }}
           />
