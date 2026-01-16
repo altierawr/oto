@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import type { Song } from "../../types";
 import { formatDuration } from "../../utils/utils";
 import { IconPlayerPlay } from "@tabler/icons-react";
-import { usePlayerState, useScrollStore } from "../../store";
+import { usePlayerState } from "../../store";
 import { Heart, ListPlus, MoreHorizontal } from "lucide-react";
 import { useSearchParams } from "react-router";
 import clsx from "clsx";
@@ -18,7 +18,6 @@ const SongListItem = ({ song, songs }: TProps) => {
   const [searchParams] = useSearchParams();
   const [hasScrolled, setHasScrolled] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const scrollRef = useScrollStore((state) => state.scrollRef);
 
   const highlightedTrackIdStr = searchParams.get("track");
   const highlightedTrackId = highlightedTrackIdStr
@@ -32,12 +31,7 @@ const SongListItem = ({ song, songs }: TProps) => {
   };
 
   useEffect(() => {
-    if (
-      highlightedTrackId === song.id &&
-      scrollRef?.current &&
-      ref.current &&
-      !hasScrolled
-    ) {
+    if (highlightedTrackId === song.id && ref.current && !hasScrolled) {
       ref.current.scrollIntoView({
         behavior: "smooth",
         block: "center",
@@ -47,7 +41,7 @@ const SongListItem = ({ song, songs }: TProps) => {
         setHasScrolled(true);
       }, 15000);
     }
-  }, [song, highlightedTrackId, scrollRef, ref, hasScrolled]);
+  }, [song, highlightedTrackId, ref, hasScrolled]);
 
   const isHighlighted = !hasScrolled && song.id === highlightedTrackId;
 
