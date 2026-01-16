@@ -28,7 +28,9 @@ const SongSearchResult = ({ song, onClose }: TProps) => {
         </>
       }
       imageUrl={song.album?.cover ? getTidalCoverUrl(song.album.cover, 80) : ""}
-      linkUrl={song.album?.id ? `/albums/${song.album.id}` : undefined}
+      linkUrl={
+        song.album?.id ? `/albums/${song.album.id}?track=${song.id}` : undefined
+      }
       onClose={onClose}
     />
   );

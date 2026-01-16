@@ -1,14 +1,13 @@
 import { Link } from "react-router";
 import type { Song } from "../../types";
 import { formatDuration } from "../../utils/utils";
-import {
-  IconDots,
-  IconHeart,
-  IconPlayerPlay,
-  IconPlus,
-} from "@tabler/icons-react";
-import { usePlayerState } from "../../store";
-import { Heart, ListPlus, MoreHorizontal, Plus } from "lucide-react";
+import { IconPlayerPlay } from "@tabler/icons-react";
+import { usePlayerState, useScrollStore } from "../../store";
+import { Heart, ListPlus, MoreHorizontal } from "lucide-react";
+import { useSearchParams } from "react-router";
+import clsx from "clsx";
+import { useEffect, useRef, useState } from "react";
+import styles from "./song-list.module.css";
 
 type TProps = {
   song: Song;
@@ -16,16 +15,52 @@ type TProps = {
 };
 
 const SongListItem = ({ song, songs }: TProps) => {
+  const [searchParams] = useSearchParams();
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const scrollRef = useScrollStore((state) => state.scrollRef);
+
+  const highlightedTrackIdStr = searchParams.get("track");
+  const highlightedTrackId = highlightedTrackIdStr
+    ? parseInt(highlightedTrackIdStr)
+    : null;
+
   const player = usePlayerState((s) => s.player);
 
   const handleClick = async () => {
     player.playSongs(songs, song.trackNumber - 1);
   };
 
+  useEffect(() => {
+    if (
+      highlightedTrackId === song.id &&
+      scrollRef?.current &&
+      ref.current &&
+      !hasScrolled
+    ) {
+      ref.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      setTimeout(() => {
+        setHasScrolled(true);
+      }, 15000);
+    }
+  }, [song, highlightedTrackId, scrollRef, ref, hasScrolled]);
+
+  const isHighlighted = !hasScrolled && song.id === highlightedTrackId;
+
   return (
     <div
-      className="rounded-md py-2 hover:bg-(--gray-2) active:bg-(--gray-3) group text-sm"
+      ref={ref}
+      className={clsx(
+        "rounded-md py-2 group text-sm outline-2 outline-transparent",
+        styles.songListItem,
+        isHighlighted && "bg-(--gray-4)! outline-(--gray-7)!",
+      )}
       onDoubleClick={handleClick}
+      data-is-highlighted={isHighlighted}
     >
       <div
         className="text-center shrink-0 basis-[24px] cursor-pointer"

@@ -79,7 +79,9 @@ const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
             <div className="flex-1">
               <p className="font-normal line-clamp-1 text-sm">
                 {track.album && (
-                  <Link to={`/albums/${track.album?.id}`}>{track.title}</Link>
+                  <Link to={`/albums/${track.album.id}?track=${track.id}`}>
+                    {track.title}
+                  </Link>
                 )}
                 {!track.album && track.title}
               </p>
