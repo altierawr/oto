@@ -21,7 +21,9 @@ const SongQueueItem = ({ song }: TProps) => {
       <div className="flex flex-col justify-center">
         <p className="font-normal">{song.title}</p>
         {song.artists.map((artist) => (
-          <Link to={`/artists/${artist.id}`}>{artist.name}</Link>
+          <Link key={artist.id} to={`/artists/${artist.id}`}>
+            {artist.name}
+          </Link>
         ))}
       </div>
     </div>
