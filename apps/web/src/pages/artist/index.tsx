@@ -140,7 +140,7 @@ const ArtistPage = () => {
             <div className="flex gap-3 items-center">
               <Button variant="solid" color="blue" size="sm">
                 <Play size={16} fill="currentColor" />
-                Play Mix
+                Play
               </Button>
               <IconButton color="gray" variant="soft" icon={Heart} size="sm" />
               <IconButton color="gray" variant="soft" icon={Share} size="sm" />
