@@ -8,16 +8,16 @@ type PlaylistSong = {
   initSegment?: Uint8Array<ArrayBuffer>;
   segments: (
     | {
-      data: Uint8Array<ArrayBuffer>;
-      start: number;
-      end: number;
-      duration: number;
-      bufferInfo?: {
+        data: Uint8Array<ArrayBuffer>;
         start: number;
         end: number;
         duration: number;
-      };
-    }
+        bufferInfo?: {
+          start: number;
+          end: number;
+          duration: number;
+        };
+      }
     | undefined
   )[];
   lastSegmentIndex: number | null;
@@ -43,6 +43,7 @@ export class MusicPlayer {
   #isBufferOperationsLocked = false;
   #isFetchOperationsLocked = false;
   #isResetting = false;
+  #volume = 0.2;
 
   constructor() {
     this.playlist = [];
@@ -59,8 +60,8 @@ export class MusicPlayer {
     const promise = this.#trackJumpsQueue.then(operation);
 
     this.#trackJumpsQueue = promise.then(
-      () => { },
-      () => { },
+      () => {},
+      () => {},
     );
 
     return promise;
@@ -70,8 +71,8 @@ export class MusicPlayer {
     const promise = this.#bufferOperationsQueue.then(operation);
 
     this.#bufferOperationsQueue = promise.then(
-      () => { },
-      () => { },
+      () => {},
+      () => {},
     );
 
     return promise;
@@ -81,8 +82,8 @@ export class MusicPlayer {
     const promise = this.#segmentFetchQueue.then(operation);
 
     this.#segmentFetchQueue = promise.then(
-      () => { },
-      () => { },
+      () => {},
+      () => {},
     );
 
     return promise;
@@ -123,7 +124,7 @@ export class MusicPlayer {
     this.#mediaSource = new MediaSource();
 
     this.#audio.src = URL.createObjectURL(this.#mediaSource);
-    this.#audio.volume = 0.03;
+    this.setVolume(this.#volume);
     this.#audio.autoplay = true;
 
     this.#mediaSource.addEventListener("sourceopen", () => {
@@ -168,19 +169,6 @@ export class MusicPlayer {
           buffer: this.#getBufferedRange(),
         },
       });
-    });
-
-    this.#audio.addEventListener("volumechange", () => {
-      const state = usePlayerState.getState().playInfo;
-
-      if (state) {
-        usePlayerState.setState({
-          playInfo: {
-            ...state,
-            volume: this.#audio.volume,
-          },
-        });
-      }
     });
 
     this.#audio.addEventListener("waiting", () => {
@@ -238,7 +226,8 @@ export class MusicPlayer {
   }
 
   setVolume(volume: number) {
-    this.#audio.volume = volume;
+    this.#volume = volume;
+    this.#audio.volume = Math.pow(volume, 2.5);
 
     const state = usePlayerState.getState().playInfo;
 
@@ -293,29 +282,29 @@ export class MusicPlayer {
     usePlayerState.setState({
       playInfo: existingPlayInfo
         ? {
-          ...existingPlayInfo,
-          volume: this.#audio.volume,
-          isMuted: this.#audio.muted,
-          timestampOffset: this.playlist[index].timestampOffset,
-          seekOffset: this.playlist[index].seekOffset,
-          song: this.playlist[index].song,
-          playlistIndex: index,
-          currentTime: this.#audio.currentTime,
-        }
+            ...existingPlayInfo,
+            volume: this.#volume,
+            isMuted: this.#audio.muted,
+            timestampOffset: this.playlist[index].timestampOffset,
+            seekOffset: this.playlist[index].seekOffset,
+            song: this.playlist[index].song,
+            playlistIndex: index,
+            currentTime: this.#audio.currentTime,
+          }
         : // TODO: some of these defaults are probably incorrect
-        {
-          currentTime: this.#audio.currentTime,
-          volume: this.#audio.volume,
-          isMuted: this.#audio.muted,
-          timestampOffset: 0,
-          seekOffset: 0,
-          isBuffering: true,
-          isPaused: false,
-          song: this.playlist[index].song,
-          buffer: this.#getBufferedRange(),
-          playlist: this.playlist.map((pe) => pe.song),
-          playlistIndex: index,
-        },
+          {
+            currentTime: this.#audio.currentTime,
+            volume: this.#volume,
+            isMuted: this.#audio.muted,
+            timestampOffset: 0,
+            seekOffset: 0,
+            isBuffering: true,
+            isPaused: false,
+            song: this.playlist[index].song,
+            buffer: this.#getBufferedRange(),
+            playlist: this.playlist.map((pe) => pe.song),
+            playlistIndex: index,
+          },
     });
   }
 
@@ -437,18 +426,18 @@ export class MusicPlayer {
   }
 
   async #clearBufferOperationsQueues() {
-    await this.#bufferOperationsQueue.catch(() => { });
+    await this.#bufferOperationsQueue.catch(() => {});
     this.#bufferOperationsQueue = Promise.resolve();
     await this.#waitForBufferReady();
   }
 
   async #clearFetchQueues() {
-    await this.#segmentFetchQueue.catch(() => { });
+    await this.#segmentFetchQueue.catch(() => {});
     this.#segmentFetchQueue = Promise.resolve();
   }
 
   async #clearTrackJumpQueues() {
-    await this.#trackJumpsQueue.catch(() => { });
+    await this.#trackJumpsQueue.catch(() => {});
     this.#trackJumpsQueue = Promise.resolve();
   }
 
@@ -1209,9 +1198,9 @@ export class MusicPlayer {
     const initResp =
       segment === 0
         ? fetch(
-          `http://localhost:3003/v1/streams/${streamId}/segments/init.mp4`,
-          { cache: "no-store", headers: { "Cache-Control": "no-cache" } },
-        )
+            `http://localhost:3003/v1/streams/${streamId}/segments/init.mp4`,
+            { cache: "no-store", headers: { "Cache-Control": "no-cache" } },
+          )
         : null;
 
     const segmentResp = fetch(
@@ -1307,7 +1296,7 @@ export class MusicPlayer {
       this.#findSegmentIndexInPlaylistEntry(
         playlistIndex,
         options?.position ??
-        this.#audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0),
+          this.#audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0),
       );
 
     if (segmentIndex === null) {
