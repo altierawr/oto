@@ -8,6 +8,7 @@ import { useSearchParams } from "react-router";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import styles from "./song-list.module.css";
+import { Menu } from "design";
 
 type TProps = {
   song: Song;
@@ -16,6 +17,7 @@ type TProps = {
 
 const SongListItem = ({ song, songs }: TProps) => {
   const [searchParams] = useSearchParams();
+  const [isActive, setIsActive] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -47,6 +49,10 @@ const SongListItem = ({ song, songs }: TProps) => {
     }
   }, [song, highlightedTrackId, ref, hasScrolled]);
 
+  const handleAddToQueueClick = () => {
+    player.addToQueue(song);
+  };
+
   const isHighlighted = !hasScrolled && song.id === highlightedTrackId;
   const isPlaying = playInfo?.song.id === song.id;
 
@@ -58,8 +64,12 @@ const SongListItem = ({ song, songs }: TProps) => {
         styles.songListItem,
         isHighlighted && "bg-(--gray-4)! outline-(--gray-7)!",
       )}
+      onMouseDown={() => setIsActive(true)}
+      onMouseLeave={() => setIsActive(false)}
+      onMouseUp={() => setIsActive(false)}
       onDoubleClick={handleClick}
       data-is-highlighted={isHighlighted}
+      data-is-active={isActive}
     >
       <div
         className="text-center shrink-0 basis-[24px] cursor-pointer"
@@ -113,27 +123,49 @@ const SongListItem = ({ song, songs }: TProps) => {
       <div className="cursor-default select-none">
         {formatDuration(song.duration, "digital")}
       </div>
-      <div className="flex items-center justify-end h-full">
-        <div className="h-full aspect-square grid place-items-center cursor-pointer hover:bg-(--gray-4) rounded-full">
-          <MoreHorizontal
-            size={20}
-            strokeWidth={1.5}
-            className="opacity-0 group-hover:opacity-100"
-          />
-        </div>
-        <div className="h-full aspect-square grid place-items-center cursor-pointer hover:bg-(--gray-4) rounded-full">
+      <div
+        className="flex items-center justify-end h-full"
+        onDoubleClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <Menu.Root>
+          <Menu.Trigger render={<ActionButton />}>
+            <MoreHorizontal
+              size={20}
+              strokeWidth={1.5}
+              className="opacity-0 group-hover:opacity-100"
+            />
+          </Menu.Trigger>
+          <Menu.Content>
+            <Menu.Item>Play Next</Menu.Item>
+            <Menu.Item onClick={handleAddToQueueClick}>Add to Queue</Menu.Item>
+            <Menu.Separator />
+            <Menu.Item>Favorite</Menu.Item>
+            <Menu.Item>Share</Menu.Item>
+          </Menu.Content>
+        </Menu.Root>
+        <ActionButton>
           {/* The left margin is to help visually center the icon (it's not symmetrical) */}
           <ListPlus
             size={18}
             strokeWidth={1.5}
             className="opacity-0 group-hover:opacity-100 ml-[3px]"
           />
-        </div>
-        <div className="h-full aspect-square grid place-items-center cursor-pointer hover:bg-(--gray-4) rounded-full">
+        </ActionButton>
+        <ActionButton>
           <Heart size={18} strokeWidth={1.5} />
-        </div>
+        </ActionButton>
       </div>
     </div>
+  );
+};
+
+const ActionButton = ({ ...props }) => {
+  return (
+    <button
+      className="h-full aspect-square grid place-items-center cursor-pointer hover:bg-(--gray-4) active:bg-(--gray-5) rounded-full outline-0"
+      {...props}
+    />
   );
 };
 

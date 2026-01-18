@@ -28,13 +28,13 @@
     }
 
     &[data-is-highlighted="true"] {
-        &:active::before {
+        &[data-is-active="true"]::before {
             background-color: var(--gray-5) !important;
         }
     }
 
     &[data-is-highlighted="false"] {
-        &:active::before {
+        &[data-is-active="true"]::before {
             background-color: var(--gray-3) !important;
         }
 

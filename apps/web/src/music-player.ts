@@ -362,6 +362,18 @@ export class MusicPlayer {
     this.#isResetting = false;
   }
 
+  #getInitialPlaylistSongFromSong(song: Song): PlaylistSong {
+    return {
+      song,
+      segments: [],
+      timestampOffset: null,
+      lastSegmentIndex: null,
+      streamId: null,
+      seekOffset: 0,
+      accurateDuration: null,
+    };
+  }
+
   async playSongs(songs: Song[], index: number) {
     this.#audio.pause();
     await this.#reset();
@@ -369,16 +381,11 @@ export class MusicPlayer {
     console.log("Play songs\n\n\n\n\n\n\n");
 
     this.#lastPlayingSongIndex = index;
-    this.playlist = songs.map((s, i) => ({
-      song: s,
-      segments: [],
-      timestampOffset: i === index ? 0 : null,
-      lastSegmentIndex: null,
-      streamId: null,
-      segmentBufferIndex: 0,
-      seekOffset: 0,
-      accurateDuration: null,
-    }));
+    this.playlist = songs.map((song) =>
+      this.#getInitialPlaylistSongFromSong(song),
+    );
+
+    this.playlist[index].timestampOffset = 0;
 
     this.#handleTrackChange(index);
 
@@ -679,6 +686,10 @@ export class MusicPlayer {
     return this.#enqueueTrackJump(async () => {
       await this.#jumpTrack(1);
     });
+  }
+
+  addToQueue(song: Song) {
+    this.playlist.push(this.#getInitialPlaylistSongFromSong(song));
   }
 
   #findSegmentIndexInPlaylistEntry(playlistIndex: number, position: number) {
