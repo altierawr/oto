@@ -1385,13 +1385,17 @@ export class MusicPlayer {
             "has no data",
           );
 
+          console.warn("Stream id is", pe.streamId);
+
           if (!result.isLastSegment) {
             console.error("It isn't the last segment either");
+            resolve();
             return;
           }
 
           if (segmentIndex === 0) {
             console.error("Segment index is 0");
+            resolve();
             return;
           }
 
