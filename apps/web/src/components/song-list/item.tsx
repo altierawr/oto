@@ -49,6 +49,10 @@ const SongListItem = ({ song, songs }: TProps) => {
     }
   }, [song, highlightedTrackId, ref, hasScrolled]);
 
+  const handlePlayNextClick = () => {
+    player.playNext(song);
+  };
+
   const handleAddToQueueClick = () => {
     player.addToQueue(song);
   };
@@ -137,7 +141,7 @@ const SongListItem = ({ song, songs }: TProps) => {
             />
           </Menu.Trigger>
           <Menu.Content>
-            <Menu.Item>Play Next</Menu.Item>
+            <Menu.Item onClick={handlePlayNextClick}>Play Next</Menu.Item>
             <Menu.Item onClick={handleAddToQueueClick}>Add to Queue</Menu.Item>
             <Menu.Separator />
             <Menu.Item>Favorite</Menu.Item>
