@@ -591,7 +591,7 @@ export class MusicPlayer {
     console.log("Segment not in buffer but in memory");
 
     if (direction > 0 && te.timestampOffset === null) {
-      console.warn(
+      console.log(
         "Jumping to next track but it doesn't have timestamp offset, need to reset buffer and offsets",
       );
 
@@ -716,6 +716,32 @@ export class MusicPlayer {
       return;
     }
 
+    // Check if the existing next track (if any) has segments already in the buffer
+    const existingNextTrack = this.playlist[currentIndex + 1];
+    const nextTrackHasBufferedSegments =
+      existingNextTrack?.segments[0]?.bufferInfo !== undefined;
+
+    if (nextTrackHasBufferedSegments) {
+      // The next track already has segments in the buffer (we're near end of current track).
+      // To avoid disrupting playback, insert the new song at position currentIndex + 2.
+      // The new song will play after the already-buffered next track.
+      console.log(
+        "Next track already has buffered segments, inserting at position",
+        currentIndex + 2,
+      );
+
+      const insertIndex = currentIndex + 2;
+      const newPlaylistSong = this.#getInitialPlaylistSongFromSong(song);
+      this.playlist.splice(insertIndex, 0, newPlaylistSong);
+
+      // Update timestamp offsets for tracks after the current one
+      this.#updateTrackTimestampOffsets(currentIndex);
+
+      this.#updatePlayerStatePlaylist();
+      return;
+    }
+
+    // Normal case: next track is not buffered yet, insert at currentIndex + 1
     const insertIndex = currentIndex + 1;
 
     this.#lockAutomaticBufferOperations();
@@ -723,7 +749,7 @@ export class MusicPlayer {
     await this.#clearBufferOperationsQueues();
     await this.#clearFetchQueues();
 
-    // Clear buffered segments for all tracks after the current one
+    // Clear buffered segments for all tracks after the current one (if any)
     for (let i = insertIndex; i < this.playlist.length; i++) {
       await this.#removeTrackSegmentsFromBuffer(i);
 
@@ -739,8 +765,13 @@ export class MusicPlayer {
 
     this.#updatePlayerStatePlaylist();
 
-    // Start fetching the first segment of the new next track
-    this.#maybeFetchNextSegment({
+    // Fetch and load the first segment of the new next track
+    await this.#maybeFetchNextSegment({
+      playlistIndex: insertIndex,
+      segmentIndex: 0,
+      force: true,
+    });
+    await this.#maybeLoadNextSegment({
       playlistIndex: insertIndex,
       segmentIndex: 0,
       force: true,
@@ -1109,6 +1140,13 @@ export class MusicPlayer {
       return;
     }
 
+    // Store the starting track info to check proximity to track end
+    const startingPe = this.playlist[playlistIndex];
+    const startingTrackEnd =
+      (startingPe.timestampOffset || 0) +
+      startingPe.seekOffset +
+      (startingPe.accurateDuration || startingPe.song.duration);
+
     // Let's not append segments that are already in the buffer (might happen due to seeking)
     while (
       playlistIndex < this.playlist.length &&
@@ -1122,6 +1160,14 @@ export class MusicPlayer {
         pe.lastSegmentIndex !== null &&
         segmentIndex > pe.lastSegmentIndex
       ) {
+        // Only advance to the next track if we're within 0.7s of the current track's end
+        // This prevents pre-decoding of next track audio too early, which would cause
+        // issues if playNext is called near the end of the current track.
+        const timeUntilTrackEnd = startingTrackEnd - this.#audio.currentTime;
+        if (!options?.force && timeUntilTrackEnd > 0.7) {
+          return;
+        }
+
         playlistIndex++;
         pe = this.playlist[playlistIndex];
         segmentIndex = 0;
