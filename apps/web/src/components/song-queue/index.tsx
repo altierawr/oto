@@ -44,14 +44,14 @@ const SongQueue = () => {
         onClick={(e) => e.stopPropagation()}
       >
         {isVisible}
-        <div className="w-full h-full bg-(--gray-2) rounded-md grid border border-(--gray-6)">
+        <div className="w-full h-full bg-(--gray-2) rounded-md grid content-start border border-(--gray-6)">
           <div className="p-5">
             <h2 className="text-(--gray-12) text-lg font-black tracking-wide">
               Queue
             </h2>
           </div>
 
-          <div className="flex-1 overflow-y-auto grid px-5">
+          <div className="flex-1 overflow-y-auto grid content-start px-5">
             {playerState.player.playlist.length === 0 && <p>Queue empty</p>}
 
             {playerState.playInfo?.playlistIndex !== undefined && (
