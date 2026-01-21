@@ -630,7 +630,7 @@ export class MusicPlayer {
 
   async #resetPlaylistEntry(index: number) {
     const streamId = this.playlist[index].streamId;
-    if (streamId !== null) {
+    if (streamId) {
       fetch(`http://localhost:3003/v1/streams/${streamId}/end`)
         .then(() => {
           console.info(
