@@ -258,7 +258,6 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 
 	if ss != "" {
 		args = append([]string{"-ss", fmt.Sprintf("%ss", ss)}, args...)
-		// args = append(args, []string{"-output_ts_offset", ss}...)
 	}
 
 	args = append(args, filepath.Join(tempDir, "index.m3u8"))
