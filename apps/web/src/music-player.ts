@@ -633,16 +633,14 @@ export class MusicPlayer {
   }
 
   async #resetPlaylistEntry(index: number) {
-    const streamId = this.playlist[index].streamId;
-    if (streamId) {
-      fetch(`http://localhost:3003/v1/streams/${streamId}/end`)
+    const pe = { ...this.playlist[index] };
+    if (pe && pe.streamId) {
+      fetch(`http://localhost:3003/v1/streams/${pe.streamId}/end`)
         .then(() => {
-          console.info(
-            `Ended stream ${streamId} (song ${this.playlist[index].song.title})`,
-          );
+          console.info(`Ended stream ${pe.streamId} (song ${pe.song.title})`);
         })
         .catch((err) => {
-          console.error("Error ending stream", streamId, ":", err);
+          console.error("Error ending stream", pe.streamId, ":", err);
         });
     }
 
