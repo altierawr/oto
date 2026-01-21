@@ -31,6 +31,8 @@ type TPlayerState = {
     seekOffset: number;
     playlist: MusicPlayerSong[];
     playlistIndex: number;
+    isShuffleEnabled: boolean;
+    isRepeatEnabled: boolean;
   };
 };
 

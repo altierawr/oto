@@ -2,8 +2,10 @@ import { usePlayerState } from "./store";
 import * as mp4box from "mp4box";
 
 import type { Song, StreamResponse, SeekResponse } from "./types";
+import { shuffleArray } from "./utils/utils";
 
 type PlaylistSong = {
+  id: string;
   song: Song;
   initSegment?: Uint8Array<ArrayBuffer>;
   segments: (
@@ -44,6 +46,9 @@ export class MusicPlayer {
   #isFetchOperationsLocked = false;
   #isResetting = false;
   #volume = 0.2;
+  #isShuffleEnabled = false;
+  #isRepeatEnabled = false;
+  #originalPlaylist: PlaylistSong[] | null = null;
 
   constructor() {
     this.playlist = [];
@@ -244,6 +249,159 @@ export class MusicPlayer {
     }
   }
 
+  async toggleShuffle() {
+    this.#isShuffleEnabled = !this.#isShuffleEnabled;
+
+    this.#lockAutomaticBufferOperations();
+    this.#lockFetchOperations();
+    await this.#clearFetchQueues();
+    if (this.#isShuffleEnabled) {
+      this.#enableShuffle();
+    } else {
+      this.#disableShuffle();
+    }
+    this.#unlockAutomaticBufferOperations();
+    this.#unlockFetchOperations();
+
+    this.#notifyShuffleRepeatStateChange();
+  }
+
+  toggleRepeat() {
+    this.#isRepeatEnabled = !this.#isRepeatEnabled;
+    this.#notifyShuffleRepeatStateChange();
+
+    if (this.#isRepeatEnabled) {
+      this.#enableRepeat();
+    }
+  }
+
+  #enableRepeat() {
+    const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
+
+    if (currentIndex !== null && currentIndex > 0) {
+      const lastPe = this.playlist[this.playlist.length - 1];
+
+      if (
+        lastPe &&
+        lastPe.timestampOffset !== null &&
+        lastPe.accurateDuration
+      ) {
+        this.playlist[0].timestampOffset =
+          lastPe.timestampOffset + lastPe.seekOffset + lastPe.accurateDuration;
+      }
+    }
+  }
+
+  #notifyShuffleRepeatStateChange() {
+    const state = usePlayerState.getState().playInfo;
+    if (state) {
+      usePlayerState.setState({
+        playInfo: {
+          ...state,
+          isShuffleEnabled: this.#isShuffleEnabled,
+          isRepeatEnabled: this.#isRepeatEnabled,
+          playlist: this.playlist.map((pe) => pe.song),
+          playlistIndex: this.#getCurrentlyPlayingSongIndex() || 0,
+        },
+      });
+    }
+  }
+
+  #enableShuffle() {
+    const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
+    if (currentIndex === null) return;
+
+    // Snapshot original playlist
+    this.#originalPlaylist = [...this.playlist];
+
+    const currentEntry = this.playlist[currentIndex];
+
+    // Check if next song is buffered
+    let nextEntry: PlaylistSong | null = null;
+    if (currentIndex + 1 < this.playlist.length) {
+      const potentialNext = this.playlist[currentIndex + 1];
+      if (
+        potentialNext.segments.length > 0 &&
+        potentialNext.segments[0]?.bufferInfo
+      ) {
+        nextEntry = potentialNext;
+      }
+    }
+
+    const otherEntries = this.playlist.filter(
+      (entry) => entry !== currentEntry && entry !== nextEntry,
+    );
+
+    const shuffledEntries = shuffleArray(otherEntries);
+
+    // Reconstruct playlist: Current -> (Next) -> Shuffled
+    this.playlist = [currentEntry];
+    if (nextEntry) {
+      this.playlist.push(nextEntry);
+    }
+    this.playlist.push(...shuffledEntries);
+
+    // Update state to match new reality
+    this.#lastPlayingSongIndex = 0;
+
+    // Recalculate offsets for the new order
+    // We keep the offset of the current track (it's playing!)
+    // We null out others to force recalculation if needed
+    for (let i = 1; i < this.playlist.length; i++) {
+      this.playlist[i].timestampOffset = null;
+    }
+
+    // Immediately update offsets for the sequence
+    this.#updateTrackTimestampOffsets(0);
+  }
+
+  #disableShuffle() {
+    if (!this.#originalPlaylist) return;
+
+    const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
+    if (currentIndex === null) {
+      // Fallback (unlikely)
+      this.playlist = this.#originalPlaylist;
+      this.#originalPlaylist = null;
+      return;
+    }
+
+    const currentEntry = this.playlist[currentIndex];
+
+    this.playlist = this.#originalPlaylist;
+    this.#originalPlaylist = null;
+
+    // Find where the current song is in the original playlist
+    const newIndex = this.playlist.findIndex(
+      (item) => item.id === currentEntry.id,
+    );
+    if (newIndex !== -1) {
+      this.#lastPlayingSongIndex = newIndex;
+      // Keep current entry's timestampOffset as is.
+      // Nuke offsets before it (they are technically invalid in timeline now)
+      for (let i = 0; i < newIndex; i++) {
+        this.playlist[i].timestampOffset = null;
+      }
+      // Nuke offsets after it and recalculate
+      for (let i = newIndex + 1; i < this.playlist.length; i++) {
+        this.playlist[i].timestampOffset = null;
+      }
+      this.#updateTrackTimestampOffsets(newIndex);
+    }
+  }
+
+  #getNextPlaylistIndex(currentIndex: number): number | null {
+    if (currentIndex + 1 < this.playlist.length) {
+      return currentIndex + 1;
+    }
+
+    if (this.#isRepeatEnabled && this.playlist.length > 0) {
+      return 0;
+    }
+
+    return null;
+  }
+
   #handleTrackChange(index: number) {
     if (index === this.#lastNotifiedTrackIndex) {
       return;
@@ -261,7 +419,8 @@ export class MusicPlayer {
     }
 
     nrSegments = 0;
-    for (let i = index - 1; i >= 0; i--) {
+    const nextIndex = this.#getNextPlaylistIndex(index);
+    for (let i = index - 1; i >= (nextIndex === 0 ? 1 : 0); i--) {
       const nrTrackSegments = this.playlist[i].segments.length;
       if (nrSegments > this.#fetchSizeForward) {
         this.#resetPlaylistEntry(i);
@@ -293,6 +452,8 @@ export class MusicPlayer {
             song: this.playlist[index].song,
             playlistIndex: index,
             currentTime: this.#audio.currentTime,
+            isShuffleEnabled: this.#isShuffleEnabled,
+            isRepeatEnabled: this.#isRepeatEnabled,
           }
         : // TODO: some of these defaults are probably incorrect
           {
@@ -307,6 +468,8 @@ export class MusicPlayer {
             buffer: this.#getBufferedRange(),
             playlist: this.playlist.map((pe) => pe.song),
             playlistIndex: index,
+            isShuffleEnabled: this.#isShuffleEnabled,
+            isRepeatEnabled: this.#isRepeatEnabled,
           },
     });
   }
@@ -367,6 +530,7 @@ export class MusicPlayer {
 
   #getInitialPlaylistSongFromSong(song: Song): PlaylistSong {
     return {
+      id: window.crypto.randomUUID(),
       song,
       segments: [],
       timestampOffset: null,
@@ -488,18 +652,35 @@ export class MusicPlayer {
   }
 
   async #updateTrackTimestampOffsets(startIndex: number) {
-    for (let i = startIndex; i < this.playlist.length - 1; i++) {
+    for (let i = startIndex; ; i++) {
+      // Stop if we've looped back around
+      if (
+        i === startIndex - 1 ||
+        (startIndex === 0 && i === this.playlist.length - 1)
+      ) {
+        return;
+      }
+
       const entry = this.playlist[i];
+      const nextIndex = this.#getNextPlaylistIndex(i);
+
+      if (nextIndex === null || nextIndex >= this.playlist.length) {
+        return;
+      }
+
+      if (!entry) {
+        return;
+      }
 
       if (
         entry.accurateDuration !== null &&
         entry.lastSegmentIndex !== null &&
         entry.timestampOffset !== null
       ) {
-        this.playlist[i + 1].timestampOffset =
+        this.playlist[nextIndex].timestampOffset =
           entry.timestampOffset + entry.accurateDuration + entry.seekOffset;
       } else {
-        this.playlist[i + 1].timestampOffset = null;
+        this.playlist[nextIndex].timestampOffset = null;
       }
     }
   }
@@ -513,18 +694,30 @@ export class MusicPlayer {
     }
 
     const targetIndex = playlistIndex + direction;
-    console.log("Jumping to", targetIndex);
 
     if (targetIndex < 0 || targetIndex >= this.playlist.length) {
       return;
     }
 
-    const pe = this.playlist[playlistIndex];
-    const te = this.playlist[targetIndex];
+    console.log("Jumping to", targetIndex);
+
+    let pe = this.playlist[playlistIndex];
+    let te = this.playlist[targetIndex];
     const segmentIndex =
       te.seekOffset > 0 || te.segments.length === 0 || !te.segments[0]
         ? null
         : 0;
+
+    // When jumping backwards let's just clear all the offsets because repeat functionality
+    // can be annoying otherwise (tracks behind can have higher offset than tracks forward)
+    if (direction < 0) {
+      for (let i = 0; i < this.playlist.length; i++) {
+        this.#resetPlaylistEntryOffsets(i);
+      }
+
+      pe = this.playlist[playlistIndex];
+      te = this.playlist[targetIndex];
+    }
 
     if (segmentIndex === null) {
       // Segment not found
@@ -536,12 +729,9 @@ export class MusicPlayer {
       await this.#clearBufferOperationsQueues();
       await this.#clearFetchQueues();
 
-      if (
-        direction < 0 ||
-        this.playlist[playlistIndex].lastSegmentIndex === null
-      ) {
+      if (this.playlist[playlistIndex].lastSegmentIndex === null) {
         for (let i = playlistIndex; i < this.playlist.length; i++) {
-          this.playlist[i].timestampOffset = null;
+          this.#resetPlaylistEntryOffsets(i);
         }
       }
 
@@ -702,11 +892,14 @@ export class MusicPlayer {
   }
 
   addToQueue(song: Song) {
-    this.playlist.push(this.#getInitialPlaylistSongFromSong(song));
+    const entry = this.#getInitialPlaylistSongFromSong(song);
+    this.playlist.push(entry);
+    if (this.#originalPlaylist) {
+      this.#originalPlaylist.push(entry);
+    }
   }
 
   async playNext(song: Song) {
-    console.log("Play next called");
     const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
 
     // If nothing is playing, just add to the beginning
@@ -771,14 +964,26 @@ export class MusicPlayer {
       segmentIndex: 0,
       force: true,
     });
-    await this.#maybeLoadNextSegment({
-      playlistIndex: insertIndex,
-      segmentIndex: 0,
-      force: true,
-    });
 
     this.#unlockAutomaticBufferOperations();
     this.#unlockFetchOperations();
+
+    // If we are shuffled, we should also insert this song into the original playlist
+    // so it doesn't disappear when we unshuffle.
+    // Try to find the current song in the original playlist and insert after it.
+    if (this.#originalPlaylist) {
+      const currentEntry = this.playlist[currentIndex];
+      const originalIndex = this.#originalPlaylist.findIndex(
+        (item) => item.id === currentEntry.id,
+      );
+      if (originalIndex !== -1) {
+        // Insert after current song in original playlist
+        this.#originalPlaylist.splice(originalIndex + 1, 0, newPlaylistSong);
+      } else {
+        // Fallback: append to end
+        this.#originalPlaylist.push(newPlaylistSong);
+      }
+    }
   }
 
   async #removeTrackSegmentsFromBuffer(playlistIndex: number) {
@@ -1041,7 +1246,15 @@ export class MusicPlayer {
     }
 
     let nrRemovedSegments = 0;
-    for (let i = currentIndex - 1; i <= currentIndex + 1; i++) {
+    const startIndex =
+      this.#isRepeatEnabled && currentIndex === 0
+        ? this.playlist.length - 1
+        : currentIndex - 1;
+    for (
+      let i = startIndex, count = 0;
+      count < 3 && i < this.playlist.length;
+      i = this.#getNextPlaylistIndex(i) ?? Number.MAX_SAFE_INTEGER, count++
+    ) {
       if (i < 0 || i >= this.playlist.length) {
         continue;
       }
@@ -1168,7 +1381,12 @@ export class MusicPlayer {
           return;
         }
 
-        playlistIndex++;
+        const nextIndex = this.#getNextPlaylistIndex(playlistIndex);
+        if (nextIndex === null) {
+          return;
+        }
+
+        playlistIndex = nextIndex;
         pe = this.playlist[playlistIndex];
         segmentIndex = 0;
       }
@@ -1329,7 +1547,12 @@ export class MusicPlayer {
         pe.lastSegmentIndex !== null &&
         segmentIndex > pe.lastSegmentIndex
       ) {
-        playlistIndex++;
+        const nextIndex = this.#getNextPlaylistIndex(playlistIndex);
+        if (nextIndex === null) {
+          break;
+        }
+
+        playlistIndex = nextIndex;
         pe = this.playlist[playlistIndex];
         segmentIndex = 0;
       }
@@ -1459,7 +1682,12 @@ export class MusicPlayer {
       segmentIndex++;
 
       if (pe.lastSegmentIndex && segmentIndex > pe.lastSegmentIndex) {
-        playlistIndex++;
+        const nextIndex = this.#getNextPlaylistIndex(playlistIndex);
+        if (nextIndex === null) {
+          return;
+        }
+
+        playlistIndex = nextIndex;
         segmentIndex = 0;
         pe = this.playlist[playlistIndex];
         continue;
@@ -1638,11 +1866,10 @@ export class MusicPlayer {
       this.playlist[playlistIndex].lastSegmentIndex = segmentIndex;
       this.playlist[playlistIndex].accurateDuration = endTime;
 
-      if (
-        playlistIndex + 1 < this.playlist.length &&
-        pe.timestampOffset !== null
-      ) {
-        this.playlist[playlistIndex + 1].timestampOffset =
+      const nextIndex = this.#getNextPlaylistIndex(playlistIndex);
+
+      if (nextIndex !== null && pe.timestampOffset !== null) {
+        this.playlist[nextIndex].timestampOffset =
           pe.timestampOffset + pe.seekOffset + endTime;
       }
     }

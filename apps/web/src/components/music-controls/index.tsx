@@ -1,8 +1,10 @@
 import {
+  IconArrowsShuffle,
   IconPlayerPause,
   IconPlayerPlay,
   IconPlayerSkipBack,
   IconPlayerSkipForward,
+  IconRepeat,
 } from "@tabler/icons-react";
 import {
   TextAlignJustify,
@@ -19,6 +21,7 @@ import useLatest from "../../utils/useLatest";
 import { getTidalCoverUrl } from "../../utils/image";
 import { Link } from "react-router";
 import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
+import clsx from "clsx";
 
 const MusicControls = () => {
   const playerState = usePlayerState();
@@ -91,6 +94,14 @@ const MusicControls = () => {
     playerState.player.seek(perc);
   };
 
+  const handleShuffleClick = () => {
+    playerState.player.toggleShuffle();
+  };
+
+  const handleRepeatClick = () => {
+    playerState.player.toggleRepeat();
+  };
+
   const handleMuteToggleClick = () => {
     playerState.player.toggleMute();
   };
@@ -143,6 +154,16 @@ const MusicControls = () => {
       </div>
       <div className="flex-1 flex flex-col gap-2">
         <div className="flex gap-4 justify-center w-full items-center">
+          <IconArrowsShuffle
+            size={20}
+            stroke={1.5}
+            onClick={handleShuffleClick}
+            className={clsx(
+              "cursor-pointer",
+              !playerState.playInfo?.isShuffleEnabled && "text-(--gray-11)",
+              playerState.playInfo?.isShuffleEnabled && "text-(--blue-11)",
+            )}
+          />
           <IconPlayerSkipBack
             size={20}
             stroke={1.5}
@@ -161,6 +182,16 @@ const MusicControls = () => {
             stroke={1.5}
             onClick={handleNextClick}
             className="cursor-pointer"
+          />
+          <IconRepeat
+            size={20}
+            stroke={1.5}
+            onClick={handleRepeatClick}
+            className={clsx(
+              "cursor-pointer",
+              !playerState.playInfo?.isRepeatEnabled && "text-(--gray-11)",
+              playerState.playInfo?.isRepeatEnabled && "text-(--blue-11)",
+            )}
           />
         </div>
 
