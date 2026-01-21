@@ -56,7 +56,7 @@ const ArtistPageOverview = () => {
           id="topSingles"
           title="Top Singles"
           albums={data.artist.topSingles}
-          viewAllUrl={`/artists/${data.artist.id}/singles`}
+          viewAllUrl={`/artists/${data.artist.id}/singles-eps`}
           showArtists={false}
           showDate={true}
         />
@@ -69,7 +69,7 @@ const ArtistPageOverview = () => {
           id="appearsOn"
           title="Appears on"
           albums={data.artist.appearsOn}
-          viewAllUrl={`/artists/${data.artist.id}/appears`}
+          viewAllUrl={`/artists/${data.artist.id}/appears-on`}
           showArtists={false}
           showDate={true}
         />
