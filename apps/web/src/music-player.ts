@@ -693,7 +693,15 @@ export class MusicPlayer {
       return;
     }
 
-    const targetIndex = playlistIndex + direction;
+    let targetIndex = playlistIndex + direction;
+
+    if (this.#isRepeatEnabled) {
+      if (targetIndex < 0) {
+        targetIndex = this.playlist.length - 1;
+      } else if (targetIndex >= this.playlist.length) {
+        targetIndex = 0;
+      }
+    }
 
     if (targetIndex < 0 || targetIndex >= this.playlist.length) {
       return;
