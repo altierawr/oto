@@ -567,6 +567,10 @@ export class MusicPlayer {
 
     this.#audio.currentTime = 0;
 
+    if (this.#isShuffleEnabled) {
+      this.#enableShuffle();
+    }
+
     await this.#waitForAudioCanPlay();
     this.#audio.play();
   }
