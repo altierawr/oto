@@ -4,13 +4,25 @@ import { getTidalCoverUrl } from "../../utils/image";
 import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
 import { useState } from "react";
 import clsx from "clsx";
+import { usePlayerState } from "../../store";
 
 type TProps = {
   song: Song;
+  index: number;
+  coverBlockVariant?: CoverBlockVariant;
 };
 
-const SongQueueItem = ({ song }: TProps) => {
+const SongQueueItem = ({
+  song,
+  index,
+  coverBlockVariant = CoverBlockVariant.PLAY_ONLY,
+}: TProps) => {
   const [isActive, setIsActive] = useState(false);
+  const { player } = usePlayerState();
+
+  const handlePlayClick = () => {
+    player.jumpToTrack(index);
+  };
 
   return (
     <div
@@ -27,8 +39,10 @@ const SongQueueItem = ({ song }: TProps) => {
         onMouseDown={(e) => e.stopPropagation()}
       >
         <CoverBlock
-          variant={CoverBlockVariant.PLAY_ONLY}
+          variant={coverBlockVariant}
           imageUrl={getTidalCoverUrl(song.album?.cover, 80)}
+          linkUrl={song.album ? `/albums/${song.album.id}` : undefined}
+          onPlayClick={handlePlayClick}
         />
       </div>
 

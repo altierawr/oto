@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useGeneralStore, usePlayerState } from "../../store";
 import SongQueueItem from "./item";
 import { Spacer } from "design";
+import { CoverBlockVariant } from "../music-blocks/cover-block";
 
 const SongQueue = () => {
   const playerState = usePlayerState();
@@ -60,8 +61,12 @@ const SongQueue = () => {
                     <h3 className="font-semibold">Previous tracks</h3>
                     {playerState.player.playlist
                       .slice(0, playerState.playInfo.playlistIndex)
-                      .map((pe) => (
-                        <SongQueueItem key={pe.song.id} song={pe.song} />
+                      .map((pe, index) => (
+                        <SongQueueItem
+                          key={pe.song.id}
+                          song={pe.song}
+                          index={index}
+                        />
                       ))}
                     <div className="min-h-5" />
                   </>
@@ -81,6 +86,8 @@ const SongQueue = () => {
                       playerState.playInfo.playlistIndex
                     ].song
                   }
+                  index={playerState.playInfo.playlistIndex}
+                  coverBlockVariant={CoverBlockVariant.COVER_ONLY}
                 />
 
                 <Spacer size="5" />
@@ -94,8 +101,14 @@ const SongQueue = () => {
                         playerState.playInfo.playlistIndex + 1,
                         playerState.player.playlist.length,
                       )
-                      .map((pe) => (
-                        <SongQueueItem key={pe.song.id} song={pe.song} />
+                      .map((pe, index) => (
+                        <SongQueueItem
+                          key={pe.song.id}
+                          song={pe.song}
+                          index={
+                            playerState.playInfo!.playlistIndex + 1 + index
+                          }
+                        />
                       ))}
                   </>
                 )}

@@ -687,8 +687,22 @@ export class MusicPlayer {
     }
   }
 
+  async jumpToTrack(index: number) {
+    return this.#enqueueTrackJump(async () => {
+      const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
+      if (currentIndex === null) {
+        return;
+      }
+
+      if (index < 0 || index >= this.playlist.length) {
+        return;
+      }
+
+      await this.#performTrackJump(index, index - currentIndex);
+    });
+  }
+
   async #jumpTrack(direction: number) {
-    console.log("\n\n\n\n\n\n\nJUMP TRACK");
     const playlistIndex = this.#getCurrentlyPlayingSongIndex(true);
 
     if (playlistIndex === null) {
@@ -706,6 +720,17 @@ export class MusicPlayer {
     }
 
     if (targetIndex < 0 || targetIndex >= this.playlist.length) {
+      return;
+    }
+
+    await this.#performTrackJump(targetIndex, direction);
+  }
+
+  async #performTrackJump(targetIndex: number, direction: number) {
+    console.log("\n\n\n\n\n\n\nJUMP TRACK");
+    const playlistIndex = this.#getCurrentlyPlayingSongIndex(true);
+
+    if (playlistIndex === null) {
       return;
     }
 
