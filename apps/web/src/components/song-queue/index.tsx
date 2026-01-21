@@ -63,7 +63,7 @@ const SongQueue = () => {
                       .slice(0, playerState.playInfo.playlistIndex)
                       .map((pe, index) => (
                         <SongQueueItem
-                          key={pe.song.id}
+                          key={pe.id}
                           song={pe.song}
                           index={index}
                         />
@@ -76,11 +76,6 @@ const SongQueue = () => {
                   Now playing
                 </h3>
                 <SongQueueItem
-                  key={
-                    playerState.player.playlist[
-                      playerState.playInfo.playlistIndex
-                    ].song.id
-                  }
                   song={
                     playerState.player.playlist[
                       playerState.playInfo.playlistIndex
@@ -103,7 +98,7 @@ const SongQueue = () => {
                       )
                       .map((pe, index) => (
                         <SongQueueItem
-                          key={pe.song.id}
+                          key={pe.id}
                           song={pe.song}
                           index={
                             playerState.playInfo!.playlistIndex + 1 + index
