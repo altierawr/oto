@@ -10,7 +10,7 @@ type TProps = {
 
 const LatestRelease = ({ album }: TProps) => {
   return (
-    <div className="w-full h-full flex gap-4">
+    <div className="min-h-[169px] w-full h-full flex gap-4">
       <div className="h-full aspect-square">
         <CoverBlock
           variant={CoverBlockVariant.FULL}
@@ -30,7 +30,7 @@ const LatestRelease = ({ album }: TProps) => {
             })}
           </p>
         )}
-        <p className="text-lg leading-6 font-bold w-full min-w-[200px] line-clamp-3">
+        <p className="text-lg leading-6 font-bold w-full min-w-[200px] max-w-[300px] line-clamp-4">
           <Link to={`/albums/${album.id}`}>{album.title}</Link>
         </p>
         {album.numberOfTracks && (

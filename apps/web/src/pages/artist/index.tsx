@@ -117,12 +117,12 @@ const ArtistPage = () => {
             className="w-[180px] aspect-square rounded-[45px] border-4 border-(--gray-0) bg-cover ml-6 -mt-[40px] z-0"
             style={{
               backgroundImage: data.artist.picture
-                ? `url(${getTidalCoverUrl(data.artist.picture, 1280)})`
+                ? `url(${getTidalCoverUrl(data.artist.picture, 750)})`
                 : `url(${getTidalCoverUrl(data.artist.selectedAlbumCoverFallback, 1280)})`,
             }}
           />
           <div className="flex flex-col items-start overflow-hidden flex-1 pb-3">
-            <h1 className="text-4xl font-bold text-(--gray-12)">
+            <h1 className="text-4xl font-bold text-(--gray-12) line-clamp-1">
               {data.artist.name}
             </h1>
             {data.artist.biography && (

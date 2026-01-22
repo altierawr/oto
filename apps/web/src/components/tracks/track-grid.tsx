@@ -7,20 +7,27 @@ import TrackGridItem from "./item";
 
 type TProps = {
   tracks: Song[];
+  className?: string;
   isLoading?: boolean;
   expectedNrMaxItems?: number;
 };
 
-const TrackGrid = ({ tracks, isLoading, expectedNrMaxItems = 50 }: TProps) => {
+const TrackGrid = ({
+  tracks,
+  className,
+  isLoading,
+  expectedNrMaxItems = 50,
+}: TProps) => {
   const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } =
     useHorizontalScrollSnap({
       id: "artistTopTracks",
       gap: 20,
       scrollAmount: 1,
+      isLoading,
     });
 
   return (
-    <div className="relative overflow-x-hidden pl-10">
+    <div className={clsx("relative overflow-x-hidden pl-10", className)}>
       <div
         className={clsx(
           "absolute z-1 left-0 top-1/2 -translate-y-1/2 grid place-content-center rounded-md px-1 py-5 hover:bg-(--gray-3) transition-colors",

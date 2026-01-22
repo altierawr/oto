@@ -23,6 +23,7 @@ const useHorizontalScrollSnap = ({
   const { pathname } = useLocation();
   const ref = useRef<HTMLDivElement>(null);
   const [scrollIndex, setScrollIndex] = useState(0);
+  const [_, forceUpdate] = useState(0);
   const [latestScrollPos, setLatestScrollPos] = useState<number | undefined>(
     ref.current ? ref.current.scrollLeft : undefined,
   );
@@ -32,6 +33,13 @@ const useHorizontalScrollSnap = ({
     id,
     dimension: ScrollDimension.HORIZONTAL,
   });
+
+  useEffect(() => {
+    // After loading wait for render
+    setTimeout(() => {
+      forceUpdate((n) => n + 1);
+    });
+  }, [isLoading]);
 
   const tryToScroll = (direction: ScrollDirection, amount: number = 1) => {
     if (latestScrollPos === undefined || !ref.current || isLoading) {
@@ -141,13 +149,16 @@ const useHorizontalScrollSnap = ({
     tryToScroll(ScrollDirection.RIGHT, scrollAmount);
   };
 
-  const canScrollLeft = latestScrollPos !== undefined && latestScrollPos > 0;
-  const canScrollRight = ref.current
-    ? ref.current.scrollWidth -
-    ref.current.clientWidth -
-    (latestScrollPos || 0) >
-    1
-    : false;
+  const canScrollLeft = isLoading
+    ? false
+    : latestScrollPos !== undefined && latestScrollPos > 0;
+  const canScrollRight =
+    !isLoading && ref.current
+      ? ref.current.scrollWidth -
+          ref.current.clientWidth -
+          (latestScrollPos || 0) >
+        1
+      : false;
 
   return {
     ref,

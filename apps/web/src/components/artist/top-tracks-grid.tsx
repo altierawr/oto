@@ -5,9 +5,14 @@ import TrackGrid from "../tracks/track-grid";
 type TProps = {
   artist: Artist;
   initialTopTracks: Song[];
+  className?: string;
 };
 
-const ArtistTopTracksGrid = ({ artist, initialTopTracks }: TProps) => {
+const ArtistTopTracksGrid = ({
+  artist,
+  initialTopTracks,
+  className,
+}: TProps) => {
   const query = useQuery({
     queryKey: ["artist-top-tracks", artist.id],
     queryFn: async () => {
@@ -24,6 +29,7 @@ const ArtistTopTracksGrid = ({ artist, initialTopTracks }: TProps) => {
     <TrackGrid
       tracks={query.data?.items || initialTopTracks}
       isLoading={query.isLoading}
+      className={className}
     />
   );
 };

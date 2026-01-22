@@ -24,7 +24,7 @@ const ArtistPageOverview = () => {
     <>
       <div className="flex gap-10 col-[breakout]! pl-6">
         {releasesByDate.length > 0 && (
-          <div className="flex-1">
+          <div>
             <LatestRelease album={releasesByDate[0]} />
           </div>
         )}
@@ -32,6 +32,7 @@ const ArtistPageOverview = () => {
           <ArtistTopTracksGrid
             artist={data.artist}
             initialTopTracks={data.artist.topTracks}
+            className="flex-1"
           />
         )}
       </div>
