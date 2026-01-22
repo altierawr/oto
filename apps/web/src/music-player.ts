@@ -48,7 +48,7 @@ export class MusicPlayer {
   #volume = 0.2;
   #isShuffleEnabled = false;
   #isRepeatEnabled = false;
-  #originalPlaylist: PlaylistSong[] | null = null;
+  originalPlaylist: PlaylistSong[] | null = null;
 
   constructor() {
     this.playlist = [];
@@ -312,7 +312,7 @@ export class MusicPlayer {
     if (currentIndex === null) return;
 
     // Snapshot original playlist
-    this.#originalPlaylist = [...this.playlist];
+    this.originalPlaylist = [...this.playlist];
 
     const currentEntry = this.playlist[currentIndex];
 
@@ -356,20 +356,20 @@ export class MusicPlayer {
   }
 
   #disableShuffle() {
-    if (!this.#originalPlaylist) return;
+    if (!this.originalPlaylist) return;
 
     const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
     if (currentIndex === null) {
       // Fallback (unlikely)
-      this.playlist = this.#originalPlaylist;
-      this.#originalPlaylist = null;
+      this.playlist = this.originalPlaylist;
+      this.originalPlaylist = null;
       return;
     }
 
     const currentEntry = this.playlist[currentIndex];
 
-    this.playlist = this.#originalPlaylist;
-    this.#originalPlaylist = null;
+    this.playlist = this.originalPlaylist;
+    this.originalPlaylist = null;
 
     // Find where the current song is in the original playlist
     const newIndex = this.playlist.findIndex(
@@ -929,8 +929,8 @@ export class MusicPlayer {
   addToQueue(song: Song) {
     const entry = this.#getInitialPlaylistSongFromSong(song);
     this.playlist.push(entry);
-    if (this.#originalPlaylist) {
-      this.#originalPlaylist.push(entry);
+    if (this.originalPlaylist) {
+      this.originalPlaylist.push(entry);
     }
   }
 
@@ -1006,17 +1006,17 @@ export class MusicPlayer {
     // If we are shuffled, we should also insert this song into the original playlist
     // so it doesn't disappear when we unshuffle.
     // Try to find the current song in the original playlist and insert after it.
-    if (this.#originalPlaylist) {
+    if (this.originalPlaylist) {
       const currentEntry = this.playlist[currentIndex];
-      const originalIndex = this.#originalPlaylist.findIndex(
+      const originalIndex = this.originalPlaylist.findIndex(
         (item) => item.id === currentEntry.id,
       );
       if (originalIndex !== -1) {
         // Insert after current song in original playlist
-        this.#originalPlaylist.splice(originalIndex + 1, 0, newPlaylistSong);
+        this.originalPlaylist.splice(originalIndex + 1, 0, newPlaylistSong);
       } else {
         // Fallback: append to end
-        this.#originalPlaylist.push(newPlaylistSong);
+        this.originalPlaylist.push(newPlaylistSong);
       }
     }
   }

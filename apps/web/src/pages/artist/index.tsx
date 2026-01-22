@@ -7,12 +7,18 @@ import {
 } from "react-router";
 import { Fragment } from "react";
 import { Link } from "react-router";
-import type { ArtistPage as TArtistPage } from "../../types";
+import type {
+  PaginatedResponse,
+  Song,
+  ArtistPage as TArtistPage,
+} from "../../types";
 import { Button, IconButton, Spacer, Tabs } from "design";
-import { Heart, Play, Share } from "lucide-react";
+import { Heart, Pause, Play, Share } from "lucide-react";
 import ArtistPageOverview from "./overview";
 import type { TabsTab } from "@base-ui/react";
 import { getTidalCoverUrl } from "../../utils/image";
+import { useQuery } from "@tanstack/react-query";
+import { usePlayerState } from "../../store";
 
 const parseTidalRichTextIntoComponent = (text: string) => {
   const regex = /\[wimpLink (artistId|albumId)="(\d+)"\](.*?)\[\/wimpLink\]/g;
@@ -64,9 +70,20 @@ const loader: LoaderFunction = async ({ params }) => {
 const ArtistPage = () => {
   const { id } = useParams();
   const data = useLoaderData() as { artist: TArtistPage };
+  const { player, playInfo } = usePlayerState();
   const navigate = useNavigate();
 
-  console.log({ data });
+  const topTracksQuery = useQuery({
+    queryKey: ["artist-top-tracks", id],
+    queryFn: async () => {
+      const resp = await fetch(
+        `http://localhost:3003/v1/artists/${id}/toptracks`,
+      );
+      const json: PaginatedResponse<Song> = await resp.json();
+
+      return json;
+    },
+  });
 
   const isChildRoute = location.pathname !== `/artists/${id}`;
 
@@ -88,6 +105,33 @@ const ArtistPage = () => {
     } else {
       navigate(`/artists/${id}/${value}`);
     }
+  };
+
+  let isArtistPlaying = true;
+  if (!topTracksQuery.data || !playInfo) {
+    isArtistPlaying = false;
+  } else {
+    for (let i = 0; i < player.playlist.length; i++) {
+      const { song } = (player.originalPlaylist || player.playlist)[i];
+
+      if (song.id !== topTracksQuery.data.items[i].id) {
+        isArtistPlaying = false;
+        break;
+      }
+    }
+  }
+
+  const handlePlayClick = () => {
+    if (isArtistPlaying) {
+      player.togglePlayPause();
+      return;
+    }
+
+    if (!topTracksQuery.data) {
+      return;
+    }
+
+    player.playSongs(topTracksQuery.data.items, 0);
   };
 
   return (
@@ -138,9 +182,25 @@ const ArtistPage = () => {
             )}
             <Spacer size="2" />
             <div className="flex gap-3 items-center">
-              <Button variant="solid" color="blue" size="sm">
-                <Play size={16} fill="currentColor" />
-                Play
+              <Button
+                variant="solid"
+                color="blue"
+                size="sm"
+                isDisabled={topTracksQuery.isLoading || !topTracksQuery.data}
+                onClick={handlePlayClick}
+              >
+                {isArtistPlaying && !playInfo?.isPaused && (
+                  <>
+                    <Pause size={16} fill="currentColor" />
+                    Pause
+                  </>
+                )}
+                {(!isArtistPlaying || playInfo?.isPaused) && (
+                  <>
+                    <Play size={16} fill="currentColor" />
+                    Play
+                  </>
+                )}
               </Button>
               <IconButton color="gray" variant="soft" icon={Heart} size="sm" />
               <IconButton color="gray" variant="soft" icon={Share} size="sm" />
