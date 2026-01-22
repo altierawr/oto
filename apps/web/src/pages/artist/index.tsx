@@ -114,7 +114,10 @@ const ArtistPage = () => {
     for (let i = 0; i < player.playlist.length; i++) {
       const { song } = (player.originalPlaylist || player.playlist)[i];
 
-      if (song.id !== topTracksQuery.data.items[i].id) {
+      if (
+        i >= topTracksQuery.data.items.length ||
+        song.id !== topTracksQuery.data.items[i].id
+      ) {
         isArtistPlaying = false;
         break;
       }

@@ -8,6 +8,8 @@ type TProps = {
   imageUrl: string;
   artists?: Artist[];
   date?: string;
+  isPlaying?: boolean;
+  isPlayLoading?: boolean;
   onPlayClick?: () => void;
 };
 
@@ -17,6 +19,8 @@ const MusicBlock = ({
   imageUrl,
   artists,
   date,
+  isPlaying,
+  isPlayLoading,
   onPlayClick,
 }: TProps) => {
   return (
@@ -26,6 +30,8 @@ const MusicBlock = ({
         linkUrl={linkUrl}
         imageUrl={imageUrl}
         onPlayClick={onPlayClick}
+        isPlayLoading={isPlayLoading}
+        isPlaying={isPlaying}
       />
       <p className="text-(--gray-12) text-sm line-clamp-2 mt-2">
         <Link to={linkUrl}>{title}</Link>

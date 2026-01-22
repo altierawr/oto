@@ -3,6 +3,7 @@ import { MoreVertical, Pause, Play } from "lucide-react";
 import type { MouseEvent, MouseEventHandler } from "react";
 import { Link } from "react-router";
 import { usePlayerState } from "../../store";
+import { Loader } from "design";
 
 export enum CoverBlockVariant {
   COVER_ONLY,
@@ -15,6 +16,7 @@ type TProps = {
   imageUrl: string;
   linkUrl?: string;
   isPlaying?: boolean;
+  isPlayLoading?: boolean;
   onPlayClick?: (e: MouseEvent) => void;
 };
 
@@ -23,6 +25,7 @@ const CoverBlock = ({
   imageUrl,
   linkUrl,
   isPlaying,
+  isPlayLoading,
   onPlayClick,
 }: TProps) => {
   const { playInfo } = usePlayerState();
@@ -87,15 +90,31 @@ const CoverBlock = ({
         <div className="w-full aspect-square rounded-md cursor-pointer transition-all relative overflow-hidden group">
           <Link to={linkUrl}>
             <Block imageUrl={imageUrl} />
-            <div className="absolute w-full h-full inset-0 opacity-0 hover:opacity-100 will-change-[opacity] transition-opacity bg-linear-to-b from-[rgba(0,0,0,0.25)] to-[rgba(0,0,0,0.90)] grid place-items-center">
+            <div
+              className={clsx(
+                "absolute w-full h-full inset-0 opacity-0 hover:opacity-100 will-change-[opacity] transition-opacity bg-linear-to-b from-[rgba(0,0,0,0.25)] to-[rgba(0,0,0,0.90)] grid place-items-center",
+                isPlaying && "opacity-100",
+              )}
+            >
               <div
                 className="absolute bottom-3 left-3 rounded-full overflow-hidden w-[40px] aspect-square cursor-default bg-[rgb(255_255_255/25%)] backdrop-blur-sm grid place-items-center transition-all hover:scale-105"
-                onClick={handlePlayClick}
+                onClick={!isPlayLoading ? handlePlayClick : undefined}
               >
-                <Play size={20} fill="currentColor" />
+                {isPlayLoading && <Loader />}
+                {!isPlayLoading && (
+                  <>
+                    {(!isPlaying || (isPlaying && playInfo?.isPaused)) && (
+                      <Play size={18} fill="currentColor" />
+                    )}
+
+                    {isPlaying && playInfo && !playInfo.isPaused && (
+                      <Pause size={18} fill="currentColor" />
+                    )}
+                  </>
+                )}
               </div>
               <div
-                className="absolute bottom-3 right-3 rounded-full overflow-hidden w-[32px] aspect-square cursor-default bg-[rgb(255_255_255/25%)] backdrop-blur-sm grid place-items-center transition-all hover:scale-105"
+                className="hidden absolute bottom-3 right-3 rounded-full overflow-hidden w-[32px] aspect-square cursor-default bg-[rgb(255_255_255/25%)] backdrop-blur-sm grid place-items-center transition-all hover:scale-105"
                 onClick={(e) => e.preventDefault()}
               >
                 <MoreVertical size={16} fill="currentColor" />

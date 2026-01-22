@@ -3,12 +3,17 @@ import type { Album } from "../../types";
 import { getTidalCoverUrl } from "../../utils/image";
 import { Link } from "react-router";
 import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
+import useAlbumPlayback from "../../hooks/useAlbumPlayback";
 
 type TProps = {
   album: Album;
 };
 
 const LatestRelease = ({ album }: TProps) => {
+  const { onPlayClick, isLoading, isPlaying } = useAlbumPlayback({
+    album,
+  });
+
   return (
     <div className="min-h-[169px] w-full h-full flex gap-4">
       <div className="h-full aspect-square">
@@ -16,6 +21,9 @@ const LatestRelease = ({ album }: TProps) => {
           variant={CoverBlockVariant.FULL}
           imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}
           linkUrl={`/albums/${album.id}`}
+          onPlayClick={onPlayClick}
+          isPlayLoading={isLoading}
+          isPlaying={isPlaying}
         />
       </div>
       <div className="flex-1 flex flex-col">
