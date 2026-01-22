@@ -187,6 +187,7 @@ const ArtistPage = () => {
                 color="blue"
                 size="sm"
                 isDisabled={topTracksQuery.isLoading || !topTracksQuery.data}
+                isLoading={topTracksQuery.isLoading}
                 onClick={handlePlayClick}
               >
                 {isArtistPlaying && !playInfo?.isPaused && (
