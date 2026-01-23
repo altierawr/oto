@@ -246,19 +246,6 @@ export class MusicPlayer {
       });
     });
 
-    this.#audio.addEventListener("waiting", () => {
-      this.#updatePlayerState({
-        isBuffering: true,
-      });
-    });
-
-    this.#audio.addEventListener("canplay", () => {
-      this.#updatePlayerState({
-        isBuffering: false,
-        buffer: this.#getBufferedRange(),
-      });
-    });
-
     this.#audio.addEventListener("play", () => {
       this.#updatePlayerState({
         isPaused: false,
@@ -1105,6 +1092,9 @@ export class MusicPlayer {
     }
 
     this.#isSeeking = false;
+    this.#updatePlayerState({
+      isBuffering: false,
+    });
   }
 
   async #seek(positionPerc: number) {
@@ -1181,6 +1171,9 @@ export class MusicPlayer {
       return;
     }
 
+    this.#updatePlayerState({
+      isBuffering: true,
+    });
     console.log("Segment not found in buffer or memory, need to fetch.");
 
     console.log("clearing fetch queues");

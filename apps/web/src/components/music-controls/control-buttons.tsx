@@ -8,12 +8,13 @@ import {
 } from "@tabler/icons-react";
 import { usePlayerState } from "../../store";
 import clsx from "clsx";
+import { Loader } from "design";
 
 const MusicControlsControlButtons = () => {
   const { player, song, playerState } = usePlayerState();
 
   const handlePrevClick = () => {
-    if (!song) {
+    if (!song || playerState.isBuffering) {
       return;
     }
 
@@ -21,7 +22,7 @@ const MusicControlsControlButtons = () => {
   };
 
   const handleNextClick = () => {
-    if (!song) {
+    if (!song || playerState.isBuffering) {
       return;
     }
 
@@ -29,7 +30,7 @@ const MusicControlsControlButtons = () => {
   };
 
   const handlePlayPauseClick = () => {
-    if (!song) {
+    if (!song || playerState.isBuffering) {
       return;
     }
 
@@ -45,7 +46,7 @@ const MusicControlsControlButtons = () => {
   };
 
   return (
-    <div className="flex gap-4 justify-center w-full items-center">
+    <div className="flex gap-4 justify-center w-full items-center h-[28px]">
       <IconArrowsShuffle
         size={20}
         stroke={1.5}
@@ -60,19 +61,29 @@ const MusicControlsControlButtons = () => {
         size={20}
         stroke={1.5}
         onClick={handlePrevClick}
-        className={clsx(song && "cursor-pointer")}
+        className={clsx(song && !playerState.isBuffering && "cursor-pointer")}
       />
       <div
-        className={clsx(song && "cursor-pointer")}
+        className={clsx(song && !playerState.isBuffering && "cursor-pointer")}
         onClick={handlePlayPauseClick}
       >
-        {!song && <IconPlayerPlay size={28} stroke={1.5} />}
-        {song && (
+        {playerState.isBuffering && (
+          <div className="w-[28px] aspect-square grid place-content-center">
+            <Loader />
+          </div>
+        )}
+
+        {!playerState.isBuffering && (
           <>
-            {playerState.isPaused ? (
-              <IconPlayerPlay size={28} stroke={1.5} />
-            ) : (
-              <IconPlayerPause size={28} stroke={1.5} />
+            {!song && <IconPlayerPlay size={28} stroke={1.5} />}
+            {song && (
+              <>
+                {playerState.isPaused ? (
+                  <IconPlayerPlay size={28} stroke={1.5} />
+                ) : (
+                  <IconPlayerPause size={28} stroke={1.5} />
+                )}
+              </>
             )}
           </>
         )}
@@ -81,7 +92,7 @@ const MusicControlsControlButtons = () => {
         size={20}
         stroke={1.5}
         onClick={handleNextClick}
-        className={clsx(song && "cursor-pointer")}
+        className={clsx(song && !playerState.isBuffering && "cursor-pointer")}
       />
       <IconRepeat
         size={20}
