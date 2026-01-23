@@ -48,6 +48,8 @@ export class MusicPlayer {
   #volume = 0.2;
   #isShuffleEnabled = false;
   #isRepeatEnabled = false;
+  #isSeeking = false;
+  #trackEndCommitBoundary = 0.7;
   originalPlaylist: PlaylistSong[] | null = null;
 
   constructor() {
@@ -58,6 +60,29 @@ export class MusicPlayer {
       document.getElementById("root")!.appendChild(this.#audio);
 
       this.#initMediaSource();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        this.togglePlayPause();
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        this.seekForward();
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        this.seekBackward();
+      }
     });
   }
 
@@ -1069,6 +1094,21 @@ export class MusicPlayer {
   }
 
   async seek(positionPerc: number) {
+    if (this.#isSeeking) {
+      return;
+    }
+
+    this.#isSeeking = true;
+    if (positionPerc >= 1) {
+      await this.nextTrack();
+    } else {
+      await this.#seek(positionPerc);
+    }
+
+    this.#isSeeking = false;
+  }
+
+  async #seek(positionPerc: number) {
     const playlistIndex = this.#getCurrentlyPlayingSongIndex(true);
     if (playlistIndex === null) {
       console.error("Couldn't find currently playing song");
@@ -1076,11 +1116,18 @@ export class MusicPlayer {
     }
 
     // Make sure it's in bounds and not TOO high
-    positionPerc = Math.max(0, Math.min(positionPerc, 0.98));
-
     const pe = this.playlist[playlistIndex];
 
-    const position = parseFloat((pe.song.duration * positionPerc).toFixed(1));
+    const position = parseFloat(
+      Math.max(
+        0,
+        Math.min(
+          pe.song.duration * positionPerc,
+          // Limit max seek to the commit boundary
+          pe.song.duration - this.#trackEndCommitBoundary,
+        ),
+      ).toFixed(1),
+    );
 
     // Adjust position for already seeked position if it exists,
     // because the segments always start at 0
@@ -1151,6 +1198,7 @@ export class MusicPlayer {
       console.log("segment to jump to is", json.segment);
       await this.#maybeFetchNextSegment({
         force: true,
+        playlistIndex,
         segmentIndex: json.segment,
       });
 
@@ -1221,6 +1269,43 @@ export class MusicPlayer {
     console.error({ resp });
 
     this.#unlockFetchOperations();
+  }
+
+  async seekForward() {
+    const playlistIndex = this.#getCurrentlyPlayingSongIndex(true);
+    if (playlistIndex === null) return;
+    const pe = this.playlist[playlistIndex];
+    if (!pe) return;
+
+    const duration = pe.accurateDuration || pe.song.duration;
+    if (!duration) return;
+
+    // Current time relative to the start of the track
+    const currentTimeInTrack =
+      this.#audio.currentTime - (pe.timestampOffset || 0);
+
+    const newTime = currentTimeInTrack + 5;
+    const newPerc = newTime / duration;
+
+    this.seek(newPerc);
+  }
+
+  async seekBackward() {
+    const playlistIndex = this.#getCurrentlyPlayingSongIndex(true);
+    if (playlistIndex === null) return;
+    const pe = this.playlist[playlistIndex];
+    if (!pe) return;
+
+    const duration = pe.accurateDuration || pe.song.duration;
+    if (!duration) return;
+
+    // Current time relative to the start of the track
+    const currentTimeInTrack =
+      this.#audio.currentTime - (pe.timestampOffset || 0);
+
+    const newTime = currentTimeInTrack - 5;
+    const newPerc = newTime / duration;
+    this.seek(newPerc);
   }
 
   async #clearSourceBuffer() {
@@ -1315,10 +1400,10 @@ export class MusicPlayer {
           segment.bufferInfo.start,
           segment.bufferInfo.end,
         );
-        nrRemovedSegments++;
 
         await this.#waitForBufferReady();
         this.playlist[i].segments[j]!.bufferInfo = undefined;
+        nrRemovedSegments++;
       }
     }
 
@@ -1412,7 +1497,10 @@ export class MusicPlayer {
         // This prevents pre-decoding of next track audio too early, which would cause
         // issues if playNext is called near the end of the current track.
         const timeUntilTrackEnd = startingTrackEnd - this.#audio.currentTime;
-        if (!options?.force && timeUntilTrackEnd > 0.7) {
+        if (
+          !options?.force &&
+          timeUntilTrackEnd > this.#trackEndCommitBoundary
+        ) {
           return;
         }
 
@@ -1691,7 +1779,9 @@ export class MusicPlayer {
       this.playlist[playlistIndex].segments[options.segmentIndex]
     ) {
       console.warn(
-        "Segment index was set for fetch but the segment already exists",
+        "Segment index",
+        options.segmentIndex,
+        "was set for fetch but the segment already exists",
       );
       return;
     }
