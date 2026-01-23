@@ -37,7 +37,7 @@ const MusicControlsSeekBar = () => {
   return (
     <div
       ref={seekBarRef}
-      className="flex-1 h-[13px] py-[4px] cursor-pointer relative group"
+      className="flex-1 h-[13px] py-[4px] cursor-pointer relative group select-none"
     >
       {offsetTime && song && (
         <div
