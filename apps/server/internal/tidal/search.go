@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/altierawr/shidal/internal/types"
+	"github.com/altierawr/oto/internal/types"
 )
 
 type TidalSearchResponse struct {

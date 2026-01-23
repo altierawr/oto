@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/altierawr/shidal/internal/tidal"
+	"github.com/altierawr/oto/internal/tidal"
 	"github.com/fsnotify/fsnotify"
 	"github.com/julienschmidt/httprouter"
 )
@@ -51,7 +51,7 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	streamPath := filepath.Join(os.TempDir(), "shidal", fmt.Sprintf("stream-%s", streamId))
+	streamPath := filepath.Join(os.TempDir(), "oto", fmt.Sprintf("stream-%s", streamId))
 	playlistPath := filepath.Join(streamPath, "index.m3u8")
 
 	playlistFile, err := os.Open(playlistPath)
@@ -101,7 +101,7 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 
 	// We should have the segment
 	if duration > 0 && duration >= offsetPosition {
-		segmentPath := filepath.Join(streamPath, "shidal", fmt.Sprintf("segment-%d.mp4", segment))
+		segmentPath := filepath.Join(streamPath, "oto", fmt.Sprintf("segment-%d.mp4", segment))
 		_, err = os.Stat(segmentPath)
 
 		if err != nil {
@@ -136,7 +136,7 @@ func (app *application) endStream(streamId string) error {
 		app.logger.PrintError(err, nil)
 	}
 
-	streamPath := filepath.Join(os.TempDir(), "shidal", fmt.Sprintf("stream-%s", streamId))
+	streamPath := filepath.Join(os.TempDir(), "oto", fmt.Sprintf("stream-%s", streamId))
 
 	err = os.RemoveAll(streamPath)
 	if err != nil {
@@ -183,7 +183,7 @@ func (app *application) serveHLSHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	segmentPath := filepath.Join(os.TempDir(), "shidal", fmt.Sprintf("stream-%s", streamId), segment)
+	segmentPath := filepath.Join(os.TempDir(), "oto", fmt.Sprintf("stream-%s", streamId), segment)
 
 	info, err := os.Stat(segmentPath)
 	stream, streamExists := streams[streamId]
@@ -230,14 +230,14 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 		return
 	}
 
-	shidalDir := filepath.Join(os.TempDir(), "shidal")
-	err = os.MkdirAll(shidalDir, os.ModePerm)
+	otoDir := filepath.Join(os.TempDir(), "oto")
+	err = os.MkdirAll(otoDir, os.ModePerm)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	tempDir, err := os.MkdirTemp(shidalDir, "stream-*")
+	tempDir, err := os.MkdirTemp(otoDir, "stream-*")
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -298,7 +298,7 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 		return
 	}
 
-	streamPath := filepath.Join(os.TempDir(), "shidal", fmt.Sprintf("stream-%s", streamId))
+	streamPath := filepath.Join(os.TempDir(), "oto", fmt.Sprintf("stream-%s", streamId))
 	err = watcher.Add(streamPath)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

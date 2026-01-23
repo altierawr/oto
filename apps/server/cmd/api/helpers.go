@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/altierawr/shidal/internal/validator"
+	"github.com/altierawr/oto/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
 

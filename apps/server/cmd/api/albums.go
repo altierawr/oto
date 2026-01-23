@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/altierawr/shidal/internal/tidal"
+	"github.com/altierawr/oto/internal/tidal"
 )
 
 func (app *application) viewAlbumHandler(w http.ResponseWriter, r *http.Request) {

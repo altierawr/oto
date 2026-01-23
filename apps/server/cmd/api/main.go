@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/altierawr/shidal/internal/jsonlog"
-	"github.com/altierawr/shidal/internal/tidal"
+	"github.com/altierawr/oto/internal/jsonlog"
+	"github.com/altierawr/oto/internal/tidal"
 	"github.com/joho/godotenv"
 )
 
@@ -17,8 +17,8 @@ type config struct {
 	tidal struct {
 		accessToken  string
 		refreshToken string
-		clientId string
-		secret string
+		clientId     string
+		secret       string
 	}
 }
 
@@ -36,7 +36,7 @@ func main() {
 		logger.PrintFatal(err, nil)
 	}
 
-	err = os.RemoveAll(filepath.Join(os.TempDir(), "shidal"))
+	err = os.RemoveAll(filepath.Join(os.TempDir(), "oto"))
 	if err != nil {
 		logger.PrintError(errors.New("couldn't delete app temp directory"), map[string]string{
 			"error": err.Error(),

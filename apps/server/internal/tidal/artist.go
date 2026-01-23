@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/altierawr/shidal/internal/types"
+	"github.com/altierawr/oto/internal/types"
 )
 
 var artistPageSize = 50

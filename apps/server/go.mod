@@ -1,4 +1,4 @@
-module github.com/altierawr/shidal
+module github.com/altierawr/oto
 
 go 1.25.1
 

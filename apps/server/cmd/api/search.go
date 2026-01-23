@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/altierawr/shidal/internal/tidal"
+	"github.com/altierawr/oto/internal/tidal"
 )
 
 func (app *application) searchHandler(w http.ResponseWriter, r *http.Request) {
