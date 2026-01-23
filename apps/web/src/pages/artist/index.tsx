@@ -70,7 +70,7 @@ const loader: LoaderFunction = async ({ params }) => {
 const ArtistPage = () => {
   const { id } = useParams();
   const data = useLoaderData() as { artist: TArtistPage };
-  const { player, playInfo } = usePlayerState();
+  const { player, playerState, song } = usePlayerState();
   const navigate = useNavigate();
 
   const topTracksQuery = useQuery({
@@ -108,7 +108,7 @@ const ArtistPage = () => {
   };
 
   let isArtistPlaying = true;
-  if (!topTracksQuery.data || !playInfo) {
+  if (!topTracksQuery.data || !song) {
     isArtistPlaying = false;
   } else {
     for (let i = 0; i < player.playlist.length; i++) {
@@ -193,13 +193,13 @@ const ArtistPage = () => {
                 isLoading={topTracksQuery.isLoading}
                 onClick={handlePlayClick}
               >
-                {isArtistPlaying && !playInfo?.isPaused && (
+                {isArtistPlaying && !playerState.isPaused && (
                   <>
                     <Pause size={16} fill="currentColor" />
                     Pause
                   </>
                 )}
-                {(!isArtistPlaying || playInfo?.isPaused) && (
+                {(!isArtistPlaying || playerState.isPaused) && (
                   <>
                     <Play size={16} fill="currentColor" />
                     Play

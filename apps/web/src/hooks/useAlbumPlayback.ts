@@ -19,10 +19,10 @@ const useAlbumPlayback = ({ album }: TProps) => {
     enabled: false,
   });
 
-  const { player, playInfo } = usePlayerState();
+  const { player, song } = usePlayerState();
 
   let isPlaying = true;
-  if (!data?.songs || !playInfo) {
+  if (!data?.songs || !song) {
     isPlaying = false;
   } else {
     for (let i = 0; i < player.playlist.length; i++) {

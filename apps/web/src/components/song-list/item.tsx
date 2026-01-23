@@ -26,7 +26,7 @@ const SongListItem = ({ song, songs }: TProps) => {
     ? parseInt(highlightedTrackIdStr)
     : null;
 
-  const { player, playInfo } = usePlayerState();
+  const { player, playerState, song: playerSong } = usePlayerState();
 
   const handleClick = async () => {
     if (isPlaying) {
@@ -58,7 +58,7 @@ const SongListItem = ({ song, songs }: TProps) => {
   };
 
   const isHighlighted = !hasScrolled && song.id === highlightedTrackId;
-  const isPlaying = playInfo?.song.id === song.id;
+  const isPlaying = playerSong?.id === song.id;
 
   return (
     <div
@@ -88,7 +88,7 @@ const SongListItem = ({ song, songs }: TProps) => {
           {song.trackNumber}
         </span>
         <div className={clsx(isPlaying && "text-(--blue-11)")}>
-          {(!isPlaying || (isPlaying && playInfo?.isPaused)) && (
+          {(!song || (isPlaying && playerState.isPaused)) && (
             <IconPlayerPlay
               className={clsx(!isPlaying && "hidden group-hover:block")}
               size={20}
@@ -96,7 +96,7 @@ const SongListItem = ({ song, songs }: TProps) => {
             />
           )}
 
-          {isPlaying && playInfo && !playInfo.isPaused && (
+          {isPlaying && !playerState.isPaused && (
             <IconPlayerPause size={20} fill="currentColor" />
           )}
         </div>

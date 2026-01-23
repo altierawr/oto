@@ -14,30 +14,32 @@ export const useLocationStore = create<TLocationState>((set) => ({
   setLocation: (location: TLocation) => set({ location }),
 }));
 
-type TPlayerState = {
+export type TPlayerState = {
   player: MusicPlayer;
-  playInfo?: {
-    song: MusicPlayerSong;
-    isMuted: boolean;
+  song: MusicPlayerSong | null;
+  playerState: {
     volume: number;
-    currentTime: number;
+    isMuted: boolean;
     isPaused: boolean;
     isBuffering: boolean;
+    seekOffset: number;
+    playlist: MusicPlayerSong[];
+    isShuffleEnabled: boolean;
+    isRepeatEnabled: boolean;
+    playlistIndex: number | null;
+    timestampOffset: number | null;
+    currentTime: number | null;
     buffer: {
       from: number;
       to: number;
     } | null;
-    timestampOffset: number | null;
-    seekOffset: number;
-    playlist: MusicPlayerSong[];
-    playlistIndex: number;
-    isShuffleEnabled: boolean;
-    isRepeatEnabled: boolean;
   };
 };
 
 export const usePlayerState = create<TPlayerState>(() => ({
   player: new MusicPlayer(),
+  song: null,
+  playerState: MusicPlayer.getInitialPlayerState(),
 }));
 
 type TGeneralStore = {

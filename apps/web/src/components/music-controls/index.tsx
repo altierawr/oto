@@ -24,7 +24,7 @@ import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
 import clsx from "clsx";
 
 const MusicControls = () => {
-  const playerState = usePlayerState();
+  const { player, playerState, song } = usePlayerState();
   const generalState = useGeneralStore();
   const volumeBarRef = useRef<HTMLDivElement>(null);
   const [isMouseDownOnVolumeChanger, setIsMouseDownOnVolumeChanger] =
@@ -49,7 +49,7 @@ const MusicControls = () => {
 
     const percent = (e.clientX - rect.left) / rect.width;
 
-    playerState.player.setVolume(Math.max(0, Math.min(percent, 1)));
+    player.setVolume(Math.max(0, Math.min(percent, 1)));
   };
 
   useEffect(() => {
@@ -66,20 +66,28 @@ const MusicControls = () => {
     };
   }, []);
 
-  if (!playerState.playInfo) {
-    return null;
-  }
-
   const handlePrevClick = () => {
-    playerState.player.prevTrack();
+    if (!song) {
+      return;
+    }
+
+    player.prevTrack();
   };
 
   const handleNextClick = () => {
-    playerState.player.nextTrack();
+    if (!song) {
+      return;
+    }
+
+    player.nextTrack();
   };
 
   const handlePlayPauseClick = () => {
-    playerState.player.togglePlayPause();
+    if (!song) {
+      return;
+    }
+
+    player.togglePlayPause();
   };
 
   const handleSeekClick: React.MouseEventHandler = (e) => {
@@ -91,19 +99,19 @@ const MusicControls = () => {
       console.error("Rect has a width of", rect.width);
     }
 
-    playerState.player.seek(perc);
+    player.seek(perc);
   };
 
   const handleShuffleClick = () => {
-    playerState.player.toggleShuffle();
+    player.toggleShuffle();
   };
 
   const handleRepeatClick = () => {
-    playerState.player.toggleRepeat();
+    player.toggleRepeat();
   };
 
   const handleMuteToggleClick = () => {
-    playerState.player.toggleMute();
+    player.toggleMute();
   };
 
   const handleVolumeBarMouseDown: MouseEventHandler<HTMLDivElement> = (e) => {
@@ -116,43 +124,48 @@ const MusicControls = () => {
     generalState.setIsSongQueueVisible(!generalState.isSongQueueVisible);
   };
 
-  const playingSong = playerState.playInfo.song;
-
   return (
     <div className="w-full p-4 flex justify-between h-[100px] border-t border-t-(--gray-6)">
       <div className="flex-1 flex gap-3 items-center">
-        {playingSong.album && (
-          <div className="h-full aspect-square">
-            <CoverBlock
-              variant={CoverBlockVariant.COVER_ONLY}
-              imageUrl={getTidalCoverUrl(playingSong.album.cover, 320)}
-              linkUrl={`/albums/${playingSong.album.id}`}
-            />
-          </div>
-        )}
-
-        <div className="flex flex-col justify-center">
-          <p className="font-bold text-sm line-clamp-2">
-            {playingSong.album && (
-              <Link
-                to={`/albums/${playingSong.album.id}?track=${playingSong.id}`}
-              >
-                {playingSong.title}
-              </Link>
+        {song && (
+          <>
+            {song.album && (
+              <div className="h-full aspect-square">
+                <CoverBlock
+                  variant={CoverBlockVariant.COVER_ONLY}
+                  imageUrl={getTidalCoverUrl(song.album.cover, 320)}
+                  linkUrl={`/albums/${song.album.id}`}
+                />
+              </div>
             )}
-            {!playingSong.album && playingSong.title}
-          </p>
-          <p className="text-xs text-gray-11">
-            {playerState.playInfo?.song.artists.map((artist, index) => (
-              <span key={artist.id}>
-                <Link to={`/artists/${artist.id}`}>{artist.name}</Link>
-                {index < playingSong.artists.length - 1 && ", "}
-              </span>
-            ))}
-          </p>
-        </div>
+
+            <div className="flex flex-col justify-center">
+              <p className="font-bold text-sm line-clamp-2">
+                {song.album && (
+                  <Link to={`/albums/${song.album.id}?track=${song.id}`}>
+                    {song.title}
+                  </Link>
+                )}
+                {!song.album && song.title}
+              </p>
+              <p className="text-xs text-gray-11">
+                {song?.artists.map((artist, index) => (
+                  <span key={artist.id}>
+                    <Link to={`/artists/${artist.id}`}>{artist.name}</Link>
+                    {index < song.artists.length - 1 && ", "}
+                  </span>
+                ))}
+              </p>
+            </div>
+          </>
+        )}
       </div>
-      <div className="flex-1 flex flex-col gap-2">
+      <div
+        className={clsx(
+          "flex-1 flex flex-col gap-2",
+          !song && "text-(--gray-11)",
+        )}
+      >
         <div className="flex gap-4 justify-center w-full items-center">
           <IconArrowsShuffle
             size={20}
@@ -160,28 +173,36 @@ const MusicControls = () => {
             onClick={handleShuffleClick}
             className={clsx(
               "cursor-pointer",
-              !playerState.playInfo?.isShuffleEnabled && "text-(--gray-11)",
-              playerState.playInfo?.isShuffleEnabled && "text-(--blue-11)",
+              !playerState.isShuffleEnabled && "text-(--gray-11)",
+              playerState.isShuffleEnabled && "text-(--blue-11)",
             )}
           />
           <IconPlayerSkipBack
             size={20}
             stroke={1.5}
             onClick={handlePrevClick}
-            className="cursor-pointer"
+            className={clsx(song && "cursor-pointer")}
           />
-          <div className="cursor-pointer" onClick={handlePlayPauseClick}>
-            {playerState.playInfo.isPaused ? (
-              <IconPlayerPlay size={28} stroke={1.5} />
-            ) : (
-              <IconPlayerPause size={28} stroke={1.5} />
+          <div
+            className={clsx(song && "cursor-pointer")}
+            onClick={handlePlayPauseClick}
+          >
+            {!song && <IconPlayerPlay size={28} stroke={1.5} />}
+            {song && (
+              <>
+                {playerState.isPaused ? (
+                  <IconPlayerPlay size={28} stroke={1.5} />
+                ) : (
+                  <IconPlayerPause size={28} stroke={1.5} />
+                )}
+              </>
             )}
           </div>
           <IconPlayerSkipForward
             size={20}
             stroke={1.5}
             onClick={handleNextClick}
-            className="cursor-pointer"
+            className={clsx(song && "cursor-pointer")}
           />
           <IconRepeat
             size={20}
@@ -189,107 +210,112 @@ const MusicControls = () => {
             onClick={handleRepeatClick}
             className={clsx(
               "cursor-pointer",
-              !playerState.playInfo?.isRepeatEnabled && "text-(--gray-11)",
-              playerState.playInfo?.isRepeatEnabled && "text-(--blue-11)",
+              !playerState?.isRepeatEnabled && "text-(--gray-11)",
+              playerState?.isRepeatEnabled && "text-(--blue-11)",
             )}
           />
         </div>
 
         <div className="flex items-center gap-3 text-sm">
           <p className="w-[30px]">
-            {formatDuration(
-              playerState.playInfo.currentTime -
-                playerState.playInfo.seekOffset -
-                (playerState.playInfo.timestampOffset || 0),
-              "digital",
+            {playerState.currentTime !== null
+              ? formatDuration(
+                  playerState.currentTime -
+                    playerState.seekOffset -
+                    (playerState.timestampOffset || 0),
+                  "digital",
+                )
+              : undefined}
+            {/*So that space is taken and there is no layout shift when the time pops in*/}
+            {playerState.currentTime === null && (
+              <span className="opacity-0">0:00</span>
             )}
           </p>
           <div className="flex-1 h-[13px] py-[4px]" onClick={handleSeekClick}>
             <div className="h-full rounded-full relative bg-(--gray-5) overflow-hidden">
-              {playerState.playInfo.buffer && (
+              {playerState.buffer && song && (
                 <div
                   style={{
                     width: `${
-                      ((playerState.playInfo.buffer.to -
-                        playerState.playInfo.buffer.from) /
-                        playingSong.duration) *
+                      ((playerState.buffer.to - playerState.buffer.from) /
+                        song.duration) *
                       100
                     }%`,
-                    left: `${((playerState.playInfo.buffer.from - playerState.playInfo.seekOffset - (playerState.playInfo.timestampOffset || 0)) / playingSong.duration) * 100}%`,
+                    left: `${((playerState.buffer.from - playerState.seekOffset - (playerState.timestampOffset || 0)) / song.duration) * 100}%`,
                   }}
                   className="h-full absolute top-0 bg-(--blue-9)"
                 />
               )}
 
-              <div
-                style={{
-                  width: "4px",
-                  top: "-4px",
-                  left: `${
-                    ((playerState.playInfo.currentTime -
-                      playerState.playInfo.seekOffset -
-                      (playerState.playInfo.timestampOffset || 0)) /
-                      playingSong.duration) *
-                    100
-                  }%`,
-                }}
-                className="h-[12px] absolute left-0 bg-(--red-9)"
-              />
+              {playerState.currentTime && song && (
+                <div
+                  style={{
+                    width: "4px",
+                    top: "-4px",
+                    left: `${
+                      ((playerState.currentTime -
+                        playerState.seekOffset -
+                        (playerState.timestampOffset || 0)) /
+                        song.duration) *
+                      100
+                    }%`,
+                  }}
+                  className="h-[12px] absolute left-0 bg-(--red-9)"
+                />
+              )}
             </div>
           </div>
-          <p>{formatDuration(playingSong.duration, "digital")}</p>
+          <p>{song ? formatDuration(song.duration, "digital") : undefined}</p>
         </div>
       </div>
       <div className="flex-1 flex justify-end items-center gap-6">
-        <TextAlignJustify
-          className="cursor-pointer"
-          strokeWidth={1.5}
-          onClick={handleQueueClick}
-        />
-        <div className="flex items-center gap-2">
-          <div onClick={handleMuteToggleClick}>
-            {playerState.playInfo.isMuted && <VolumeOff strokeWidth={1.5} />}
-            {!playerState.playInfo.isMuted && (
-              <>
-                {playerState.playInfo.volume === 0 && (
-                  <VolumeX strokeWidth={1.5} />
-                )}
-                {playerState.playInfo.volume > 0 &&
-                  playerState.playInfo.volume < 0.1 && (
-                    <Volume strokeWidth={1.5} />
-                  )}
-                {playerState.playInfo.volume >= 0.1 &&
-                  playerState.playInfo.volume < 0.6 && (
-                    <Volume1 strokeWidth={1.5} />
-                  )}
-                {playerState.playInfo.volume >= 0.6 && (
-                  <Volume2 strokeWidth={1.5} />
-                )}
-              </>
-            )}
-          </div>
-          <div
-            ref={volumeBarRef}
-            className="w-[100px] h-[20px] flex items-center relative cursor-pointer"
-            onMouseDown={handleVolumeBarMouseDown}
-          >
-            <div className="bg-(--gray-5) w-full h-[6px] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-(--gray-12)"
-                style={{
-                  width: `${playerState.playInfo.volume * 100}%`,
-                }}
-              />
-            </div>
-
-            <div
-              className="w-[7px] h-[16px] top-[50%] -translate-y-[50%] -translate-x-[50%] rounded-full bg-(--gray-12) absolute border border-(--gray-0)"
-              style={{
-                left: `${playerState.playInfo.volume * 100}%`,
-              }}
+        {playerState && (
+          <>
+            <TextAlignJustify
+              className="cursor-pointer"
+              strokeWidth={1.5}
+              onClick={handleQueueClick}
             />
-          </div>
-        </div>
+            <div className="flex items-center gap-2">
+              <div onClick={handleMuteToggleClick}>
+                {playerState.isMuted && <VolumeOff strokeWidth={1.5} />}
+                {!playerState.isMuted && (
+                  <>
+                    {playerState.volume === 0 && <VolumeX strokeWidth={1.5} />}
+                    {playerState.volume > 0 && playerState.volume < 0.1 && (
+                      <Volume strokeWidth={1.5} />
+                    )}
+                    {playerState.volume >= 0.1 && playerState.volume < 0.6 && (
+                      <Volume1 strokeWidth={1.5} />
+                    )}
+                    {playerState.volume >= 0.6 && <Volume2 strokeWidth={1.5} />}
+                  </>
+                )}
+              </div>
+              <div
+                ref={volumeBarRef}
+                className="w-[100px] h-[20px] flex items-center relative cursor-pointer"
+                onMouseDown={handleVolumeBarMouseDown}
+              >
+                <div className="bg-(--gray-5) w-full h-[6px] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-(--gray-12)"
+                    style={{
+                      width: `${playerState.volume * 100}%`,
+                    }}
+                  />
+                </div>
+
+                <div
+                  className="w-[7px] h-[16px] top-[50%] -translate-y-[50%] -translate-x-[50%] rounded-full bg-(--gray-12) absolute border border-(--gray-0)"
+                  style={{
+                    left: `${playerState.volume * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

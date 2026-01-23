@@ -28,7 +28,7 @@ const CoverBlock = ({
   isPlayLoading,
   onPlayClick,
 }: TProps) => {
-  const { playInfo } = usePlayerState();
+  const { playerState } = usePlayerState();
 
   if (variant === CoverBlockVariant.FULL && linkUrl === undefined) {
     console.error("CoverBlock variant is FULL but link url is missing!");
@@ -75,11 +75,11 @@ const CoverBlock = ({
               isPlaying && "opacity-100",
             )}
           >
-            {(!isPlaying || (isPlaying && playInfo?.isPaused)) && (
+            {(!isPlaying || (isPlaying && playerState.isPaused)) && (
               <Play size={18} fill="currentColor" />
             )}
 
-            {isPlaying && playInfo && !playInfo.isPaused && (
+            {isPlaying && !playerState.isPaused && (
               <Pause size={18} fill="currentColor" />
             )}
           </div>
@@ -103,11 +103,11 @@ const CoverBlock = ({
                 {isPlayLoading && <Loader />}
                 {!isPlayLoading && (
                   <>
-                    {(!isPlaying || (isPlaying && playInfo?.isPaused)) && (
+                    {(!isPlaying || (isPlaying && playerState.isPaused)) && (
                       <Play size={18} fill="currentColor" />
                     )}
 
-                    {isPlaying && playInfo && !playInfo.isPaused && (
+                    {isPlaying && !playerState.isPaused && (
                       <Pause size={18} fill="currentColor" />
                     )}
                   </>

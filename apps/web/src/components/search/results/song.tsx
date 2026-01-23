@@ -12,8 +12,8 @@ type TProps = {
 };
 
 const SongSearchResult = ({ song, onClose }: TProps) => {
-  const { player, playInfo } = usePlayerState();
-  const isPlaying = playInfo?.song.id === song.id;
+  const { player, song: playerSong } = usePlayerState();
+  const isPlaying = playerSong?.id === song.id;
 
   const handlePlayClick = () => {
     if (isPlaying) {

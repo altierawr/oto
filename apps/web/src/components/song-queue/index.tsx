@@ -5,7 +5,7 @@ import { Spacer } from "design";
 import { CoverBlockVariant } from "../music-blocks/cover-block";
 
 const SongQueue = () => {
-  const playerState = usePlayerState();
+  const { playerState } = usePlayerState();
   const generalState = useGeneralStore();
   const isVisible = useGeneralStore((store) => store.isSongQueueVisible);
 
@@ -52,21 +52,17 @@ const SongQueue = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto grid content-start px-5">
-            {playerState.player.playlist.length === 0 && <p>Queue empty</p>}
+            {playerState.playlist.length === 0 && <p>Queue empty</p>}
 
-            {playerState.playInfo?.playlistIndex !== undefined && (
+            {playerState.playlistIndex !== null && (
               <>
-                {playerState.playInfo.playlistIndex > 0 && (
+                {playerState.playlistIndex > 0 && (
                   <>
                     <h3 className="font-semibold">Previous tracks</h3>
-                    {playerState.player.playlist
-                      .slice(0, playerState.playInfo.playlistIndex)
+                    {playerState.playlist
+                      .slice(0, playerState.playlistIndex)
                       .map((pe, index) => (
-                        <SongQueueItem
-                          key={pe.id}
-                          song={pe.song}
-                          index={index}
-                        />
+                        <SongQueueItem key={pe.id} song={pe} index={index} />
                       ))}
                     <div className="min-h-5" />
                   </>
@@ -76,33 +72,27 @@ const SongQueue = () => {
                   Now playing
                 </h3>
                 <SongQueueItem
-                  song={
-                    playerState.player.playlist[
-                      playerState.playInfo.playlistIndex
-                    ].song
-                  }
-                  index={playerState.playInfo.playlistIndex}
+                  song={playerState.playlist[playerState.playlistIndex]}
+                  index={playerState.playlistIndex}
                   coverBlockVariant={CoverBlockVariant.COVER_ONLY}
                 />
 
                 <Spacer size="5" />
 
-                {playerState.player.playlist.length >
-                  playerState.playInfo.playlistIndex + 1 && (
+                {playerState.playlist.length >
+                  playerState.playlistIndex + 1 && (
                   <>
                     <h3 className="font-semibold">Next up</h3>
-                    {playerState.player.playlist
+                    {playerState.playlist
                       .slice(
-                        playerState.playInfo.playlistIndex + 1,
-                        playerState.player.playlist.length,
+                        playerState.playlistIndex + 1,
+                        playerState.playlist.length,
                       )
                       .map((pe, index) => (
                         <SongQueueItem
                           key={pe.id}
-                          song={pe.song}
-                          index={
-                            playerState.playInfo!.playlistIndex + 1 + index
-                          }
+                          song={pe}
+                          index={playerState.playlistIndex! + 1 + index}
                         />
                       ))}
                   </>

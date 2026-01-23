@@ -13,8 +13,8 @@ type TProps = {
 };
 
 const TrackGridItem = ({ track, tracks, trackIndex, isLoading }: TProps) => {
-  const { player, playInfo } = usePlayerState((s) => s);
-  const isPlaying = playInfo?.song.id === track.id;
+  const { player, song } = usePlayerState((s) => s);
+  const isPlaying = song?.id === track.id;
 
   const handlePlayClick = () => {
     if (isPlaying) {

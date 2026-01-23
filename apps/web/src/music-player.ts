@@ -1,4 +1,4 @@
-import { usePlayerState } from "./store";
+import { usePlayerState, type TPlayerState } from "./store";
 import * as mp4box from "mp4box";
 
 import type { Song, StreamResponse, SeekResponse } from "./types";
@@ -29,6 +29,8 @@ type PlaylistSong = {
   seekOffset: number;
 };
 
+const initialVolume = 0.2;
+
 export class MusicPlayer {
   #mediaSource!: MediaSource;
   #sourceBuffer!: SourceBuffer;
@@ -45,12 +47,29 @@ export class MusicPlayer {
   #isBufferOperationsLocked = false;
   #isFetchOperationsLocked = false;
   #isResetting = false;
-  #volume = 0.2;
+  #volume = initialVolume;
   #isShuffleEnabled = false;
   #isRepeatEnabled = false;
   #isSeeking = false;
   #trackEndCommitBoundary = 0.7;
   originalPlaylist: PlaylistSong[] | null = null;
+
+  static getInitialPlayerState(): TPlayerState["playerState"] {
+    return {
+      volume: initialVolume,
+      isMuted: false,
+      isPaused: false,
+      isBuffering: false,
+      seekOffset: 0,
+      playlist: [],
+      isShuffleEnabled: false,
+      isRepeatEnabled: false,
+      playlistIndex: null,
+      timestampOffset: null,
+      currentTime: null,
+      buffer: null,
+    };
+  }
 
   constructor() {
     this.playlist = [];
@@ -177,12 +196,9 @@ export class MusicPlayer {
         this.#handleTrackChange(track);
       }
 
-      usePlayerState.setState({
-        playInfo: {
-          ...usePlayerState.getState().playInfo!,
-          currentTime: this.#audio.currentTime,
-          buffer: this.#getBufferedRange(),
-        },
+      this.#updatePlayerState({
+        currentTime: this.#audio.currentTime,
+        buffer: this.#getBufferedRange(),
       });
 
       if (!this.#isBufferOperationsLocked) {
@@ -196,49 +212,34 @@ export class MusicPlayer {
     });
 
     this.#audio.addEventListener("progress", () => {
-      usePlayerState.setState({
-        playInfo: {
-          ...usePlayerState.getState().playInfo!,
-          buffer: this.#getBufferedRange(),
-        },
+      this.#updatePlayerState({
+        buffer: this.#getBufferedRange(),
       });
     });
 
     this.#audio.addEventListener("waiting", () => {
-      usePlayerState.setState({
-        playInfo: {
-          ...usePlayerState.getState().playInfo!,
-          isBuffering: true,
-        },
+      this.#updatePlayerState({
+        isBuffering: true,
       });
     });
 
     this.#audio.addEventListener("canplay", () => {
-      usePlayerState.setState({
-        playInfo: {
-          ...usePlayerState.getState().playInfo!,
-          isBuffering: false,
-          buffer: this.#getBufferedRange(),
-        },
+      this.#updatePlayerState({
+        isBuffering: false,
+        buffer: this.#getBufferedRange(),
       });
     });
 
     this.#audio.addEventListener("play", () => {
-      usePlayerState.setState({
-        playInfo: {
-          ...usePlayerState.getState().playInfo!,
-          isPaused: false,
-          buffer: this.#getBufferedRange(),
-        },
+      this.#updatePlayerState({
+        isPaused: false,
+        buffer: this.#getBufferedRange(),
       });
     });
 
     this.#audio.addEventListener("pause", () => {
-      usePlayerState.setState({
-        playInfo: {
-          ...usePlayerState.getState().playInfo!,
-          isPaused: true,
-        },
+      this.#updatePlayerState({
+        isPaused: true,
       });
     });
   }
@@ -246,32 +247,18 @@ export class MusicPlayer {
   toggleMute() {
     this.#audio.muted = !this.#audio.muted;
 
-    const state = usePlayerState.getState().playInfo;
-
-    if (state) {
-      usePlayerState.setState({
-        playInfo: {
-          ...state,
-          isMuted: this.#audio.muted,
-        },
-      });
-    }
+    this.#updatePlayerState({
+      isMuted: this.#audio.muted,
+    });
   }
 
   setVolume(volume: number) {
     this.#volume = volume;
     this.#audio.volume = Math.pow(volume, 2.5);
 
-    const state = usePlayerState.getState().playInfo;
-
-    if (state) {
-      usePlayerState.setState({
-        playInfo: {
-          ...state,
-          volume,
-        },
-      });
-    }
+    this.#updatePlayerState({
+      volume,
+    });
   }
 
   async toggleShuffle() {
@@ -318,18 +305,21 @@ export class MusicPlayer {
   }
 
   #notifyShuffleRepeatStateChange() {
-    const state = usePlayerState.getState().playInfo;
-    if (state) {
-      usePlayerState.setState({
-        playInfo: {
-          ...state,
-          isShuffleEnabled: this.#isShuffleEnabled,
-          isRepeatEnabled: this.#isRepeatEnabled,
-          playlist: this.playlist.map((pe) => pe.song),
-          playlistIndex: this.#getCurrentlyPlayingSongIndex() || 0,
-        },
-      });
-    }
+    this.#updatePlayerState({
+      isShuffleEnabled: this.#isShuffleEnabled,
+      isRepeatEnabled: this.#isRepeatEnabled,
+      playlist: this.playlist.map((pe) => pe.song),
+      playlistIndex: this.#getCurrentlyPlayingSongIndex(),
+    });
+  }
+
+  #updatePlayerState(data: Partial<TPlayerState["playerState"]>) {
+    usePlayerState.setState({
+      playerState: {
+        ...usePlayerState.getState().playerState,
+        ...data,
+      },
+    });
   }
 
   #enableShuffle() {
@@ -464,38 +454,13 @@ export class MusicPlayer {
   }
 
   #notifyTrackChange(index: number) {
-    const existingPlayInfo = usePlayerState.getState().playInfo;
-
     usePlayerState.setState({
-      playInfo: existingPlayInfo
-        ? {
-            ...existingPlayInfo,
-            volume: this.#volume,
-            isMuted: this.#audio.muted,
-            timestampOffset: this.playlist[index].timestampOffset,
-            seekOffset: this.playlist[index].seekOffset,
-            song: this.playlist[index].song,
-            playlistIndex: index,
-            currentTime: this.#audio.currentTime,
-            isShuffleEnabled: this.#isShuffleEnabled,
-            isRepeatEnabled: this.#isRepeatEnabled,
-          }
-        : // TODO: some of these defaults are probably incorrect
-          {
-            currentTime: this.#audio.currentTime,
-            volume: this.#volume,
-            isMuted: this.#audio.muted,
-            timestampOffset: 0,
-            seekOffset: 0,
-            isBuffering: true,
-            isPaused: false,
-            song: this.playlist[index].song,
-            buffer: this.#getBufferedRange(),
-            playlist: this.playlist.map((pe) => pe.song),
-            playlistIndex: index,
-            isShuffleEnabled: this.#isShuffleEnabled,
-            isRepeatEnabled: this.#isRepeatEnabled,
-          },
+      song: this.playlist[index].song,
+    });
+
+    this.#updatePlayerState({
+      currentTime: 0,
+      playlistIndex: index,
     });
   }
 
@@ -577,6 +542,10 @@ export class MusicPlayer {
       this.#getInitialPlaylistSongFromSong(song),
     );
 
+    this.#updatePlayerState({
+      playlist: this.playlist.map((pe) => pe.song),
+    });
+
     this.playlist[index].timestampOffset = 0;
 
     this.#handleTrackChange(index);
@@ -645,6 +614,11 @@ export class MusicPlayer {
   }
 
   togglePlayPause() {
+    const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
+    if (currentIndex === null) {
+      return;
+    }
+
     if (this.#audio.paused) {
       this.#audio.play();
     } else {
@@ -1070,15 +1044,9 @@ export class MusicPlayer {
   }
 
   #updatePlayerStatePlaylist() {
-    const state = usePlayerState.getState().playInfo;
-    if (state) {
-      usePlayerState.setState({
-        playInfo: {
-          ...state,
-          playlist: this.playlist.map((pe) => pe.song),
-        },
-      });
-    }
+    this.#updatePlayerState({
+      playlist: this.playlist.map((pe) => pe.song),
+    });
   }
 
   #findSegmentIndexInPlaylistEntry(playlistIndex: number, position: number) {
