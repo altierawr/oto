@@ -86,12 +86,12 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 				duration += segmentDuration
 				segment++
 
-				if position < duration {
+				if duration > offsetPosition {
 					segment--
 					break
 				}
 
-				if duration >= position {
+				if duration == offsetPosition {
 					break
 				}
 			}
@@ -100,7 +100,7 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// We should have the segment
-	if duration > 0 && duration >= position {
+	if duration > 0 && duration >= offsetPosition {
 		segmentPath := filepath.Join(streamPath, "shidal", fmt.Sprintf("segment-%d.mp4", segment))
 		_, err = os.Stat(segmentPath)
 
