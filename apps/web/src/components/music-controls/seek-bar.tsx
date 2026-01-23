@@ -8,8 +8,9 @@ const MusicControlsSeekBar = () => {
   const seekBarRef = useRef<HTMLDivElement>(null);
   const [dragValue, setDragValue] = useState<number | null>(null);
 
-  const onMouseUp = (newValue: number) => {
-    player.seek(newValue);
+  const onMouseUp = async (newValue: number) => {
+    await player.seek(newValue);
+
     setDragValue(null);
   };
 
@@ -29,22 +30,25 @@ const MusicControlsSeekBar = () => {
       (playerState.timestampOffset || 0)
     : null;
 
+  if (dragValue && song) {
+    console.log(dragValue * song.duration);
+  }
+
   return (
     <div
       ref={seekBarRef}
-      className="flex-1 h-[13px] py-[4px] cursor-pointer relative"
+      className="flex-1 h-[13px] py-[4px] cursor-pointer relative group"
     >
       {offsetTime && song && (
         <div
           className={clsx(
-            "opacity-0 w-[7px] h-[16px] z-10 top-[50%] -translate-y-[50%] -translate-x-[50%] rounded-full bg-(--gray-12) absolute border border-(--gray-0)",
+            "opacity-0 w-[6px] h-[14px] z-10 top-[50%] -translate-y-[50%] -translate-x-[50%] rounded-full bg-(--gray-12) absolute border border-(--gray-0) group-hover:opacity-100! transition-opacity",
             isDragging && "opacity-100",
           )}
           style={{
             left: `${
-              (dragValue
-                ? dragValue * song.duration
-                : offsetTime / song.duration) * 100
+              (dragValue !== null ? dragValue : offsetTime / song.duration) *
+              100
             }%`,
           }}
         />
@@ -67,7 +71,7 @@ const MusicControlsSeekBar = () => {
         {offsetTime && song && (
           <div
             style={{
-              width: `${(offsetTime / song.duration) * 100}%`,
+              width: `${(dragValue ? dragValue : offsetTime / song.duration) * 100}%`,
             }}
             className="h-full absolute top-0 left-0 bg-(--gray-12)"
           />

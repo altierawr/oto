@@ -1151,6 +1151,9 @@ export class MusicPlayer {
       const seekPos = position + (pe.timestampOffset || 0);
       console.log("Segment is in buffer, seeking to", seekPos);
       this.#audio.currentTime = seekPos;
+      this.#updatePlayerState({
+        currentTime: seekPos,
+      });
       this.#audio.play();
       return;
     }
@@ -1168,7 +1171,12 @@ export class MusicPlayer {
       await this.#maybeLoadNextSegment({
         segmentIndex: targetSegmentIndex,
       });
-      this.#audio.currentTime = position + (pe.timestampOffset || 0);
+
+      const newPos = position + (pe.timestampOffset || 0);
+      this.#audio.currentTime = newPos;
+      this.#updatePlayerState({
+        currentTime: newPos,
+      });
 
       return;
     }
@@ -1218,7 +1226,12 @@ export class MusicPlayer {
         segmentIndex: json.segment,
       });
 
-      this.#audio.currentTime = position + (pe.timestampOffset || 0);
+      const newPos = position + (pe.timestampOffset || 0);
+      this.#audio.currentTime = newPos;
+      this.#updatePlayerState({
+        currentTime: newPos,
+      });
+
       await this.#waitForAudioCanPlay();
       this.#unlockFetchOperations();
       this.#unlockAutomaticBufferOperations();
@@ -1255,7 +1268,12 @@ export class MusicPlayer {
         segmentIndex: 0,
       });
 
-      this.#audio.currentTime = position + (pe.timestampOffset || 0);
+      const newPos = position + (pe.timestampOffset || 0);
+      this.#audio.currentTime = newPos;
+      this.#updatePlayerState({
+        currentTime: newPos,
+      });
+
       await this.#waitForAudioCanPlay();
       this.#unlockFetchOperations();
       this.#unlockAutomaticBufferOperations();
