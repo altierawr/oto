@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { useLocation, useNavigationType } from "react-router";
 
 const scrollPositions = new Map();
@@ -9,7 +9,7 @@ export enum ScrollDimension {
 }
 
 type TProps = {
-  scrollRef: React.RefObject<HTMLElement | null>;
+  scrollRef: RefObject<HTMLElement | null>;
   id?: string;
   dimension?: ScrollDimension;
 };
