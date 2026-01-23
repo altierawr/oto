@@ -88,7 +88,7 @@ const SongListItem = ({ song, songs }: TProps) => {
           {song.trackNumber}
         </span>
         <div className={clsx(isPlaying && "text-(--blue-11)")}>
-          {(!song || (isPlaying && playerState.isPaused)) && (
+          {(!song || !isPlaying || (isPlaying && playerState.isPaused)) && (
             <IconPlayerPlay
               className={clsx(!isPlaying && "hidden group-hover:block")}
               size={20}
