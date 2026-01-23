@@ -461,6 +461,8 @@ export class MusicPlayer {
     this.#updatePlayerState({
       currentTime: 0,
       playlistIndex: index,
+      timestampOffset: this.playlist[index].timestampOffset,
+      seekOffset: this.playlist[index].seekOffset,
     });
   }
 
