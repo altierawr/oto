@@ -19,6 +19,7 @@ import type { TabsTab } from "@base-ui/react";
 import { getTidalCoverUrl } from "../../utils/image";
 import { useQuery } from "@tanstack/react-query";
 import { usePlayerState } from "../../store";
+import { Helmet } from "react-helmet-async";
 
 const parseTidalRichTextIntoComponent = (text: string) => {
   const regex = /\[wimpLink (artistId|albumId)="(\d+)"\](.*?)\[\/wimpLink\]/g;
@@ -141,6 +142,10 @@ const ArtistPage = () => {
     <>
       {/* Use key so components get re-rendered when navigating between artists */}
       <Fragment key={data.artist.id}>
+        <Helmet>
+          <title>{data.artist.name} - oto</title>
+        </Helmet>
+
         <div
           className="w-full h-[140px] bg-cover bg-center rounded-xl overflow-hidden"
           style={{

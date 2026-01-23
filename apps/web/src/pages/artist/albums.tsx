@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import MusicBlockGrid from "../../components/music-blocks/music-block-grid";
 import MusicBlock from "../../components/music-blocks/music-block";
 import { Loader } from "design";
+import { Helmet } from "react-helmet-async";
 
 const ArtistPageAlbums = () => {
   const data = useRouteLoaderData("artist") as { artist: ArtistPage };

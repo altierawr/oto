@@ -7,6 +7,7 @@ import AudioDebugger from "../components/debugger";
 import SongQueue from "../components/song-queue";
 import Navbar from "../components/navbar";
 import useScrollRestoration from "../hooks/useScrollRestoration";
+import { HelmetProvider } from "react-helmet-async";
 
 const Root = () => {
   const location = useLocation();
@@ -37,7 +38,7 @@ const Root = () => {
   }, [hasSetInitialLocation, location.pathname, setLocation]);
 
   return (
-    <>
+    <HelmetProvider>
       <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative">
         <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
           <Sidebar />
@@ -59,7 +60,7 @@ const Root = () => {
         <AudioDebugger />
         <SongQueue />
       </div>
-    </>
+    </HelmetProvider>
   );
 };
 
