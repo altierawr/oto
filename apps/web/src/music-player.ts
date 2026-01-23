@@ -209,6 +209,35 @@ export class MusicPlayer {
       if (!this.#isFetchOperationsLocked) {
         this.#maybeFetchNextSegment();
       }
+
+      const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
+
+      if (currentIndex !== null && currentIndex === this.playlist.length - 1) {
+        const pe = this.playlist[currentIndex];
+
+        if (pe.timestampOffset === null || pe.lastSegmentIndex === null) {
+          return;
+        }
+
+        const segment = pe.segments[pe.lastSegmentIndex];
+
+        if (
+          !segment?.bufferInfo ||
+          this.#audio.currentTime !== segment.bufferInfo.end
+        ) {
+          return;
+        }
+
+        // All checks passed, we should be at the end of the last song,
+        // let's pause and jump to the start of the last track
+        this.#audio.pause();
+        this.#audio.currentTime = pe.timestampOffset;
+
+        this.#updatePlayerState({
+          isPaused: true,
+          currentTime: pe.timestampOffset,
+        });
+      }
     });
 
     this.#audio.addEventListener("progress", () => {
