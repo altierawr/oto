@@ -30,10 +30,6 @@ const MusicControlsSeekBar = () => {
       (playerState.timestampOffset || 0)
     : null;
 
-  if (dragValue && song) {
-    console.log(dragValue * song.duration);
-  }
-
   return (
     <div
       ref={seekBarRef}
