@@ -10,7 +10,9 @@ const useAlbumPlayback = ({ album }: TProps) => {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["album", album.id],
     queryFn: async () => {
-      const resp = await fetch(`http://localhost:3003/v1/albums/${album.id}`);
+      const resp = await fetch(`http://localhost:3003/v1/albums/${album.id}`, {
+        credentials: "include",
+      });
 
       const json: Album = await resp.json();
 

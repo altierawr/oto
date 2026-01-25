@@ -36,20 +36,3 @@ func (app *application) getSongStreamHandler(w http.ResponseWriter, r *http.Requ
 
 	app.startStream(w, r, id, ss)
 }
-
-func (app *application) searchTracksHandler(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		Query string
-	}
-
-	err := app.readJSON(w, r, &input)
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	err = app.writeJSON(w, 200, envelope{"query": input.Query}, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-	}
-}

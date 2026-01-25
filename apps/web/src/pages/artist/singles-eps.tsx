@@ -13,6 +13,7 @@ const ArtistPageSinglesAndEps = () => {
     queryFn: async () => {
       const resp = await fetch(
         `http://localhost:3003/v1/artists/${data.artist.id}/singles-eps`,
+        { credentials: "include" },
       );
       const json: PaginatedResponse<Album> = await resp.json();
 

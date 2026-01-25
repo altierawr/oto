@@ -37,6 +37,7 @@ const SearchInput = () => {
     const timeout = setTimeout(async () => {
       const resp = await fetch(
         `http://localhost:3003/v1/search?query=${searchValue}`,
+        { credentials: "include" },
       );
 
       if (resp.status !== 200) {

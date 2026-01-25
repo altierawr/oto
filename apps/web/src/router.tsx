@@ -6,6 +6,9 @@ import ArtistPageAlbums from "./pages/artist/albums";
 import ArtistPageSinglesAndEps from "./pages/artist/singles-eps";
 import ArtistPageCompilations from "./pages/artist/compilations";
 import ArtistPageAppearsOn from "./pages/artist/appears-on";
+import LoginRegisterPage from "./pages/login-register";
+import AppRoot from "./pages/app-root";
+import InvitePage from "./pages/invite";
 
 const router = createBrowserRouter([
   {
@@ -13,37 +16,54 @@ const router = createBrowserRouter([
     element: <Root />,
     children: [
       {
-        path: "artists/:id",
-        id: "artist",
-        element: <ArtistPage />,
-        loader: artistPageLoader,
         children: [
           {
-            path: "albums",
-            element: <ArtistPageAlbums />,
+            path: "register",
+            element: <LoginRegisterPage />,
           },
           {
-            path: "singles-eps",
-            element: <ArtistPageSinglesAndEps />,
+            path: "login",
+            element: <LoginRegisterPage />,
           },
           {
-            path: "compilations",
-            element: <ArtistPageCompilations />,
-          },
-          {
-            path: "appears-on",
-            element: <ArtistPageAppearsOn />,
+            path: "invite",
+            element: <InvitePage />,
           },
         ],
       },
       {
-        path: "albums/:id",
-        element: <AlbumPage />,
-        loader: albumPageLoader,
-      },
-      {
-        path: "notes/:id",
-        element: <div></div>,
+        element: <AppRoot />,
+        children: [
+          {
+            path: "artists/:id",
+            id: "artist",
+            element: <ArtistPage />,
+            loader: artistPageLoader,
+            children: [
+              {
+                path: "albums",
+                element: <ArtistPageAlbums />,
+              },
+              {
+                path: "singles-eps",
+                element: <ArtistPageSinglesAndEps />,
+              },
+              {
+                path: "compilations",
+                element: <ArtistPageCompilations />,
+              },
+              {
+                path: "appears-on",
+                element: <ArtistPageAppearsOn />,
+              },
+            ],
+          },
+          {
+            path: "albums/:id",
+            element: <AlbumPage />,
+            loader: albumPageLoader,
+          },
+        ],
       },
     ],
   },

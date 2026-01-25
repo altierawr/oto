@@ -14,7 +14,9 @@ import { Fragment } from "react/jsx-runtime";
 import { Helmet } from "react-helmet-async";
 
 const loader: LoaderFunction = async ({ params }) => {
-  const data = await fetch(`http://localhost:3003/v1/albums/${params.id}`);
+  const data = await fetch(`http://localhost:3003/v1/albums/${params.id}`, {
+    credentials: "include",
+  });
   const json: Album = await data.json();
 
   return { album: json };

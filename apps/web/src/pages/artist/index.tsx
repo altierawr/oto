@@ -62,7 +62,9 @@ const parseTidalRichTextIntoComponent = (text: string) => {
 };
 
 const loader: LoaderFunction = async ({ params }) => {
-  const data = await fetch(`http://localhost:3003/v1/artists/${params.id}`);
+  const data = await fetch(`http://localhost:3003/v1/artists/${params.id}`, {
+    credentials: "include",
+  });
   const json: TArtistPage = await data.json();
 
   return { artist: json };
@@ -79,6 +81,7 @@ const ArtistPage = () => {
     queryFn: async () => {
       const resp = await fetch(
         `http://localhost:3003/v1/artists/${id}/toptracks`,
+        { credentials: "include" },
       );
       const json: PaginatedResponse<Song> = await resp.json();
 

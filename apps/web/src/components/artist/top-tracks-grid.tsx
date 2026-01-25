@@ -18,6 +18,7 @@ const ArtistTopTracksGrid = ({
     queryFn: async () => {
       const resp = await fetch(
         `http://localhost:3003/v1/artists/${artist.id}/toptracks`,
+        { credentials: "include" },
       );
       const json: PaginatedResponse<Song> = await resp.json();
 
