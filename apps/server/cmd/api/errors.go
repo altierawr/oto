@@ -6,13 +6,13 @@ import (
 )
 
 func (app *application) logError(r *http.Request, err error) {
-	app.logger.PrintError(err, map[string]string{
-		"request_method": r.Method,
-		"request_url":    r.URL.String(),
-	})
+	app.logger.Error(err.Error(),
+		"request_method", r.Method,
+		"request_url", r.URL.String(),
+	)
 }
 
-func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, message interface{}) {
+func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
 	env := envelope{"error": message}
 
 	err := app.writeJSON(w, status, env, nil)

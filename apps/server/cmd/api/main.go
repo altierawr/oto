@@ -1,16 +1,16 @@
 package main
 
 import (
-	"errors"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/database"
-	"github.com/altierawr/oto/internal/jsonlog"
 	"github.com/altierawr/oto/internal/tidal"
 	"github.com/joho/godotenv"
+	"github.com/lmittmann/tint"
 )
 
 type config struct {
@@ -26,37 +26,40 @@ type config struct {
 
 type application struct {
 	config config
-	logger *jsonlog.Logger
+	logger *slog.Logger
 	wg     sync.WaitGroup
 	models data.Models
 }
 
 func main() {
-	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+	logger := slog.New(tint.NewHandler(os.Stdout, &tint.Options{Level: slog.LevelDebug}))
 
 	err := godotenv.Load()
 	if err != nil {
-		logger.PrintFatal(err, nil)
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 
 	db, err := database.New()
 	if err != nil {
-		logger.PrintFatal(err, nil)
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 	defer db.Close()
 
-	logger.PrintInfo("database connected", nil)
+	logger.Info("database connected")
 
 	err = database.MigrateUp()
 	if err != nil {
-		logger.PrintFatal(err, nil)
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 
 	err = os.RemoveAll(filepath.Join(os.TempDir(), "oto"))
 	if err != nil {
-		logger.PrintError(errors.New("couldn't delete app temp directory"), map[string]string{
-			"error": err.Error(),
-		})
+		logger.Error("couldn't delete app temp directory",
+			"error", err.Error(),
+		)
 	}
 
 	var cfg config
@@ -79,11 +82,12 @@ func main() {
 
 	createdAdmin, err := createAdminUser(app)
 	if err != nil {
-		logger.PrintFatal(err, nil)
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 
 	if createdAdmin {
-		logger.PrintInfo("created admin user", nil)
+		logger.Info("created admin user")
 	}
 
 	app.serve()

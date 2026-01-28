@@ -170,7 +170,7 @@ func (app *application) background(fn func()) {
 
 		defer func() {
 			if err := recover(); err != nil {
-				app.logger.PrintError(fmt.Errorf("%s", err), nil)
+				app.logger.Error(fmt.Sprintf("%s", err))
 			}
 		}()
 

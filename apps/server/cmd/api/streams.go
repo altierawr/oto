@@ -77,9 +77,7 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 
 				segmentDuration, err := strconv.ParseFloat(durationStr, 64)
 				if err != nil {
-					app.logger.PrintError(err, map[string]string{
-						"durationStr": durationStr,
-					})
+					app.logger.Error(err.Error(), "durationStr", durationStr)
 					continue
 				}
 
@@ -117,9 +115,7 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = app.endStream(streamId)
 	if err != nil {
-		app.logger.PrintError(err, map[string]string{
-			"streamId": streamId,
-		})
+		app.logger.Error(err.Error(), "streamId", streamId)
 	}
 
 	app.startStream(w, r, stream.trackId, strconv.FormatFloat(position, 'f', -1, 64))
@@ -133,21 +129,19 @@ func (app *application) endStream(streamId string) error {
 
 	err := stream.ffmpeg.Process.Kill()
 	if err != nil && !errors.Is(err, os.ErrProcessDone) {
-		app.logger.PrintError(err, nil)
+		app.logger.Error(err.Error())
 	}
 
 	streamPath := filepath.Join(os.TempDir(), "oto", fmt.Sprintf("stream-%s", streamId))
 
 	err = os.RemoveAll(streamPath)
 	if err != nil {
-		app.logger.PrintError(err, nil)
+		app.logger.Error(err.Error())
 	}
 
 	delete(streams, streamId)
 
-	app.logger.PrintInfo("ended stream", map[string]string{
-		"streamId": streamId,
-	})
+	app.logger.Info("ended stream", "streamId", streamId)
 
 	return nil
 }
@@ -206,17 +200,13 @@ func (app *application) serveHLSHandler(w http.ResponseWriter, r *http.Request) 
 		if matches != "" {
 			segmentNr, err := strconv.Atoi(matches)
 			if err != nil {
-				app.logger.PrintError(err, map[string]string{
-					"segment": segment,
-				})
+				app.logger.Error(err.Error(), "segment", segment)
 			} else if stream.nrSegments == segmentNr+1 {
 				w.Header().Set("Access-Control-Expose-Headers", "X-Last-Segment")
 				w.Header().Set("X-Last-Segment", "true")
 			}
 		} else {
-			app.logger.PrintError(errors.New("error parsing number from segment"), map[string]string{
-				"segment": segment,
-			})
+			app.logger.Error("error parsing number from segment", "segment", segment)
 		}
 	}
 
@@ -262,9 +252,7 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 
 	args = append(args, filepath.Join(tempDir, "index.m3u8"))
 
-	app.logger.PrintInfo("ffmpeg process started", map[string]string{
-		"args": fmt.Sprintf("%v", args),
-	})
+	app.logger.Info("ffmpeg process started", "args", fmt.Sprintf("%v", args))
 
 	cmd := exec.Command("ffmpeg", args...)
 
@@ -319,9 +307,7 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 				}
 
 				if event.Op == fsnotify.Create && strings.HasSuffix(event.Name, "segment1.mp4") {
-					app.logger.PrintInfo("segment 1 was created, notifying client", map[string]string{
-						"streamId": streamId,
-					})
+					app.logger.Info("segment 1 was created, notifying client", "streamId", streamId)
 					responseOnce.Do(func() {
 						responseChan <- nil
 					})
@@ -331,7 +317,7 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 				if !ok {
 					return
 				}
-				app.logger.PrintError(err, nil)
+				app.logger.Error(err.Error())
 			}
 		}
 	}()
@@ -340,10 +326,10 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 	go func() {
 		cmd.Wait()
 
-		app.logger.PrintInfo("finished downloading track", map[string]string{
-			"trackId":  fmt.Sprintf("%d", trackId),
-			"streamId": streamId,
-		})
+		app.logger.Info("finished downloading track",
+			"trackId", fmt.Sprintf("%d", trackId),
+			"streamId", streamId,
+		)
 
 		s, exists := streams[streamId]
 		if exists {
@@ -355,9 +341,9 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 			if err == nil && len(segmentFiles) > 2 {
 				s.nrSegments = len(segmentFiles) - 2
 			} else if err != nil {
-				app.logger.PrintError(errors.New("error reading stream dir"), map[string]string{
-					"error": err.Error(),
-				})
+				app.logger.Error("error reading stream dir",
+					"error", err.Error(),
+				)
 			}
 
 			streams[streamId] = s
@@ -366,16 +352,16 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 		_, err := os.Stat(filepath.Join(streamPath, "segment0.mp4"))
 		if err == nil {
 			responseOnce.Do(func() {
-				app.logger.PrintInfo("ffmpeg finished, sending nil", map[string]string{
-					"streamId": streamId,
-				})
+				app.logger.Info("ffmpeg finished, sending nil",
+					"streamId", streamId,
+				)
 				responseChan <- nil
 			})
 		} else {
 			responseOnce.Do(func() {
-				app.logger.PrintInfo("ffmpeg finished without any segments, sending error", map[string]string{
-					"streamId": streamId,
-				})
+				app.logger.Info("ffmpeg finished without any segments, sending error",
+					"streamId", streamId,
+				)
 				responseChan <- errors.New("ffmpeg didn't create any segments")
 			})
 		}
