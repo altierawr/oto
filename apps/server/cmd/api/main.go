@@ -1,20 +1,16 @@
 package main
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/altierawr/oto/internal/data"
+	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/jsonlog"
 	"github.com/altierawr/oto/internal/tidal"
 	"github.com/joho/godotenv"
-
-	_ "modernc.org/sqlite"
 )
 
 type config struct {
@@ -43,13 +39,18 @@ func main() {
 		logger.PrintFatal(err, nil)
 	}
 
-	db, err := openDB()
+	db, err := database.New()
 	if err != nil {
 		logger.PrintFatal(err, nil)
 	}
 	defer db.Close()
 
 	logger.PrintInfo("database connected", nil)
+
+	err = database.MigrateUp()
+	if err != nil {
+		logger.PrintFatal(err, nil)
+	}
 
 	err = os.RemoveAll(filepath.Join(os.TempDir(), "oto"))
 	if err != nil {
@@ -116,21 +117,4 @@ func createAdminUser(app *application) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func openDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite", "./data.db?_fk=1")
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	err = db.PingContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
 }
