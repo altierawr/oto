@@ -3,9 +3,9 @@ package main
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/altierawr/oto/internal/data"
+	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/validator"
 )
 
@@ -31,10 +31,10 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := app.models.Users.GetByUsername(input.Username)
+	user, err := app.db.GetUserByUsername(input.Username)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
+		case errors.Is(err, database.ErrRecordNotFound):
 			app.invalidCredentialsResponse(w, r)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -54,24 +54,40 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := app.models.Tokens.New(&user.ID, 24*time.Hour, data.ScopeAuthentication)
+	tokenPair, err := app.auth.GenerateTokenPair(user)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
+		return
 	}
 
-	cookie := http.Cookie{
-		Name:     "auth_token",
-		Value:    token.PlainText,
+	// Store refresh token in database
+	err = app.db.InsertToken(tokenPair.RefreshToken)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    tokenPair.AccessToken.PlainText,
 		Path:     "/",
-		Expires:  time.Now().Add(24 * time.Hour),
-		MaxAge:   int((24 * time.Hour).Seconds()),
+		Expires:  tokenPair.AccessToken.Expiry.Time,
 		Secure:   app.config.env != "development",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-	}
-	http.SetCookie(w, &cookie)
+	})
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"token": token}, nil)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    tokenPair.RefreshToken.PlainText,
+		Path:     "/",
+		Expires:  tokenPair.RefreshToken.Expiry.Time,
+		Secure:   app.config.env != "development",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	err = app.writeJSON(w, http.StatusCreated, nil, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -118,10 +134,10 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	validToken, err := app.models.Tokens.IsValid(data.ScopeInvitation, input.InviteCode)
+	validToken, err := app.db.IsTokenValid(data.ScopeInvitation, input.InviteCode)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
+		case errors.Is(err, database.ErrRecordNotFound):
 			v.AddError("inviteCode", "is invalid")
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
@@ -137,7 +153,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.models.Users.Insert(user)
+	err = app.db.InsertUser(user)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicateUsername):
@@ -150,13 +166,13 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.models.Tokens.Delete(input.InviteCode)
+	err = app.db.DeleteToken(input.InviteCode)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"user": user}, nil)
+	err = app.writeJSON(w, http.StatusCreated, nil, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

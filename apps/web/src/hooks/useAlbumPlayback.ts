@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Album } from "../types";
 import { usePlayerState } from "../store";
+import { request } from "../utils/http";
 
 type TProps = {
   album: Album;
@@ -10,7 +11,7 @@ const useAlbumPlayback = ({ album }: TProps) => {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["album", album.id],
     queryFn: async () => {
-      const resp = await fetch(`http://localhost:3003/v1/albums/${album.id}`, {
+      const resp = await request(`/albums/${album.id}`, {
         credentials: "include",
       });
 

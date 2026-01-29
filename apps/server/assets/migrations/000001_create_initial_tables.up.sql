@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-  id integer PRIMARY KEY,
+  id TEXT PRIMARY KEY,
   created_at integer NOT NULL DEFAULT (unixepoch()),
   username text UNIQUE NOT NULL,
   password_hash blob NOT NULL,
@@ -12,5 +12,7 @@ CREATE TABLE IF NOT EXISTS tokens (
   user_id integer,
   expiry integer not null,
   scope text NOT NULL,
+  family blob NOT NULL,
+  is_revoked integer NOT NULL DEFAULT false,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

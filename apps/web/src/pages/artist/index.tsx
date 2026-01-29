@@ -20,6 +20,7 @@ import { getTidalCoverUrl } from "../../utils/image";
 import { useQuery } from "@tanstack/react-query";
 import { usePlayerState } from "../../store";
 import { Helmet } from "react-helmet-async";
+import { request } from "../../utils/http";
 
 const parseTidalRichTextIntoComponent = (text: string) => {
   const regex = /\[wimpLink (artistId|albumId)="(\d+)"\](.*?)\[\/wimpLink\]/g;
@@ -62,7 +63,7 @@ const parseTidalRichTextIntoComponent = (text: string) => {
 };
 
 const loader: LoaderFunction = async ({ params }) => {
-  const data = await fetch(`http://localhost:3003/v1/artists/${params.id}`, {
+  const data = await request(`/artists/${params.id}`, {
     credentials: "include",
   });
   const json: TArtistPage = await data.json();
@@ -79,8 +80,8 @@ const ArtistPage = () => {
   const topTracksQuery = useQuery({
     queryKey: ["artist-top-tracks", id],
     queryFn: async () => {
-      const resp = await fetch(
-        `http://localhost:3003/v1/artists/${id}/toptracks`,
+      const resp = await request(
+        `/artists/${id}/toptracks`,
         { credentials: "include" },
       );
       const json: PaginatedResponse<Song> = await resp.json();
@@ -154,8 +155,8 @@ const ArtistPage = () => {
           style={{
             backgroundImage: `url(${getTidalCoverUrl(
               data.artist.albums?.[1]?.cover ||
-                data.artist.picture ||
-                data.artist.selectedAlbumCoverFallback,
+              data.artist.picture ||
+              data.artist.selectedAlbumCoverFallback,
               80,
             )})`,
           }}
@@ -186,7 +187,7 @@ const ArtistPage = () => {
                   data.artist.biography?.slice(
                     0,
                     data.artist.biography.indexOf("<br/>") ||
-                      data.artist.biography?.length,
+                    data.artist.biography?.length,
                   ),
                 )}
               </p>

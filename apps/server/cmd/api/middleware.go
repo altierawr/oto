@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/altierawr/oto/internal/auth"
 	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/validator"
 )
@@ -42,11 +43,11 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("auth_token")
+		cookie, err := r.Cookie("access_token")
 		if err != nil {
 			switch {
 			case errors.Is(err, http.ErrNoCookie):
-				r = app.contextSetUser(r, data.AnonymousUser)
+				r = app.contextSetUserRole(r, UserRoleAnonymous)
 				next.ServeHTTP(w, r)
 			default:
 				app.serverErrorResponse(w, r, err)
@@ -59,16 +60,21 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 		v := validator.New()
 
-		if data.ValidateTokenPlaintext(v, "auth_token", token, data.ScopeAuthentication); !v.Valid() {
-			app.invalidAuthenticationTokenResponse(w, r)
+		if data.ValidateTokenPlaintext(v, "access_token", token, data.ScopeAuthentication); !v.Valid() {
+			r = app.contextSetUserRole(r, UserRoleAnonymous)
+			next.ServeHTTP(w, r)
 			return
 		}
 
-		user, err := app.models.Users.GetForToken(data.ScopeAuthentication, token)
+		claims, err := app.auth.ValidateAccessToken(token)
 		if err != nil {
 			switch {
-			case errors.Is(err, data.ErrRecordNotFound):
-				app.invalidAuthenticationTokenResponse(w, r)
+			case errors.Is(err, auth.ErrTokenExpired):
+				r = app.contextSetUserRole(r, UserRoleAnonymous)
+				next.ServeHTTP(w, r)
+			case errors.Is(err, auth.ErrTokenInvalid):
+				r = app.contextSetUserRole(r, UserRoleAnonymous)
+				next.ServeHTTP(w, r)
 			default:
 				app.serverErrorResponse(w, r, err)
 			}
@@ -76,7 +82,12 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		r = app.contextSetUser(r, user)
+		role := UserRoleUser
+		if claims.IsAdmin {
+			role = UserRoleAdmin
+		}
+
+		r = app.contextSetUserRole(r, role)
 
 		next.ServeHTTP(w, r)
 	})
@@ -84,9 +95,9 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := app.contextGetUser(r)
+		role := app.contextGetUserRole(r)
 
-		if user.IsAnonymous() {
+		if role == UserRoleAnonymous {
 			app.authenticationRequiredResponse(w, r)
 			return
 		}
@@ -97,10 +108,10 @@ func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.Han
 
 func (app *application) requireAdminUser(next http.HandlerFunc) http.HandlerFunc {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := app.contextGetUser(r)
+		role := app.contextGetUserRole(r)
 
-		if !user.IsAdmin {
-			app.inactiveAccountResponse(w, r)
+		if role != UserRoleAdmin {
+			app.notPermittedResponse(w, r)
 			return
 		}
 

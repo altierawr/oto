@@ -9,6 +9,7 @@ import PlaylistSearchResult from "./results/playlist";
 import TopHitSearchResult from "./results/top-hit";
 import { Search } from "lucide-react";
 import { useLocation } from "react-router";
+import { request } from "../../utils/http";
 
 const SearchInput = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -35,8 +36,8 @@ const SearchInput = () => {
     }
 
     const timeout = setTimeout(async () => {
-      const resp = await fetch(
-        `http://localhost:3003/v1/search?query=${searchValue}`,
+      const resp = await request(
+        `/search?query=${searchValue}`,
         { credentials: "include" },
       );
 

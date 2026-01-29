@@ -5,6 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useEffect, useState } from "react";
 import { IconExclamationMark } from "@tabler/icons-react";
 import { z } from "zod";
+import { request } from "../utils/http";
 
 const validators = {
   username: z
@@ -41,7 +42,7 @@ const LoginRegisterPage = () => {
       });
 
       if (isRegister) {
-        const resp = await fetch("http://localhost:3003/v1/users", {
+        const resp = await request("/users", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -51,6 +52,7 @@ const LoginRegisterPage = () => {
             password: value.password,
             inviteCode: value.inviteCode,
           }),
+          skipRedirect: true,
         });
 
         const data = await resp.json();
@@ -93,8 +95,8 @@ const LoginRegisterPage = () => {
       }
 
       if (isLogin) {
-        const resp = await fetch(
-          "http://localhost:3003/v1/tokens/authentication",
+        const resp = await request(
+          "/tokens/authentication",
           {
             method: "POST",
             headers: {
@@ -105,6 +107,7 @@ const LoginRegisterPage = () => {
               username: value.username,
               password: value.password,
             }),
+            skipRedirect: true,
           },
         );
 

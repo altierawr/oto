@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/altierawr/oto/internal/auth"
 	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/tidal"
@@ -22,13 +23,18 @@ type config struct {
 		clientId     string
 		secret       string
 	}
+	secrets struct {
+		accessToken  string
+		refreshToken string
+	}
 }
 
 type application struct {
 	config config
 	logger *slog.Logger
+	auth   auth.AuthService
 	wg     sync.WaitGroup
-	models data.Models
+	db     *database.DB
 }
 
 func main() {
@@ -40,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := database.New()
+	db, err := database.New(logger)
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
@@ -49,7 +55,7 @@ func main() {
 
 	logger.Info("database connected")
 
-	err = database.MigrateUp()
+	err = db.MigrateUp()
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
@@ -71,13 +77,21 @@ func main() {
 
 	tidal.SetTokens(cfg.tidal.accessToken, cfg.tidal.refreshToken, cfg.tidal.clientId, cfg.tidal.secret)
 
+	cfg.secrets.accessToken = os.Getenv("ACCESS_TOKEN_SECRET")
+	cfg.secrets.refreshToken = os.Getenv("REFRESH_TOKEN_SECRET")
+
+	auth.SetTokenSecrets(cfg.secrets.accessToken, cfg.secrets.refreshToken)
+
 	cfg.env = "development"
 	cfg.port = 3003
 
 	app := &application{
 		logger: logger,
 		config: cfg,
-		models: data.NewModels(db),
+		db:     db,
+		auth: auth.AuthService{
+			DB: db,
+		},
 	}
 
 	createdAdmin, err := createAdminUser(app)
@@ -94,7 +108,7 @@ func main() {
 }
 
 func createAdminUser(app *application) (bool, error) {
-	admins, err := app.models.Users.GetAdmins()
+	admins, err := app.db.GetAdminUsers()
 	if err != nil {
 		return false, err
 	}
@@ -114,7 +128,7 @@ func createAdminUser(app *application) (bool, error) {
 		return false, err
 	}
 
-	err = app.models.Users.Insert(user)
+	err = app.db.InsertUser(user)
 
 	if err != nil {
 		return false, err

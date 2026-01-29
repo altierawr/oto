@@ -3,6 +3,7 @@ import * as mp4box from "mp4box";
 
 import type { Song, StreamResponse, SeekResponse } from "./types";
 import { shuffleArray } from "./utils/utils";
+import { request } from "./utils/http";
 
 type PlaylistSong = {
   id: string;
@@ -549,6 +550,15 @@ export class MusicPlayer {
     };
   }
 
+  async stop() {
+    this.#audio.pause();
+    await this.#reset();
+    this.#updatePlayerState(MusicPlayer.getInitialPlayerState());
+    usePlayerState.setState({
+      song: null,
+    });
+  }
+
   async playSongs(songs: Song[], index: number) {
     this.#audio.pause();
     await this.#reset();
@@ -652,7 +662,7 @@ export class MusicPlayer {
   async #resetPlaylistEntry(index: number) {
     const pe = { ...this.playlist[index] };
     if (pe && pe.streamId) {
-      fetch(`http://localhost:3003/v1/streams/${pe.streamId}/end`, {
+      request(`/streams/${pe.streamId}/end`, {
         credentials: "include",
       })
         .then(() => {
@@ -1186,8 +1196,8 @@ export class MusicPlayer {
     await this.#clearBufferOperationsQueues();
     console.log("done in", performance.now() - start, "milliseconds");
 
-    const resp = await fetch(
-      `http://localhost:3003/v1/streams/${pe.streamId}/seek?position=${position}`,
+    const resp = await request(
+      `/streams/${pe.streamId}/seek?position=${position}`,
       {
         credentials: "include",
       },
@@ -1706,18 +1716,15 @@ export class MusicPlayer {
   ) {
     const initResp =
       segment === 0
-        ? fetch(
-            `http://localhost:3003/v1/streams/${streamId}/segments/init.mp4`,
-            {
-              cache: "no-store",
-              headers: { "Cache-Control": "no-cache" },
-              credentials: "include",
-            },
-          )
+        ? request(`/streams/${streamId}/segments/init.mp4`, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache" },
+            credentials: "include",
+          })
         : null;
 
-    const segmentResp = fetch(
-      `http://localhost:3003/v1/streams/${streamId}/segments/segment${segment}.mp4`,
+    const segmentResp = request(
+      `/streams/${streamId}/segments/segment${segment}.mp4`,
       { cache: "no-store", credentials: "include" },
     );
 
@@ -1844,8 +1851,8 @@ export class MusicPlayer {
 
     if (!pe.streamId) {
       console.log("stream id not found, fetching stream");
-      const streamResp = await fetch(
-        `http://localhost:3003/v1/tracks/${this.playlist[playlistIndex].song.id}/stream`,
+      const streamResp = await request(
+        `/tracks/${this.playlist[playlistIndex].song.id}/stream`,
         { cache: "no-store", credentials: "include" },
       );
       if (streamResp.status !== 201) {

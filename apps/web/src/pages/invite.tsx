@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { Button, Spacer } from "design";
 import { useState } from "react";
+import { request } from "../utils/http";
 
 const InvitePage = () => {
   const [inviteCode, setInviteCode] = useState<string | null>(null);
@@ -11,7 +12,7 @@ const InvitePage = () => {
     mutationFn: async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setError(null);
-      const resp = await fetch("http://localhost:3003/v1/tokens/invitecode", {
+      const resp = await request("/tokens/invitecode", {
         method: "POST",
         credentials: "include",
       });

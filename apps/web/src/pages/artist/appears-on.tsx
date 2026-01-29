@@ -5,14 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 import MusicBlockGrid from "../../components/music-blocks/music-block-grid";
 import MusicBlock from "../../components/music-blocks/music-block";
 import { Loader } from "design";
+import { request } from "../../utils/http";
 
 const ArtistPageAppearsOn = () => {
   const data = useRouteLoaderData("artist") as { artist: ArtistPage };
   const query = useQuery({
     queryKey: ["artist-appears-on", data.artist.id],
     queryFn: async () => {
-      const resp = await fetch(
-        `http://localhost:3003/v1/artists/${data.artist.id}/appears-on`,
+      const resp = await request(
+        `/artists/${data.artist.id}/appears-on`,
         { credentials: "include" },
       );
       const json: PaginatedResponse<Album> = await resp.json();
