@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/altierawr/oto/assets"
@@ -27,13 +30,44 @@ type DB struct {
 	*sqlx.DB
 }
 
-const dbFileName = "data.db"
+func ensureDBPath() (string, error) {
+	var baseDir string
+
+	switch runtime.GOOS {
+	case "windows":
+		baseDir = os.Getenv("APPDATA")
+		if baseDir == "" {
+			baseDir = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming")
+		}
+	case "darwin":
+		baseDir = filepath.Join(os.Getenv("HOME"), "Library", "Application Support")
+	default: // linux, bsd, etc.
+		baseDir = os.Getenv("XDG_DATA_HOME")
+		if baseDir == "" {
+			baseDir = filepath.Join(os.Getenv("HOME"), ".local", "share")
+		}
+	}
+
+	appDir := filepath.Join(baseDir, "oto")
+
+	// Create directory if it doesn't exist
+	if err := os.MkdirAll(appDir, 0755); err != nil {
+		return "", err
+	}
+
+	return filepath.Join(appDir, "data.db"), nil
+}
 
 func New(logger *slog.Logger) (*DB, error) {
+	dbPath, err := ensureDBPath()
+	if err != nil {
+		return nil, err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	db, err := sqlx.ConnectContext(ctx, "sqlite3", fmt.Sprintf("%s?_fk=1", dbFileName))
+	db, err := sqlx.ConnectContext(ctx, "sqlite3", fmt.Sprintf("%s?_fk=1", dbPath))
 	if err != nil {
 		return nil, err
 	}
@@ -45,18 +79,23 @@ func New(logger *slog.Logger) (*DB, error) {
 
 	return &DB{
 		DB:     db,
-		dsn:    dbFileName,
+		dsn:    dbPath,
 		logger: logger,
 	}, nil
 }
 
 func (db *DB) MigrateUp() error {
+	dbPath, err := ensureDBPath()
+	if err != nil {
+		return err
+	}
+
 	iofsDriver, err := iofs.New(assets.EmbeddedFiles, "migrations")
 	if err != nil {
 		return err
 	}
 
-	migrator, err := migrate.NewWithSourceInstance("iofs", iofsDriver, fmt.Sprintf("sqlite3://%s", dbFileName))
+	migrator, err := migrate.NewWithSourceInstance("iofs", iofsDriver, fmt.Sprintf("sqlite3://%s", dbPath))
 	if err != nil {
 		return err
 	}
