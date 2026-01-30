@@ -48,7 +48,7 @@ const SongQueueItem = ({
 
       <div className="flex flex-col justify-center">
         <p
-          className="text-sm font-bold line-clamp-2"
+          className="text-sm font-bold line-clamp-2 w-full"
           onMouseDown={(e) => e.stopPropagation()}
         >
           {song.album && (

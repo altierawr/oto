@@ -25,7 +25,11 @@ const AlbumsScroller = ({
         id={id}
         title={title}
         viewAllUrl={viewAllUrl}
-        className="col-[breakout]! px-6 scroll-px-6"
+        className="col-[breakout]!"
+        style={{
+          paddingInline: "calc((100% - 1050px) / 2)",
+          scrollPaddingInline: "calc((100% - 1050px) / 2)",
+        }}
       >
         {albums.map((album) => (
           <AlbumsScrollerItem

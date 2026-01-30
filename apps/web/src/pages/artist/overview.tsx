@@ -22,7 +22,12 @@ const ArtistPageOverview = () => {
 
   return (
     <>
-      <div className="flex gap-10 col-[breakout]! pl-6">
+      <div
+        className="flex gap-10 col-[breakout]!"
+        style={{
+          paddingInline: "calc((100% - 1050px) / 2)",
+        }}
+      >
         {releasesByDate.length > 0 && (
           <div>
             <LatestRelease album={releasesByDate[0]} />

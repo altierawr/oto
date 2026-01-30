@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { Button, IconButton, Spacer } from "design";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { type PropsWithChildren } from "react";
+import { type HTMLAttributes, type PropsWithChildren } from "react";
 import { useNavigate } from "react-router";
 import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 
@@ -10,6 +10,7 @@ type TClassNameProps = {
   title: string;
   viewAllUrl?: string;
   className?: string;
+  style?: HTMLAttributes<HTMLDivElement>["style"];
 };
 
 const HorizontalMediaScroller = ({
@@ -18,6 +19,7 @@ const HorizontalMediaScroller = ({
   viewAllUrl,
   children,
   className,
+  style,
 }: PropsWithChildren<TClassNameProps>) => {
   const navigate = useNavigate();
   const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } =
@@ -81,6 +83,7 @@ const HorizontalMediaScroller = ({
           className,
           "grid grid-flow-col auto-cols-[145px] gap-5 pb-2 overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-stretch",
         )}
+        style={style}
       >
         {children}
       </div>

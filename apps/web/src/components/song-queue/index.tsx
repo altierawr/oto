@@ -35,7 +35,7 @@ const SongQueue = () => {
       onClick={handleBlur}
     >
       <div
-        className="fixed right-0 top-0 min-w-[300px] p-4"
+        className="fixed right-0 top-0 min-w-[450px] max-w-[450px] p-4"
         style={{
           height: "calc(100dvh - 100px)",
           transform: isVisible ? "translate(0, 0)" : "translate(0, 5px)",

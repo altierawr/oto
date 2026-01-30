@@ -38,7 +38,7 @@ const LatestRelease = ({ album }: TProps) => {
             })}
           </p>
         )}
-        <p className="text-lg leading-6 font-bold w-full min-w-[200px] max-w-[300px] line-clamp-4">
+        <p className="text-lg leading-6 font-bold w-full min-w-[170px] max-w-[170px] line-clamp-4">
           <Link to={`/albums/${album.id}`}>{album.title}</Link>
         </p>
         {album.numberOfTracks && (

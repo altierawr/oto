@@ -41,17 +41,42 @@ const AppRoot = () => {
       <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
         <Sidebar />
 
-        <main
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto grid *:col-[content] items-start content-start auto-rows-max"
-          style={{
-            gridTemplateColumns:
-              "[breakout-start] var(--spacing-8) [content-start] 1fr [content-end] var(--spacing-8) [breakout-end]",
-          }}
-        >
-          <Navbar />
-          <Outlet />
-        </main>
+        <div className="relative w-full h-full min-w-0">
+          <div
+            className="absolute inset-0 pointer-events-none z-50 grid"
+            style={{
+              gridTemplateColumns:
+                "[breakout-start] 1fr [content-start] 1050px [content-end] 1fr [breakout-end]",
+            }}
+          >
+            <div
+              className="col-[breakout-start/content-start] h-full"
+              style={{
+                background:
+                  "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.95) 40%, rgba(0,0,0,1.0) 100%)",
+              }}
+            />
+            <div
+              className="col-[content-end/breakout-end] h-full"
+              style={{
+                background:
+                  "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.95) 40%, rgba(0,0,0,1.0) 100%)",
+              }}
+            />
+          </div>
+
+          <main
+            ref={scrollRef}
+            className="w-full h-full overflow-y-auto grid *:col-[content] items-start content-start auto-rows-max"
+            style={{
+              gridTemplateColumns:
+                "[breakout-start] 1fr [content-start] 1050px [content-end] 1fr [breakout-end]",
+            }}
+          >
+            <Navbar />
+            <Outlet />
+          </main>
+        </div>
       </div>
 
       <MusicControls />
