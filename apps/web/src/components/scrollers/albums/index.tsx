@@ -27,8 +27,12 @@ const AlbumsScroller = ({
         viewAllUrl={viewAllUrl}
         className="col-[breakout]!"
         style={{
-          paddingInline: "calc((100% - 1050px) / 2)",
-          scrollPaddingInline: "calc((100% - 1050px) / 2)",
+          paddingInlineStart:
+            "calc(50vw - (var(--content-width) / 2) - var(--sidebar-width))",
+          paddingInlineEnd: "calc(50vw - (var(--content-width) / 2))",
+          scrollPaddingInlineStart:
+            "calc(50vw - (var(--content-width) / 2) - var(--sidebar-width))",
+          scrollPaddingInlineEnd: "calc(50vw - (var(--content-width) / 2))",
         }}
       >
         {albums.map((album) => (

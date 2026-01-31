@@ -9,6 +9,9 @@
 
 @theme {
   --spacing-1: var(--space-1);
+  --sidebar-width: 220px;
+  --content-width: 1050px;
+
   --spacing-2: var(--space-2);
   --spacing-3: var(--space-3);
   --spacing-4: var(--space-4);

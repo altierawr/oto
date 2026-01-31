@@ -25,7 +25,9 @@ const ArtistPageOverview = () => {
       <div
         className="flex gap-10 col-[breakout]!"
         style={{
-          paddingInline: "calc((100% - 1050px) / 2)",
+          paddingInlineStart:
+            "calc(50vw - (var(--content-width) / 2) - var(--sidebar-width))",
+          paddingInlineEnd: "calc(50vw - (var(--content-width) / 2))",
         }}
       >
         {releasesByDate.length > 0 && (

@@ -39,7 +39,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="h-full min-w-[220px] w-[220px] py-4 px-2 grid items-end border-r border-r-(--gray-3)">
+    <div className="h-full min-w-(--sidebar-width) w-(--sidebar-width) py-4 px-2 grid items-end border-r border-r-(--gray-3)">
       {user && (
         <Menu.Root onOpenChange={(open) => setIsUserMenuOpen(open)}>
           <Menu.Trigger>
