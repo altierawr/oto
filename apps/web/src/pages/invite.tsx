@@ -5,7 +5,7 @@ import { request } from "../utils/http";
 
 const InvitePage = () => {
   const [inviteCode, setInviteCode] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [_, setError] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationKey: ["invitecode"],

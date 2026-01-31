@@ -1,8 +1,8 @@
 import { Link, useLoaderData, type LoaderFunction } from "react-router";
-import { Button, IconButton, Spacer } from "design";
+import { Button, Spacer } from "design";
 import type { Album } from "../types";
 import SongList from "../components/song-list";
-import { Heart, Play, Share } from "lucide-react";
+import { Play } from "lucide-react";
 import { usePlayerState } from "../store";
 import { formatDuration } from "../utils/utils";
 import clsx from "clsx";

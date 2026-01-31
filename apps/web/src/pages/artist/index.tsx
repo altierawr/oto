@@ -12,8 +12,8 @@ import type {
   Song,
   ArtistPage as TArtistPage,
 } from "../../types";
-import { Button, IconButton, Spacer, Tabs } from "design";
-import { Heart, Pause, Play, Share } from "lucide-react";
+import { Button, Spacer, Tabs } from "design";
+import { Pause, Play } from "lucide-react";
 import ArtistPageOverview from "./overview";
 import type { TabsTab } from "@base-ui/react";
 import { getTidalCoverUrl } from "../../utils/image";
