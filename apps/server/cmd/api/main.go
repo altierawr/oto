@@ -42,8 +42,7 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		logger.Error(err.Error())
-		os.Exit(1)
+		logger.Warn("could not load .env file")
 	}
 
 	db, err := database.New(logger)
@@ -70,19 +69,54 @@ func main() {
 
 	var cfg config
 
-	cfg.tidal.accessToken = os.Getenv("TIDAL_ACCESS_TOKEN")
-	cfg.tidal.refreshToken = os.Getenv("TIDAL_REFRESH_TOKEN")
-	cfg.tidal.clientId = os.Getenv("TIDAL_CLIENT_ID")
-	cfg.tidal.secret = os.Getenv("TIDAL_SECRET")
+	found := false
+	cfg.tidal.accessToken, found = os.LookupEnv("TIDAL_ACCESS_TOKEN")
+	if !found {
+		logger.Error("missing env variable TIDAL_ACCESS_TOKEN")
+		os.Exit(1)
+	}
+
+	cfg.tidal.refreshToken, found = os.LookupEnv("TIDAL_REFRESH_TOKEN")
+	if !found {
+		logger.Error("missing env variable TIDAL_ACCESS_TOKEN")
+		os.Exit(1)
+	}
+
+	cfg.tidal.clientId, found = os.LookupEnv("TIDAL_CLIENT_ID")
+	if !found {
+		logger.Error("missing env variable TIDAL_ACCESS_TOKEN")
+		os.Exit(1)
+	}
+
+	cfg.tidal.secret, found = os.LookupEnv("TIDAL_SECRET")
+	if !found {
+		logger.Error("missing env variable TIDAL_ACCESS_TOKEN")
+		os.Exit(1)
+	}
 
 	tidal.SetTokens(cfg.tidal.accessToken, cfg.tidal.refreshToken, cfg.tidal.clientId, cfg.tidal.secret)
 
-	cfg.secrets.accessToken = os.Getenv("ACCESS_TOKEN_SECRET")
-	cfg.secrets.refreshToken = os.Getenv("REFRESH_TOKEN_SECRET")
+	cfg.secrets.accessToken, found = os.LookupEnv("ACCESS_TOKEN_SECRET")
+	if !found {
+		logger.Error("missing env variable TIDAL_ACCESS_TOKEN")
+		os.Exit(1)
+	}
+
+	cfg.secrets.refreshToken, found = os.LookupEnv("REFRESH_TOKEN_SECRET")
+	if !found {
+		logger.Error("missing env variable TIDAL_ACCESS_TOKEN")
+		os.Exit(1)
+	}
 
 	auth.SetTokenSecrets(cfg.secrets.accessToken, cfg.secrets.refreshToken)
 
-	cfg.env = "development"
+	env, found := os.LookupEnv("OTO_ENV")
+	if found {
+		cfg.env = env
+	} else {
+		cfg.env = "production"
+	}
+
 	cfg.port = 3003
 
 	app := &application{
