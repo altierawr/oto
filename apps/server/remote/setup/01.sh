@@ -24,6 +24,9 @@ export LC_ALL=en_US.UTF-8
 # Enable the "universe" repository.
 add-apt-repository --yes universe
 
+# Enable golang repository
+add-apt-repository --yes ppa:longsleep/golang-backports
+
 # Update all software packages. Using the --force-confnew flag means that configuration
 # files will be replaced if newer ones are available.
 apt update
@@ -49,15 +52,12 @@ ufw allow 80/tcp
 ufw allow 443/tcp
 ufw --force enable
 
-# Install fail2ban.
-apt --yes install fail2ban
+# Install required packages
+apt --yes install fail2ban golang-go ffmpeg sqlite3
 
 # Install the migrate CLI tool.
 curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.1/migrate.linux-amd64.tar.gz | tar xvz
 mv migrate /usr/local/bin/migrate
-
-# Install Sqlite.
-apt --yes install sqlite3
 
 # Install Caddy (see https://caddyserver.com/docs/install#debian-ubuntu-raspbian).
 apt --yes install -y debian-keyring debian-archive-keyring apt-transport-https curl
