@@ -7,7 +7,6 @@ import AudioDebugger from "../components/debugger";
 import SongQueue from "../components/song-queue";
 import Navbar from "../components/navbar";
 import useScrollRestoration from "../hooks/useScrollRestoration";
-import { HelmetProvider } from "react-helmet-async";
 
 const AppRoot = () => {
   const location = useLocation();
