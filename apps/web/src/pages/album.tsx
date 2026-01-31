@@ -91,8 +91,8 @@ const AlbumPage = () => {
                 <Play size={16} fill="currentColor" />
                 Play Album
               </Button>
-              <IconButton color="gray" variant="soft" icon={Heart} />
-              <IconButton color="gray" variant="soft" icon={Share} />
+              {/*<IconButton color="gray" variant="soft" icon={Heart} />
+              <IconButton color="gray" variant="soft" icon={Share} />*/}
             </div>
           </div>
         </div>

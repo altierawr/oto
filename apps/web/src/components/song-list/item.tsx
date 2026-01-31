@@ -143,22 +143,24 @@ const SongListItem = ({ song, songs }: TProps) => {
           <Menu.Content>
             <Menu.Item onClick={handlePlayNextClick}>Play Next</Menu.Item>
             <Menu.Item onClick={handleAddToQueueClick}>Add to Queue</Menu.Item>
-            <Menu.Separator />
+            {/*<Menu.Separator />
             <Menu.Item>Favorite</Menu.Item>
-            <Menu.Item>Share</Menu.Item>
+            <Menu.Item>Share</Menu.Item>*/}
           </Menu.Content>
         </Menu.Root>
-        <ActionButton>
-          {/* The left margin is to help visually center the icon (it's not symmetrical) */}
-          <ListPlus
-            size={18}
-            strokeWidth={1.5}
-            className="opacity-0 group-hover:opacity-100 ml-[3px]"
-          />
-        </ActionButton>
-        <ActionButton>
-          <Heart size={18} strokeWidth={1.5} />
-        </ActionButton>
+        <div className="hidden">
+          <ActionButton>
+            {/* The left margin is to help visually center the icon (it's not symmetrical) */}
+            <ListPlus
+              size={18}
+              strokeWidth={1.5}
+              className="opacity-0 group-hover:opacity-100 ml-[3px]"
+            />
+          </ActionButton>
+          <ActionButton>
+            <Heart size={18} strokeWidth={1.5} />
+          </ActionButton>
+        </div>
       </div>
     </div>
   );

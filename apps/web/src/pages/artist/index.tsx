@@ -210,8 +210,8 @@ const ArtistPage = () => {
                   </>
                 )}
               </Button>
-              <IconButton color="gray" variant="soft" icon={Heart} size="sm" />
-              <IconButton color="gray" variant="soft" icon={Share} size="sm" />
+              {/*<IconButton color="gray" variant="soft" icon={Heart} size="sm" />
+              <IconButton color="gray" variant="soft" icon={Share} size="sm" />*/}
             </div>
           </div>
         </div>
