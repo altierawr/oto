@@ -1,5 +1,6 @@
-import router from "../router";
 import { usePlayerState } from "../store";
+import { invalidateUserQuery } from "../hooks/useCurrentUser";
+import router from "../router";
 
 const BASE_URL = "http://localhost:3003/v1";
 
@@ -9,10 +10,15 @@ export const request = async (
   input: string,
   init?: RequestInit & { skipRedirect?: boolean },
 ): Promise<Response> => {
-  const { skipRedirect, ...fetchInit } = init || {};
+  let { skipRedirect, ...fetchInit } = init || {};
+  fetchInit = {
+    ...fetchInit,
+    credentials: "include",
+  };
+
   const response = await fetch(`${BASE_URL}${input}`, fetchInit);
 
-  if (response.status === 401 && !skipRedirect) {
+  if (response.status === 401) {
     console.warn("Auth token expired, trying to refresh");
     if (!refreshPromise) {
       refreshPromise = fetch(`${BASE_URL}/tokens/refresh`, {
@@ -21,9 +27,19 @@ export const request = async (
       })
         .then((res) => {
           if (res.status === 401) {
-            console.log("Refresh failed, going to login");
-            usePlayerState.getState().player.stop();
-            router.navigate("/login");
+            console.log("Access token refresh failed");
+
+            const pathname = router.state.location.pathname;
+
+            if (pathname !== "/login" && pathname !== "/register") {
+              invalidateUserQuery();
+
+              if (!skipRedirect) {
+                console.log("Going to login");
+                usePlayerState.getState().player.stop();
+                router.navigate("/login");
+              }
+            }
           }
           return res;
         })

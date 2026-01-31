@@ -36,10 +36,7 @@ const SearchInput = () => {
     }
 
     const timeout = setTimeout(async () => {
-      const resp = await request(
-        `/search?query=${searchValue}`,
-        { credentials: "include" },
-      );
+      const resp = await request(`/search?query=${searchValue}`);
 
       if (resp.status !== 200) {
         console.error("Resp failed with status", resp.status, ":", resp);

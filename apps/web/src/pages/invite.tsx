@@ -14,7 +14,6 @@ const InvitePage = () => {
       setError(null);
       const resp = await request("/tokens/invitecode", {
         method: "POST",
-        credentials: "include",
       });
 
       const data = await resp.json();

@@ -16,7 +16,7 @@ const MusicControls = () => {
   };
 
   return (
-    <div className="w-full p-4 flex justify-between h-[100px] border-t border-t-(--gray-6)">
+    <div className="w-full p-4 flex justify-between h-[100px] border-t border-t-(--gray-3)">
       <div className="flex-1">
         <MusicControlsSongInfo />
       </div>

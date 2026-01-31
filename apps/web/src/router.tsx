@@ -9,6 +9,7 @@ import ArtistPageAppearsOn from "./pages/artist/appears-on";
 import LoginRegisterPage from "./pages/login-register";
 import AppRoot from "./pages/app-root";
 import InvitePage from "./pages/invite";
+import AccountPage from "./pages/account";
 
 const router = createBrowserRouter([
   {
@@ -29,10 +30,15 @@ const router = createBrowserRouter([
             path: "invite",
             element: <InvitePage />,
           },
+          {
+            path: "account",
+            element: <AccountPage />,
+          },
         ],
       },
       {
         element: <AppRoot />,
+        path: "/",
         children: [
           {
             path: "artists/:id",

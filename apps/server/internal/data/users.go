@@ -58,17 +58,17 @@ func ValidateUsername(v *validator.Validator, username string) {
 	v.Check(len(username) <= 16, "username", "must not be more than 16 bytes long")
 }
 
-func ValidatePasswordPlaintext(v *validator.Validator, password string) {
-	v.Check(password != "", "password", "must be provided")
-	v.Check(utf8.RuneCountInString(password) >= 8, "password", "must be at least 8 characters long")
-	v.Check(utf8.RuneCountInString(password) <= 72, "password", "must not be more than 72 characters long")
+func ValidatePasswordPlaintext(v *validator.Validator, password string, key string) {
+	v.Check(password != "", key, "must be provided")
+	v.Check(utf8.RuneCountInString(password) >= 8, key, "must be at least 8 characters long")
+	v.Check(utf8.RuneCountInString(password) <= 72, key, "must not be more than 72 characters long")
 }
 
 func ValidateUser(v *validator.Validator, user *User) {
 	ValidateUsername(v, user.Username)
 
 	if user.Password.Plaintext != nil {
-		ValidatePasswordPlaintext(v, *user.Password.Plaintext)
+		ValidatePasswordPlaintext(v, *user.Password.Plaintext, "password")
 	}
 
 	// this should never happen

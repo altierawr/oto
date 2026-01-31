@@ -15,7 +15,11 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 
+	router.HandlerFunc(http.MethodGet, "/v1/me", app.getCurrentUserHandler)
+
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/users/logout", app.logOutUserHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/users/change-password", app.changePasswordHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.loginHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/refresh", app.refreshTokensHandler)

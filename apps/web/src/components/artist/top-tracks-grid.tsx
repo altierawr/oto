@@ -17,10 +17,7 @@ const ArtistTopTracksGrid = ({
   const query = useQuery({
     queryKey: ["artist-top-tracks", artist.id],
     queryFn: async () => {
-      const resp = await request(
-        `/artists/${artist.id}/toptracks`,
-        { credentials: "include" },
-      );
+      const resp = await request(`/artists/${artist.id}/toptracks`);
       const json: PaginatedResponse<Song> = await resp.json();
 
       return json;

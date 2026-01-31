@@ -15,9 +15,7 @@ import { Helmet } from "react-helmet-async";
 import { request } from "../utils/http";
 
 const loader: LoaderFunction = async ({ params }) => {
-  const data = await request(`/albums/${params.id}`, {
-    credentials: "include",
-  });
+  const data = await request(`/albums/${params.id}`);
   const json: Album = await data.json();
 
   return { album: json };

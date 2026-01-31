@@ -132,7 +132,7 @@ func (db *DB) DeleteToken(tokenPlaintext string) error {
 	return err
 }
 
-func (db *DB) DeleteAllTokensForUser(scope string, userId int64) error {
+func (db *DB) DeleteAllTokensForUser(scope string, userId uuid.UUID) error {
 	query := `
 		DELETE FROM tokens
 		WHERE scope = $1 AND user_id = $2`

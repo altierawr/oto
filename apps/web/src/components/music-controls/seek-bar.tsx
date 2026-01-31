@@ -33,7 +33,10 @@ const MusicControlsSeekBar = () => {
   return (
     <div
       ref={seekBarRef}
-      className="flex-1 h-[13px] py-[4px] cursor-pointer relative group select-none"
+      className={clsx(
+        "flex-1 h-[13px] py-[4px] relative group select-none",
+        song && !playerState.isBuffering && "cursor-pointer",
+      )}
     >
       {offsetTime && song && (
         <div

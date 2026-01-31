@@ -12,10 +12,7 @@ const ArtistPageCompilations = () => {
   const query = useQuery({
     queryKey: ["artist-compilations", data.artist.id],
     queryFn: async () => {
-      const resp = await request(
-        `/artists/${data.artist.id}/compilations`,
-        { credentials: "include" },
-      );
+      const resp = await request(`/artists/${data.artist.id}/compilations`);
       const json: PaginatedResponse<Album> = await resp.json();
 
       return json;

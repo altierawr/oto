@@ -7,6 +7,7 @@ import AudioDebugger from "../components/debugger";
 import SongQueue from "../components/song-queue";
 import Navbar from "../components/navbar";
 import useScrollRestoration from "../hooks/useScrollRestoration";
+import { HelmetProvider } from "react-helmet-async";
 
 const AppRoot = () => {
   const location = useLocation();
@@ -37,52 +38,54 @@ const AppRoot = () => {
   }, [hasSetInitialLocation, location.pathname, setLocation]);
 
   return (
-    <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative">
-      <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
-        <Sidebar />
+    <>
+      <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative">
+        <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
+          <Sidebar />
 
-        <div className="relative w-full h-full min-w-0">
-          <div
-            className="absolute inset-0 pointer-events-none z-50 grid"
-            style={{
-              gridTemplateColumns:
-                "[breakout-start] 1fr [content-start] 1050px [content-end] 1fr [breakout-end]",
-            }}
-          >
+          <div className="relative w-full h-full min-w-0">
             <div
-              className="col-[breakout-start/content-start] h-full"
+              className="absolute inset-0 pointer-events-none z-50 grid"
               style={{
-                background:
-                  "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.95) 40%, rgba(0,0,0,1.0) 100%)",
+                gridTemplateColumns:
+                  "[breakout-start] 1fr [content-start] 1050px [content-end] 1fr [breakout-end]",
               }}
-            />
-            <div
-              className="col-[content-end/breakout-end] h-full"
+            >
+              <div
+                className="col-[breakout-start/content-start] h-full"
+                style={{
+                  background:
+                    "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.95) 40%, rgba(0,0,0,1.0) 100%)",
+                }}
+              />
+              <div
+                className="col-[content-end/breakout-end] h-full"
+                style={{
+                  background:
+                    "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.95) 40%, rgba(0,0,0,1.0) 100%)",
+                }}
+              />
+            </div>
+
+            <main
+              ref={scrollRef}
+              className="w-full h-full overflow-y-auto grid *:col-[content] items-start content-start auto-rows-max"
               style={{
-                background:
-                  "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.95) 40%, rgba(0,0,0,1.0) 100%)",
+                gridTemplateColumns:
+                  "[breakout-start] 1fr [content-start] 1050px [content-end] 1fr [breakout-end]",
               }}
-            />
+            >
+              <Navbar />
+              <Outlet />
+            </main>
           </div>
-
-          <main
-            ref={scrollRef}
-            className="w-full h-full overflow-y-auto grid *:col-[content] items-start content-start auto-rows-max"
-            style={{
-              gridTemplateColumns:
-                "[breakout-start] 1fr [content-start] 1050px [content-end] 1fr [breakout-end]",
-            }}
-          >
-            <Navbar />
-            <Outlet />
-          </main>
         </div>
-      </div>
 
-      <MusicControls />
-      <AudioDebugger />
-      <SongQueue />
-    </div>
+        <MusicControls />
+        <AudioDebugger />
+        <SongQueue />
+      </div>
+    </>
   );
 };
 

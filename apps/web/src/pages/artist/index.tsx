@@ -63,9 +63,7 @@ const parseTidalRichTextIntoComponent = (text: string) => {
 };
 
 const loader: LoaderFunction = async ({ params }) => {
-  const data = await request(`/artists/${params.id}`, {
-    credentials: "include",
-  });
+  const data = await request(`/artists/${params.id}`);
   const json: TArtistPage = await data.json();
 
   return { artist: json };
@@ -80,10 +78,7 @@ const ArtistPage = () => {
   const topTracksQuery = useQuery({
     queryKey: ["artist-top-tracks", id],
     queryFn: async () => {
-      const resp = await request(
-        `/artists/${id}/toptracks`,
-        { credentials: "include" },
-      );
+      const resp = await request(`/artists/${id}/toptracks`);
       const json: PaginatedResponse<Song> = await resp.json();
 
       return json;
@@ -155,8 +150,8 @@ const ArtistPage = () => {
           style={{
             backgroundImage: `url(${getTidalCoverUrl(
               data.artist.albums?.[1]?.cover ||
-              data.artist.picture ||
-              data.artist.selectedAlbumCoverFallback,
+                data.artist.picture ||
+                data.artist.selectedAlbumCoverFallback,
               80,
             )})`,
           }}
@@ -187,7 +182,7 @@ const ArtistPage = () => {
                   data.artist.biography?.slice(
                     0,
                     data.artist.biography.indexOf("<br/>") ||
-                    data.artist.biography?.length,
+                      data.artist.biography?.length,
                   ),
                 )}
               </p>

@@ -1,11 +1,12 @@
+import { z } from "zod";
 import { Button, Input, Spacer } from "design";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useLocation } from "react-router";
 import { useForm } from "@tanstack/react-form";
 import { useEffect, useState } from "react";
-import { IconExclamationMark } from "@tabler/icons-react";
-import { z } from "zod";
+import { IconCheck, IconExclamationMark } from "@tabler/icons-react";
 import { request } from "../utils/http";
+import useCurrentUser, { invalidateUserQuery } from "../hooks/useCurrentUser";
 
 const validators = {
   username: z
@@ -22,6 +23,9 @@ const validators = {
 const LoginRegisterPage = () => {
   const [searchParams] = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const { isLoading, isStale, user } = useCurrentUser();
+  const navigate = useNavigate();
 
   const { pathname } = useLocation();
 
@@ -36,10 +40,8 @@ const LoginRegisterPage = () => {
       inviteCode: searchParams.get("code") || "",
     },
     onSubmit: async ({ value, formApi }) => {
+      setFormSuccess(null);
       setFormError(null);
-      await new Promise((resolve) => {
-        setTimeout(resolve, 1000);
-      });
 
       if (isRegister) {
         const resp = await request("/users", {
@@ -56,10 +58,11 @@ const LoginRegisterPage = () => {
         });
 
         const data = await resp.json();
-        console.log({ data });
 
         if (resp.status === 201) {
-          console.log({ data });
+          setFormSuccess(
+            "Your account has been registered! You can now log in.",
+          );
           return;
         }
 
@@ -95,26 +98,28 @@ const LoginRegisterPage = () => {
       }
 
       if (isLogin) {
-        const resp = await request(
-          "/tokens/authentication",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify({
-              username: value.username,
-              password: value.password,
-            }),
-            skipRedirect: true,
+        const resp = await request("/tokens/authentication", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify({
+            username: value.username,
+            password: value.password,
+          }),
+          skipRedirect: true,
+        });
 
         const data = await resp.json();
 
+        if (resp.status === 201) {
+          invalidateUserQuery();
+          navigate("/");
+          return;
+        }
+
         // Wrong credentials
-        if (resp.status === 401) {
+        if (resp.status === 403) {
           setFormError("Invalid username or password");
           return;
         }
@@ -141,11 +146,6 @@ const LoginRegisterPage = () => {
           return;
         }
 
-        if (resp.status === 201) {
-          // TODO: do something with the token
-          return;
-        }
-
         console.error("Unknown response", resp.status);
         setFormError("Something went wrong");
       }
@@ -156,6 +156,12 @@ const LoginRegisterPage = () => {
     setFormError(null);
     form.reset();
   }, [pathname]);
+
+  useEffect(() => {
+    if (!isLoading && !isStale && user) {
+      navigate("/");
+    }
+  }, [user, isLoading, isStale]);
 
   return (
     <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative grid place-items-center">
@@ -182,37 +188,33 @@ const LoginRegisterPage = () => {
           }}
         >
           <div className="grid gap-4 content-start">
-            <div className="grid content-start gap-2">
-              <form.Field
-                name="username"
-                validators={{
-                  onBlur: validators.username,
-                }}
-                children={(field) => (
-                  <>
-                    <Input
-                      type="text"
-                      name={field.name}
-                      placeholder="Username"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) =>
-                        field.handleChange(e.target.value.trim())
-                      }
-                      required
-                      errors={field.state.meta.errors
-                        .filter((err) => err !== undefined)
-                        .map((err) => `Username ${err.message}`)}
-                      className="w-full"
-                    />
-                  </>
-                )}
-              />
-            </div>
+            <form.Field
+              name="username"
+              validators={{
+                onBlur: validators.username,
+              }}
+              children={(field) => (
+                <>
+                  <Input
+                    type="text"
+                    name={field.name}
+                    placeholder="Username"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value.trim())}
+                    required
+                    errors={field.state.meta.errors
+                      .filter((err) => err !== undefined)
+                      .map((err) => `Username ${err.message}`)}
+                    className="w-full"
+                  />
+                </>
+              )}
+            />
             <form.Field
               name="password"
               validators={{
-                onBlur: validators.username,
+                onBlur: validators.password,
               }}
               children={(field) => (
                 <Input
@@ -220,6 +222,7 @@ const LoginRegisterPage = () => {
                   name={field.name}
                   placeholder="Password"
                   value={field.state.value}
+                  onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value.trim())}
                   errors={field.state.meta.errors
                     .filter((err) => err !== undefined)
@@ -287,6 +290,16 @@ const LoginRegisterPage = () => {
                   <IconExclamationMark size={16} stroke={1.5} />
                 </div>
                 <p className="text-sm">{formError}</p>
+              </div>
+            )}
+
+            {/* Form-level success display */}
+            {formSuccess && (
+              <div className="text-(--green-11) bg-(--green-2) border border-(--green-6) rounded-md px-3 py-2 flex gap-2 items-center">
+                <div className="rounded-full w-[24px] aspect-square grid place-items-center bg-(--green-3)">
+                  <IconCheck size={16} stroke={1.5} />
+                </div>
+                <p className="text-sm">{formSuccess}</p>
               </div>
             )}
           </div>

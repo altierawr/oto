@@ -82,6 +82,8 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
+		r = app.contextSetUserId(r, &claims.UserId)
+
 		role := UserRoleUser
 		if claims.IsAdmin {
 			role = UserRoleAdmin
