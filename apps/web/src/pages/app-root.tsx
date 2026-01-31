@@ -47,7 +47,7 @@ const AppRoot = () => {
               className="absolute inset-0 pointer-events-none z-50 grid"
               style={{
                 gridTemplateColumns:
-                  "[breakout-start] calc(50vw - (var(--content-width) / 2) - var(--sidebar-width)) [content-start] var(--content-width) [content-end] 1fr [breakout-end]",
+                  "[breakout-start] max(calc(50vw - (var(--content-width) / 2) - var(--sidebar-width)), var(--space-8)) [content-start] var(--content-width) [content-end] 1fr [breakout-end]",
               }}
             >
               <div
@@ -71,7 +71,7 @@ const AppRoot = () => {
               className="w-full h-full overflow-y-auto grid *:col-[content] items-start content-start auto-rows-max"
               style={{
                 gridTemplateColumns:
-                  "[breakout-start] calc(50vw - (var(--content-width) / 2) - var(--sidebar-width)) [content-start] var(--content-width) [content-end] 1fr [breakout-end]",
+                  "[breakout-start] max(calc(50vw - (var(--content-width) / 2) - var(--sidebar-width)), var(--space-8)) [content-start] var(--content-width) [content-end] 1fr [breakout-end]",
               }}
             >
               <Navbar />

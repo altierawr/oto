@@ -239,24 +239,24 @@ const ArtistPage = () => {
 
           <Tabs.Panel
             value="overview"
-            className="grid grid-cols-subgrid col-[breakout]! *:col-[content]"
+            className="grid grid-cols-subgrid col-[breakout]! *:col-[content] px-0!"
           >
             {!isChildRoute && <ArtistPageOverview />}
           </Tabs.Panel>
 
-          <Tabs.Panel value="albums">
+          <Tabs.Panel value="albums" className="px-0!">
             <Outlet />
           </Tabs.Panel>
 
-          <Tabs.Panel value="singles-eps">
+          <Tabs.Panel value="singles-eps" className="px-0!">
             <Outlet />
           </Tabs.Panel>
 
-          <Tabs.Panel value="compilations">
+          <Tabs.Panel value="compilations" className="px-0!">
             <Outlet />
           </Tabs.Panel>
 
-          <Tabs.Panel value="appears-on">
+          <Tabs.Panel value="appears-on" className="px-0!">
             <Outlet />
           </Tabs.Panel>
         </Tabs.Root>

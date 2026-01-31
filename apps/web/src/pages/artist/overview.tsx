@@ -4,6 +4,8 @@ import AlbumsScroller from "../../components/scrollers/albums";
 import type { ArtistPage } from "../../types";
 import LatestRelease from "../../components/albums/latest-release";
 import { Spacer } from "design";
+import styles from "./overview.module.css";
+import clsx from "clsx";
 
 const ArtistPageOverview = () => {
   const data = useRouteLoaderData("artist") as { artist: ArtistPage };
@@ -22,14 +24,7 @@ const ArtistPageOverview = () => {
 
   return (
     <>
-      <div
-        className="flex gap-10 col-[breakout]!"
-        style={{
-          paddingInlineStart:
-            "calc(50vw - (var(--content-width) / 2) - var(--sidebar-width))",
-          paddingInlineEnd: "calc(50vw - (var(--content-width) / 2))",
-        }}
-      >
+      <div className={clsx("flex gap-10 col-[breakout]!", styles.container)}>
         {releasesByDate.length > 0 && (
           <div>
             <LatestRelease album={releasesByDate[0]} />
