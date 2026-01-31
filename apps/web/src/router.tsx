@@ -10,6 +10,7 @@ import LoginRegisterPage from "./pages/login-register";
 import AppRoot from "./pages/app-root";
 import InvitePage from "./pages/invite";
 import AccountPage from "./pages/account";
+import HomePage from "./pages/home";
 
 const router = createBrowserRouter([
   {
@@ -40,6 +41,10 @@ const router = createBrowserRouter([
         element: <AppRoot />,
         path: "/",
         children: [
+          {
+            path: "/",
+            element: <HomePage />,
+          },
           {
             path: "artists/:id",
             id: "artist",
