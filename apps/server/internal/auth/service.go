@@ -119,6 +119,7 @@ func (as AuthService) GenerateAccessToken(user *data.User, family uuid.UUID) (st
 		UserId:   user.ID,
 		Username: user.Username,
 		Family:   family,
+		IsAdmin:  user.IsAdmin,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.ID.String(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(accessTokenDuration)),
