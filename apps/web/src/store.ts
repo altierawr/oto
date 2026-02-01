@@ -22,6 +22,7 @@ export type TPlayerState = {
     isMuted: boolean;
     isPaused: boolean;
     isBuffering: boolean;
+    isJumping: boolean;
     seekOffset: number;
     playlist: MusicPlayerSong[];
     isShuffleEnabled: boolean;

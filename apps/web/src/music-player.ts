@@ -43,8 +43,8 @@ export class MusicPlayer {
   #bufferSizeForward = 10;
   #lastPlayingSongIndex: number | null = null;
   #bufferOperationsQueue: Promise<void> = Promise.resolve();
-  #trackJumpsQueue: Promise<void> = Promise.resolve();
   #segmentFetchQueue: Promise<void> = Promise.resolve();
+  #fetchQueueGeneration = 0;
   #isBufferOperationsLocked = false;
   #isFetchOperationsLocked = false;
   #isResetting = false;
@@ -52,6 +52,7 @@ export class MusicPlayer {
   #isShuffleEnabled = false;
   #isRepeatEnabled = false;
   #isSeeking = false;
+  #isJumping = false;
   #trackEndCommitBoundary = 0.7;
   originalPlaylist: PlaylistSong[] | null = null;
 
@@ -61,6 +62,7 @@ export class MusicPlayer {
       isMuted: false,
       isPaused: false,
       isBuffering: false,
+      isJumping: false,
       seekOffset: 0,
       playlist: [],
       isShuffleEnabled: false,
@@ -106,17 +108,6 @@ export class MusicPlayer {
     });
   }
 
-  #enqueueTrackJump<T>(operation: () => Promise<T>): Promise<T> {
-    const promise = this.#trackJumpsQueue.then(operation);
-
-    this.#trackJumpsQueue = promise.then(
-      () => {},
-      () => {},
-    );
-
-    return promise;
-  }
-
   #enqueueBufferOperation<T>(operation: () => Promise<T>): Promise<T> {
     const promise = this.#bufferOperationsQueue.then(operation);
 
@@ -129,7 +120,13 @@ export class MusicPlayer {
   }
 
   #enqueueSegmentFetch<T>(operation: () => Promise<T>): Promise<T> {
-    const promise = this.#segmentFetchQueue.then(operation);
+    const generation = this.#fetchQueueGeneration;
+    const promise = this.#segmentFetchQueue.then(() => {
+      if (generation !== this.#fetchQueueGeneration) {
+        return undefined as unknown as T;
+      }
+      return operation();
+    });
 
     this.#segmentFetchQueue = promise.then(
       () => {},
@@ -257,6 +254,28 @@ export class MusicPlayer {
     this.#audio.addEventListener("pause", () => {
       this.#updatePlayerState({
         isPaused: true,
+      });
+    });
+
+    this.#audio.addEventListener("stalled", () => {
+      console.log("stalled");
+    });
+
+    this.#audio.addEventListener("waiting", () => {
+      this.#updatePlayerState({
+        isBuffering: true,
+      });
+    });
+
+    this.#audio.addEventListener("playing", () => {
+      this.#updatePlayerState({
+        isBuffering: false,
+      });
+    });
+
+    this.#audio.addEventListener("canplay", () => {
+      this.#updatePlayerState({
+        isBuffering: false,
       });
     });
   }
@@ -514,7 +533,6 @@ export class MusicPlayer {
     this.#isResetting = true;
     this.#lockAutomaticBufferOperations();
 
-    await this.#clearTrackJumpQueues();
     await this.#clearBufferOperationsQueues();
     await this.#clearFetchQueues();
 
@@ -534,6 +552,10 @@ export class MusicPlayer {
     this.playlist = [];
 
     this.#unlockAutomaticBufferOperations();
+    this.#isJumping = false;
+    this.#updatePlayerState({
+      isJumping: false,
+    });
     this.#isResetting = false;
   }
 
@@ -572,6 +594,7 @@ export class MusicPlayer {
 
     this.#updatePlayerState({
       playlist: this.playlist.map((pe) => pe.song),
+      isBuffering: true,
     });
 
     this.playlist[index].timestampOffset = 0;
@@ -632,13 +655,9 @@ export class MusicPlayer {
   }
 
   async #clearFetchQueues() {
+    this.#fetchQueueGeneration++;
     await this.#segmentFetchQueue.catch(() => {});
     this.#segmentFetchQueue = Promise.resolve();
-  }
-
-  async #clearTrackJumpQueues() {
-    await this.#trackJumpsQueue.catch(() => {});
-    this.#trackJumpsQueue = Promise.resolve();
   }
 
   togglePlayPause() {
@@ -715,21 +734,31 @@ export class MusicPlayer {
   }
 
   async jumpToTrack(index: number) {
-    return this.#enqueueTrackJump(async () => {
-      const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
-      if (currentIndex === null) {
-        return;
-      }
+    const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
+    if (currentIndex === null) {
+      return;
+    }
 
-      if (index < 0 || index >= this.playlist.length) {
-        return;
-      }
+    if (index < 0 || index >= this.playlist.length) {
+      return;
+    }
 
-      await this.#performTrackJump(index, index - currentIndex);
+    this.#isJumping = true;
+    this.#updatePlayerState({
+      isJumping: true,
+    });
+    await this.#performTrackJump(index, index - currentIndex);
+    this.#isJumping = false;
+    this.#updatePlayerState({
+      isJumping: false,
     });
   }
 
   async #jumpTrack(direction: number) {
+    if (this.#isJumping) {
+      return;
+    }
+
     const playlistIndex = this.#getCurrentlyPlayingSongIndex(true);
 
     if (playlistIndex === null) {
@@ -750,7 +779,15 @@ export class MusicPlayer {
       return;
     }
 
+    this.#isJumping = true;
+    this.#updatePlayerState({
+      isJumping: true,
+    });
     await this.#performTrackJump(targetIndex, direction);
+    this.#isJumping = false;
+    this.#updatePlayerState({
+      isJumping: false,
+    });
   }
 
   async #performTrackJump(targetIndex: number, direction: number) {
@@ -942,15 +979,11 @@ export class MusicPlayer {
   }
 
   async prevTrack() {
-    return this.#enqueueTrackJump(async () => {
-      await this.#jumpTrack(-1);
-    });
+    await this.#jumpTrack(-1);
   }
 
   async nextTrack() {
-    return this.#enqueueTrackJump(async () => {
-      await this.#jumpTrack(1);
-    });
+    await this.#jumpTrack(1);
   }
 
   addToQueue(song: Song) {
@@ -1017,21 +1050,6 @@ export class MusicPlayer {
     const newPlaylistSong = this.#getInitialPlaylistSongFromSong(song);
     this.playlist.splice(insertIndex, 0, newPlaylistSong);
 
-    // Update timestamp offsets starting from the current track
-    this.#updateTrackTimestampOffsets(currentIndex);
-
-    this.#updatePlayerStatePlaylist();
-
-    // Fetch and load the first segment of the new next track
-    await this.#maybeFetchNextSegment({
-      playlistIndex: insertIndex,
-      segmentIndex: 0,
-      force: true,
-    });
-
-    this.#unlockAutomaticBufferOperations();
-    this.#unlockFetchOperations();
-
     // If we are shuffled, we should also insert this song into the original playlist
     // so it doesn't disappear when we unshuffle.
     // Try to find the current song in the original playlist and insert after it.
@@ -1048,6 +1066,14 @@ export class MusicPlayer {
         this.originalPlaylist.push(newPlaylistSong);
       }
     }
+
+    // Update timestamp offsets starting from the current track
+    this.#updateTrackTimestampOffsets(currentIndex);
+
+    this.#updatePlayerStatePlaylist();
+
+    this.#unlockAutomaticBufferOperations();
+    this.#unlockFetchOperations();
   }
 
   async #removeTrackSegmentsFromBuffer(playlistIndex: number) {
@@ -1092,7 +1118,7 @@ export class MusicPlayer {
   }
 
   async seek(positionPerc: number) {
-    if (this.#isSeeking) {
+    if (this.#isSeeking || this.#isJumping) {
       return;
     }
 
@@ -2020,5 +2046,14 @@ export class MusicPlayer {
           pe.timestampOffset + pe.seekOffset + endTime;
       }
     }
+
+    if (
+      this.#isResetting ||
+      (this.#isBufferOperationsLocked && this.#isFetchOperationsLocked)
+    ) {
+      return;
+    }
+
+    this.#maybeLoadNextSegment();
   }
 }

@@ -14,7 +14,7 @@ const MusicControlsControlButtons = () => {
   const { player, song, playerState } = usePlayerState();
 
   const handlePrevClick = () => {
-    if (!song || playerState.isBuffering) {
+    if (!song || playerState.isJumping) {
       return;
     }
 
@@ -22,7 +22,7 @@ const MusicControlsControlButtons = () => {
   };
 
   const handleNextClick = () => {
-    if (!song || playerState.isBuffering) {
+    if (!song || playerState.isJumping) {
       return;
     }
 
@@ -30,7 +30,7 @@ const MusicControlsControlButtons = () => {
   };
 
   const handlePlayPauseClick = () => {
-    if (!song || playerState.isBuffering) {
+    if (!song || playerState.isBuffering || playerState.isJumping) {
       return;
     }
 
@@ -61,19 +61,19 @@ const MusicControlsControlButtons = () => {
         size={20}
         stroke={1.5}
         onClick={handlePrevClick}
-        className={clsx(song && !playerState.isBuffering && "cursor-pointer")}
+        className={clsx(song && !playerState.isJumping && "cursor-pointer")}
       />
       <div
-        className={clsx(song && !playerState.isBuffering && "cursor-pointer")}
+        className={clsx(song && !playerState.isJumping && "cursor-pointer")}
         onClick={handlePlayPauseClick}
       >
-        {playerState.isBuffering && (
-          <div className="w-[28px] aspect-square grid place-content-center">
+        {(playerState.isBuffering || playerState.isJumping) && (
+          <div className="w-[28px] aspect-square grid place-content-center cursor-default">
             <Loader />
           </div>
         )}
 
-        {!playerState.isBuffering && (
+        {!playerState.isBuffering && !playerState.isJumping && (
           <>
             {!song && <IconPlayerPlay size={28} stroke={1.5} />}
             {song && (
@@ -92,7 +92,7 @@ const MusicControlsControlButtons = () => {
         size={20}
         stroke={1.5}
         onClick={handleNextClick}
-        className={clsx(song && !playerState.isBuffering && "cursor-pointer")}
+        className={clsx(song && !playerState.isJumping && "cursor-pointer")}
       />
       <IconRepeat
         size={20}
