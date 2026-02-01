@@ -50,6 +50,7 @@ export class MusicPlayer {
   #isResetting = false;
   #volume = initialVolume;
   #isShuffleEnabled = false;
+  #isTogglingShuffle = false;
   #isRepeatEnabled = false;
   #isSeeking = false;
   #isJumping = false;
@@ -265,6 +266,16 @@ export class MusicPlayer {
       this.#updatePlayerState({
         isBuffering: true,
       });
+
+      if (
+        this.#isResetting ||
+        (this.#isBufferOperationsLocked && this.#isFetchOperationsLocked)
+      ) {
+        return;
+      }
+
+      this.#maybeFetchNextSegment();
+      this.#maybeLoadNextSegment();
     });
 
     this.#audio.addEventListener("playing", () => {
@@ -298,7 +309,13 @@ export class MusicPlayer {
   }
 
   async toggleShuffle() {
+    if (this.#isTogglingShuffle) {
+      return;
+    }
+
+    this.#isTogglingShuffle = true;
     this.#isShuffleEnabled = !this.#isShuffleEnabled;
+    this.#notifyShuffleRepeatStateChange();
 
     this.#lockAutomaticBufferOperations();
     this.#lockFetchOperations();
@@ -310,8 +327,9 @@ export class MusicPlayer {
     }
     this.#unlockAutomaticBufferOperations();
     this.#unlockFetchOperations();
+    this.#updatePlayerStatePlaylist();
 
-    this.#notifyShuffleRepeatStateChange();
+    this.#isTogglingShuffle = false;
   }
 
   toggleRepeat() {
@@ -557,6 +575,7 @@ export class MusicPlayer {
       isJumping: false,
     });
     this.#isResetting = false;
+    this.#isTogglingShuffle = false;
   }
 
   #getInitialPlaylistSongFromSong(song: Song): PlaylistSong {
