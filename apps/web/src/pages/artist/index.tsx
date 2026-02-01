@@ -222,6 +222,7 @@ const ArtistPage = () => {
           className="grid grid-cols-subgrid col-[breakout]! *:col-[content]"
           value={getActiveTab()}
           onValueChange={handleTabChange}
+          orientation="vertical"
         >
           <Tabs.List className="bg-(--gray-1)!">
             <Tabs.Tab value="overview">Overview</Tabs.Tab>

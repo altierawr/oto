@@ -4,6 +4,10 @@ import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "design";
 import TrackGridItem from "./item";
+import {
+  IconChevronCompactLeft,
+  IconChevronCompactRight,
+} from "@tabler/icons-react";
 
 type TProps = {
   tracks: Song[];
@@ -27,35 +31,51 @@ const TrackGrid = ({
     });
 
   return (
-    <div className={clsx("relative overflow-x-hidden pl-10", className)}>
+    <div className={clsx("relative overflow-x-hidden", className)}>
       <div
         className={clsx(
-          "absolute z-1 left-0 top-1/2 -translate-y-1/2 grid place-content-center rounded-md px-1 py-5 hover:bg-(--gray-3) transition-colors",
-          (!canScrollLeft || isLoading) && "hidden",
-        )}
-        onClick={scrollLeft}
-      >
-        <ChevronLeft size={20} />
-      </div>
-      <div
-        className={clsx(
-          "absolute z-1 right-0 top-1/2 -translate-y-1/2 grid place-content-center w-8 h-full bg-[rgba(0,0,0,0.9)]",
+          "absolute z-1 left-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-full",
           isLoading && "hidden",
         )}
-        onClick={scrollRight}
+        onClick={scrollLeft}
+        style={{
+          background:
+            "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+        }}
       >
         <div
           className={clsx(
-            "rounded-md px-1 py-5 hover:bg-(--gray-3) transition-colors",
+            "rounded-md py-5 hover:bg-(--gray-3) transition-colors",
+            (!canScrollLeft || isLoading) && "hidden",
+          )}
+          onClick={scrollLeft}
+        >
+          <IconChevronCompactLeft size={24} />
+        </div>
+      </div>
+      <div
+        className={clsx(
+          "absolute z-1 right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-full",
+          isLoading && "hidden",
+        )}
+        style={{
+          background:
+            "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+        }}
+      >
+        <div
+          className={clsx(
+            "rounded-md py-5 hover:bg-(--gray-3) transition-colors",
             (!canScrollRight || isLoading) && "hidden",
           )}
+          onClick={scrollRight}
         >
-          <ChevronRight size={20} />
+          <IconChevronCompactRight size={24} />
         </div>
       </div>
       <div
         ref={ref}
-        className="grid grid-flow-col auto-cols-[320px] grid-rows-[58px_58px_58px] gap-x-5 w-full overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-start content-start"
+        className="grid grid-flow-col auto-cols-[320px] scroll-px-10 px-10 grid-rows-[58px_58px_58px] gap-x-5 w-full overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-start content-start"
       >
         {tracks.map((track, idx) => (
           <TrackGridItem

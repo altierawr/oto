@@ -81,7 +81,7 @@ const HorizontalMediaScroller = ({
         ref={ref}
         className={clsx(
           className,
-          "grid grid-flow-col auto-cols-[145px] gap-5 pb-2 overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-stretch",
+          "grid grid-flow-col auto-cols-[160px] gap-5 pb-2 overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-stretch",
         )}
         style={style}
       >

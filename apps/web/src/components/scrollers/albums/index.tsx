@@ -2,7 +2,6 @@ import clsx from "clsx";
 import type { Album } from "../../../types";
 import HorizontalMediaScroller from "../../horizonal-media-scroller";
 import AlbumsScrollerItem from "./item";
-import styles from "./index.module.css";
 
 type TProps = {
   id: string;
@@ -27,13 +26,7 @@ const AlbumsScroller = ({
         id={id}
         title={title}
         viewAllUrl={viewAllUrl}
-        className={clsx("col-[breakout]!", styles.scroller)}
-        style={{
-          paddingInlineStart:
-            "max(calc(50vw - (var(--content-width) / 2) - var(--sidebar-width)), var(--space-8))",
-          scrollPaddingInlineStart:
-            "max(calc(50vw - (var(--content-width) / 2) - var(--sidebar-width)), var(--space-8))",
-        }}
+        className={clsx("col-[breakout]! px-10 scroll-px-10")}
       >
         {albums.map((album) => (
           <AlbumsScrollerItem

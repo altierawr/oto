@@ -1,9 +1,0 @@
-.scroller {
-  padding-right: calc(50vw - (var(--content-width) / 2));
-  scroll-padding-right: calc(50vw - (var(--content-width) / 2));
-
-  @media (max-width: 1400px) {
-    padding-right: var(--space-8);
-    scroll-padding-right: var(--space-8);
-  }
-}

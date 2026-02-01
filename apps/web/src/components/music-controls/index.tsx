@@ -43,7 +43,9 @@ const MusicControls = () => {
             )}
           </p>
           <MusicControlsSeekBar />
-          <p>{song ? formatDuration(song.duration, "digital") : undefined}</p>
+          <p className="w-[30px]">
+            {song ? formatDuration(song.duration, "digital") : undefined}
+          </p>
         </div>
       </div>
       <div className="flex-1 flex justify-end items-center gap-6">

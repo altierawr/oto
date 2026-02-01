@@ -4,7 +4,6 @@ import AlbumsScroller from "../../components/scrollers/albums";
 import type { ArtistPage } from "../../types";
 import LatestRelease from "../../components/albums/latest-release";
 import { Spacer } from "design";
-import styles from "./overview.module.css";
 import clsx from "clsx";
 
 const ArtistPageOverview = () => {
@@ -24,9 +23,13 @@ const ArtistPageOverview = () => {
 
   return (
     <>
-      <div className={clsx("flex gap-10 col-[breakout]!", styles.container)}>
+      <div
+        className={clsx(
+          "flex flex-col lg:flex-row gap-8 lg:gap-10 col-[breakout]!",
+        )}
+      >
         {releasesByDate.length > 0 && (
-          <div>
+          <div className="pl-10">
             <LatestRelease album={releasesByDate[0]} />
           </div>
         )}
