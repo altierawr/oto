@@ -38,7 +38,7 @@ const MusicControlsSeekBar = () => {
         song && !playerState.isBuffering && "cursor-pointer",
       )}
     >
-      {offsetTime && song && (
+      {offsetTime !== null && song && (
         <div
           className={clsx(
             "opacity-0 w-[6px] h-[14px] z-10 top-[50%] -translate-y-[50%] -translate-x-[50%] rounded-full bg-(--gray-12) absolute border border-(--gray-0) group-hover:opacity-100! transition-opacity",
