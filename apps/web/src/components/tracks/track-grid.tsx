@@ -1,7 +1,6 @@
 import clsx from "clsx";
 import type { Song } from "../../types";
 import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "design";
 import TrackGridItem from "./item";
 import {
