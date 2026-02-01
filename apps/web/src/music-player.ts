@@ -959,6 +959,8 @@ export class MusicPlayer {
     if (this.originalPlaylist) {
       this.originalPlaylist.push(entry);
     }
+
+    this.#updatePlayerStatePlaylist();
   }
 
   async playNext(song: Song) {
