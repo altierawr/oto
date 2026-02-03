@@ -1897,7 +1897,7 @@ export class MusicPlayer {
         { cache: "no-store" },
       );
       if (streamResp.status !== 201) {
-        console.error("woops");
+        console.error("Stream creation was unsuccesful");
         return;
       }
 
