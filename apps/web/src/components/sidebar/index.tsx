@@ -7,6 +7,7 @@ import { Menu } from "design";
 import { request } from "../../utils/http";
 import { Link, useNavigate } from "react-router";
 import { useState } from "react";
+import logo from "../../assets/oto-logo.svg";
 import clsx from "clsx";
 
 const Sidebar = () => {
@@ -44,7 +45,7 @@ const Sidebar = () => {
         to="/"
         className="flex items-center px-1 lg:px-3 gap-3 no-underline! mx-auto lg:mx-0"
       >
-        <img src={"/logo-64.png"} width="20" height="20" />
+        <img src={logo} width="20" height="20" />
         <p className="font-medium text-2xl hidden lg:inline-block">oto</p>
       </Link>
 
