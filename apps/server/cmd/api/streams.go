@@ -216,6 +216,10 @@ func (app *application) serveHLSHandler(w http.ResponseWriter, r *http.Request) 
 func (app *application) startStream(w http.ResponseWriter, r *http.Request, trackId int64, ss string) {
 	stream, err := tidal.GetSongStreamUrl(trackId)
 	if err != nil {
+		if errors.Is(err, tidal.ErrInvalidTidalResponseType) {
+			app.logger.Error("tidal returned data in an invalid format from stream endpoint", "trackId", trackId)
+		}
+
 		app.serverErrorResponse(w, r, err)
 		return
 	}

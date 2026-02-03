@@ -20,6 +20,9 @@ var (
 	tokenExpiry int64 = 0
 )
 
+var (
+	ErrInvalidTidalResponseType = errors.New("invalid tidal response type")
+)
 
 func SetTokens(accessToken string, refreshToken string, clientId string, secret string) {
 	tidalAccessToken = accessToken

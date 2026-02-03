@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/altierawr/oto/internal/types"
 )
@@ -32,20 +33,25 @@ func GetSongStreamUrl(id int64) (*string, error) {
 	req, _ := http.NewRequest(http.MethodGet, tidalURL.String(), nil)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
 
+	req.Header.Set("Accept", "application/json")
+
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
 
-	body, _ := io.ReadAll(res.Body)
+	contentType := res.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "application/json") {
+		return nil, ErrInvalidTidalResponseType
+	}
 
+	body, _ := io.ReadAll(res.Body)
 	if err := json.Unmarshal(body, &playback); err != nil {
 		return nil, err
 	}
 
 	decoded, err := base64.StdEncoding.DecodeString(playback.Manifest)
-
 	if err != nil {
 		return nil, err
 	}
