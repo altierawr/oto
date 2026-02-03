@@ -13,11 +13,11 @@ import (
 )
 
 var (
-	tidalClientId     = ""
-	tidalSecret = ""
-	tidalAccessToken  = ""
-	tidalRefreshToken = ""
-	tokenExpiry int64 = 0
+	tidalClientId           = ""
+	tidalSecret             = ""
+	tidalAccessToken        = ""
+	tidalRefreshToken       = ""
+	tokenExpiry       int64 = 0
 )
 
 var (
@@ -90,4 +90,3 @@ func refreshTokens() error {
 
 	return nil
 }
-
