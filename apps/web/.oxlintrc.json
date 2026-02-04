@@ -12,7 +12,9 @@
     "vitest"
   ],
   "categories": {},
-  "rules": {},
+  "rules": {
+    "react/no-children-prop": "off"
+  },
   "settings": {
     "jsx-a11y": {
       "polymorphicPropName": null,

@@ -134,12 +134,22 @@ const useHorizontalScrollSnap = ({
       }
     };
 
-    ref.current.addEventListener("wheel", listener);
+    const current = ref.current;
+    current.addEventListener("wheel", listener);
 
     return () => {
-      ref.current?.removeEventListener("wheel", listener);
+      current.removeEventListener("wheel", listener);
     };
-  }, [ref, scrollIndex, latestScrollPos, gap, pathname, isLoading]);
+  }, [
+    ref,
+    scrollIndex,
+    latestScrollPos,
+    gap,
+    pathname,
+    isLoading,
+    // oxlint-disable-next-line eslint-plugin-react-hooks(exhaustive-deps)
+    tryToScroll,
+  ]);
 
   const scrollLeft = () => {
     tryToScroll(ScrollDirection.LEFT, scrollAmount);

@@ -13,19 +13,21 @@ import { request } from "../../utils/http";
 
 const SearchInput = () => {
   const [searchValue, setSearchValue] = useState("");
-  const [searchTimeout, setSearchTimeout] = useState<number | undefined>();
   const [searchTab, setSearchTab] = useState<SearchTab>("topHits");
   const [searchResults, setSearchResults] = useState<SearchResults | null>(
     null,
   );
   const [isFocused, setIsFocused] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { pathname } = useLocation();
 
   const resultsListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    clearTimeout(searchTimeout);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
     const value = searchValue.trim();
 
@@ -35,7 +37,7 @@ const SearchInput = () => {
       return;
     }
 
-    const timeout = setTimeout(async () => {
+    searchTimeoutRef.current = setTimeout(async () => {
       const resp = await request(`/search?query=${searchValue}`);
 
       if (resp.status !== 200) {
@@ -52,7 +54,6 @@ const SearchInput = () => {
     }, 500);
 
     setIsFetching(true);
-    setSearchTimeout(timeout);
   }, [searchValue]);
 
   useEffect(() => {

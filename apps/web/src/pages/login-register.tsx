@@ -161,7 +161,7 @@ const LoginRegisterPage = () => {
     if (!isLoading && !isStale && user) {
       navigate("/");
     }
-  }, [user, isLoading, isStale]);
+  }, [user, isLoading, isStale, navigate]);
 
   return (
     <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative grid place-items-center">

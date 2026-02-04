@@ -17,7 +17,7 @@ const MusicControlsVolumeControl = () => {
     if (volume !== null) {
       player.setVolume(volume);
     }
-  }, [volume]);
+  }, [volume, player]);
 
   const handleMuteToggleClick = () => {
     player.toggleMute();

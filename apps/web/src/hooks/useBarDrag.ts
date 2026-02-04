@@ -55,16 +55,23 @@ const useBarDrag = ({ ref, initialValue, onMouseUp }: TProps) => {
       setIsMouseDown(true);
     };
 
+    const current = ref.current;
+
     document.addEventListener("mouseup", handleMouseUp);
     document.addEventListener("mousemove", handleMouseMove);
-    ref.current.addEventListener("mousedown", handleMouseDown);
+    current.addEventListener("mousedown", handleMouseDown);
 
     return () => {
       document.removeEventListener("mouseup", handleMouseUp);
       document.removeEventListener("mousemove", handleMouseMove);
-      ref.current?.removeEventListener("mousedown", handleMouseDown);
+      current.removeEventListener("mousedown", handleMouseDown);
     };
-  }, [ref.current]);
+  }, [
+    ref,
+    // oxlint-disable-next-line eslint-plugin-react-hooks(exhaustive-deps)
+    getValue,
+    onMouseUp,
+  ]);
 
   return {
     value,
