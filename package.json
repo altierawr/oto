@@ -1,0 +1,14 @@
+{
+  "name": "oto",
+  "version": "0.0.0",
+  "description": "A self-hostable, gapless music server for Tidal with improved UI & UX",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "author": "altierawr <github.com/altierawr>",
+  "license": "AGPL-3.0",
+  "packageManager": "pnpm@10.26.0",
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}
