@@ -3,14 +3,21 @@ name: Lint
 on:
   pull_request:
     branches: [main]
+    paths:
+      - "apps/web/**"
   push:
     branches: [main]
+    paths:
+      - "apps/web/**"
 
 permissions: {}
 
 jobs:
   oxlint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@v6
 
@@ -18,8 +25,9 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: lts/*
+          node-version: 24
           cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run lint
+      - run: pnpm lint
