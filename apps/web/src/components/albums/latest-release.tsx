@@ -1,4 +1,4 @@
-import { Spacer } from "design";
+import { Spacer } from "@awlt/design";
 import type { Album } from "../../types";
 import { getTidalCoverUrl } from "../../utils/image";
 import { Link } from "react-router";

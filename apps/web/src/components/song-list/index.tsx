@@ -2,7 +2,7 @@ import clsx from "clsx";
 import type { Song } from "../../types";
 import SongListItem from "./item";
 import styles from "./song-list.module.css";
-import { Spacer } from "design";
+import { Spacer } from "@awlt/design";
 import { Fragment } from "react/jsx-runtime";
 
 type TProps = {

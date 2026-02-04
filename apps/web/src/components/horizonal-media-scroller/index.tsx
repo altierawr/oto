@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Button, IconButton, Spacer } from "design";
+import { Button, IconButton, Spacer } from "@awlt/design";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type HTMLAttributes, type PropsWithChildren } from "react";
 import { useNavigate } from "react-router";

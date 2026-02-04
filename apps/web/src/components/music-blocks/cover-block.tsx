@@ -3,7 +3,7 @@ import { MoreVertical, Pause, Play } from "lucide-react";
 import type { MouseEvent, MouseEventHandler } from "react";
 import { Link } from "react-router";
 import { usePlayerState } from "../../store";
-import { Loader } from "design";
+import { Loader } from "@awlt/design";
 
 export enum CoverBlockVariant {
   COVER_ONLY,

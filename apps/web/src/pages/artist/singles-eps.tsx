@@ -4,7 +4,7 @@ import { getTidalCoverUrl } from "../../utils/image";
 import { useQuery } from "@tanstack/react-query";
 import MusicBlockGrid from "../../components/music-blocks/music-block-grid";
 import MusicBlock from "../../components/music-blocks/music-block";
-import { Loader } from "design";
+import { Loader } from "@awlt/design";
 import { request } from "../../utils/http";
 
 const ArtistPageSinglesAndEps = () => {

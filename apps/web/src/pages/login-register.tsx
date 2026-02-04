@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Button, Input, Spacer } from "design";
+import { Button, Input, Spacer } from "@awlt/design";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useLocation } from "react-router";
 import { useForm } from "@tanstack/react-form";

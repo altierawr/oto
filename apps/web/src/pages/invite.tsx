@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Button, Spacer } from "design";
+import { Button, Spacer } from "@awlt/design";
 import { useState } from "react";
 import { request } from "../utils/http";
 

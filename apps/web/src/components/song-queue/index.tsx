@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useGeneralStore, usePlayerState } from "../../store";
 import SongQueueItem from "./item";
-import { Spacer } from "design";
+import { Spacer } from "@awlt/design";
 import { CoverBlockVariant } from "../music-blocks/cover-block";
 
 const SongQueue = () => {

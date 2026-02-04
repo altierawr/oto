@@ -12,7 +12,7 @@ import type {
   Song,
   ArtistPage as TArtistPage,
 } from "../../types";
-import { Button, Spacer, Tabs } from "design";
+import { Button, Spacer, Tabs } from "@awlt/design";
 import { Pause, Play } from "lucide-react";
 import ArtistPageOverview from "./overview";
 import type { TabsTab } from "@base-ui/react";

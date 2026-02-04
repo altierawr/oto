@@ -1,6 +1,6 @@
 import { IconExclamationMark } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { Button, Input, Loader, Spacer } from "design";
+import { Button, Input, Loader, Spacer } from "@awlt/design";
 import { useState } from "react";
 import { z } from "zod";
 import { request } from "../utils/http";

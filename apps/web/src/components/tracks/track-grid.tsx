@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { Song } from "../../types";
 import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
-import { Skeleton } from "design";
+import { Skeleton } from "@awlt/design";
 import TrackGridItem from "./item";
 import {
   IconChevronCompactLeft,

@@ -3,7 +3,7 @@ import useCurrentUser, {
 } from "../../hooks/useCurrentUser";
 import { Facehash } from "facehash";
 import { ChevronUp } from "lucide-react";
-import { Menu } from "design";
+import { Menu } from "@awlt/design";
 import { request } from "../../utils/http";
 import { Link, useNavigate } from "react-router";
 import { useState } from "react";

@@ -3,7 +3,7 @@ import ArtistTopTracksGrid from "../../components/artist/top-tracks-grid";
 import AlbumsScroller from "../../components/scrollers/albums";
 import type { ArtistPage } from "../../types";
 import LatestRelease from "../../components/albums/latest-release";
-import { Spacer } from "design";
+import { Spacer } from "@awlt/design";
 import clsx from "clsx";
 
 const ArtistPageOverview = () => {

@@ -8,7 +8,7 @@ import { useSearchParams } from "react-router";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import styles from "./song-list.module.css";
-import { Menu } from "design";
+import { Menu } from "@awlt/design";
 
 type TProps = {
   song: Song;

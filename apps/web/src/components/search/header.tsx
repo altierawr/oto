@@ -1,6 +1,6 @@
 import { Toggle, ToggleGroup } from "@base-ui/react";
 import clsx from "clsx";
-import { Button } from "design";
+import { Button } from "@awlt/design";
 
 export type SearchTab =
   | "topHits"

@@ -1,5 +1,5 @@
 import { Link, useLoaderData, type LoaderFunction } from "react-router";
-import { Button, Spacer } from "design";
+import { Button, Spacer } from "@awlt/design";
 import type { Album } from "../types";
 import SongList from "../components/song-list";
 import { Play } from "lucide-react";

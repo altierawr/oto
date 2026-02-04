@@ -8,7 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { usePlayerState } from "../../store";
 import clsx from "clsx";
-import { Loader } from "design";
+import { Loader } from "@awlt/design";
 
 const MusicControlsControlButtons = () => {
   const { player, song, playerState } = usePlayerState();

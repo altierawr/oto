@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Input, Spacer, ScrollArea } from "design";
+import { Input, Spacer, ScrollArea } from "@awlt/design";
 import SearchHeader, { type SearchTab } from "./header";
 import type { SearchResults } from "../../types";
 import ArtistSearchResult from "./results/artist";
