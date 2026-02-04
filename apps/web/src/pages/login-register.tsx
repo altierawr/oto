@@ -155,7 +155,7 @@ const LoginRegisterPage = () => {
   useEffect(() => {
     setFormError(null);
     form.reset();
-  }, [pathname]);
+  }, [pathname, form]);
 
   useEffect(() => {
     if (!isLoading && !isStale && user) {
