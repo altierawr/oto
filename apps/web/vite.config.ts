@@ -6,7 +6,15 @@ import oxlint from "vite-plugin-oxlint";
 
 // https://vite.dev/config/
 export default defineConfig(() => ({
-  plugins: [oxlint(), react(), tailwindcss()],
+  plugins: [
+    oxlint(),
+    react({
+      babel: {
+        plugins: ["babel-plugin-react-compiler"],
+      },
+    }),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
       react: path.resolve(__dirname, "./node_modules/react"),
