@@ -1,11 +1,11 @@
 @import "tailwindcss";
-@import "design/blue.css";
-@import "design/slate.css";
-@import "design/green.css";
-@import "design/yellow.css";
-@import "design/red.css";
-@import "design/styles.css";
-@import "design/components.css";
+@import "@awlt/design/colors/blue.css";
+@import "@awlt/design/colors/slate.css";
+@import "@awlt/design/colors/green.css";
+@import "@awlt/design/colors/yellow.css";
+@import "@awlt/design/colors/red.css";
+@import "@awlt/design/styles.css";
+@import "@awlt/design/components.css";
 
 @theme {
   --spacing-1: var(--space-1);
