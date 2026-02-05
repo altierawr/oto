@@ -2,7 +2,7 @@ import Search from "../search";
 
 const Navbar = () => {
   return (
-    <div className="min-h-12 flex items-center">
+    <div className="flex min-h-12 items-center">
       <Search />
     </div>
   );

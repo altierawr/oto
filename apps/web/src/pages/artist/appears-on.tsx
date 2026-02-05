@@ -1,11 +1,13 @@
-import { useRouteLoaderData } from "react-router";
-import type { ArtistPage, Album, PaginatedResponse } from "../../types";
-import { getTidalCoverUrl } from "../../utils/image";
-import { useQuery } from "@tanstack/react-query";
-import MusicBlockGrid from "../../components/music-blocks/music-block-grid";
-import MusicBlock from "../../components/music-blocks/music-block";
 import { Loader } from "@awlt/design";
+import { useQuery } from "@tanstack/react-query";
+import { useRouteLoaderData } from "react-router";
+
+import type { ArtistPage, Album, PaginatedResponse } from "../../types";
+
+import MusicBlock from "../../components/music-blocks/music-block";
+import MusicBlockGrid from "../../components/music-blocks/music-block-grid";
 import { request } from "../../utils/http";
+import { getTidalCoverUrl } from "../../utils/image";
 
 const ArtistPageAppearsOn = () => {
   const data = useRouteLoaderData("artist") as { artist: ArtistPage };

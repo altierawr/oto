@@ -1,15 +1,12 @@
-import { usePlayerState } from "../store";
 import { invalidateUserQuery } from "../hooks/useCurrentUser";
 import router from "../router";
+import { usePlayerState } from "../store";
 
 const BASE_URL = `${import.meta.env.VITE_SERVER_URI}/v1`;
 
 let refreshPromise: Promise<Response> | null = null;
 
-export const request = async (
-  input: string,
-  init?: RequestInit & { skipRedirect?: boolean },
-): Promise<Response> => {
+export const request = async (input: string, init?: RequestInit & { skipRedirect?: boolean }): Promise<Response> => {
   if (!import.meta.env.VITE_SERVER_URI) {
     console.error("env variable VITE_SERVER_URI is not set");
   }

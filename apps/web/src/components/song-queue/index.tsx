@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
-import { useGeneralStore, usePlayerState } from "../../store";
-import SongQueueItem from "./item";
 import { Spacer } from "@awlt/design";
+import { useEffect, useRef } from "react";
+
+import { useGeneralStore, usePlayerState } from "../../store";
 import { CoverBlockVariant } from "../music-blocks/cover-block";
+import SongQueueItem from "./item";
 
 const SongQueue = () => {
   const { playerState } = usePlayerState();
@@ -26,7 +27,7 @@ const SongQueue = () => {
 
   return (
     <div
-      className="fixed inset-0 w-dvw bg-[rgba(0,0,0,0.3)] z-50 transition-opacity"
+      className="fixed inset-0 z-50 w-dvw bg-[rgba(0,0,0,0.3)] transition-opacity"
       style={{
         pointerEvents: isVisible ? "unset" : "none",
         opacity: isVisible ? "1" : "0",
@@ -35,7 +36,7 @@ const SongQueue = () => {
       onClick={handleBlur}
     >
       <div
-        className="fixed right-0 top-0 min-w-[450px] max-w-[450px] p-4"
+        className="fixed top-0 right-0 max-w-[450px] min-w-[450px] p-4"
         style={{
           height: "calc(100dvh - 100px)",
           transform: isVisible ? "translate(0, 0)" : "translate(0, 5px)",
@@ -44,14 +45,12 @@ const SongQueue = () => {
         onClick={(e) => e.stopPropagation()}
       >
         {isVisible}
-        <div className="w-full h-full bg-(--gray-2) rounded-md grid content-start border border-(--gray-6)">
+        <div className="grid h-full w-full content-start rounded-md border border-(--gray-6) bg-(--gray-2)">
           <div className="p-5">
-            <h2 className="text-(--gray-12) text-lg font-black tracking-wide">
-              Queue
-            </h2>
+            <h2 className="text-lg font-black tracking-wide text-(--gray-12)">Queue</h2>
           </div>
 
-          <div className="flex-1 overflow-y-auto grid content-start px-5">
+          <div className="grid flex-1 content-start overflow-y-auto px-5">
             {playerState.playlist.length === 0 && <p>Queue empty</p>}
 
             {playerState.playlistIndex !== null && (
@@ -59,11 +58,9 @@ const SongQueue = () => {
                 {playerState.playlistIndex > 0 && (
                   <>
                     <h3 className="font-semibold">Previous tracks</h3>
-                    {playerState.playlist
-                      .slice(0, playerState.playlistIndex)
-                      .map((pe, index) => (
-                        <SongQueueItem key={pe.id} song={pe} index={index} />
-                      ))}
+                    {playerState.playlist.slice(0, playerState.playlistIndex).map((pe, index) => (
+                      <SongQueueItem key={pe.id} song={pe} index={index} />
+                    ))}
                     <div className="min-h-5" />
                   </>
                 )}
@@ -79,21 +76,13 @@ const SongQueue = () => {
 
                 <Spacer size="5" />
 
-                {playerState.playlist.length >
-                  playerState.playlistIndex + 1 && (
+                {playerState.playlist.length > playerState.playlistIndex + 1 && (
                   <>
                     <h3 className="font-semibold">Next up</h3>
                     {playerState.playlist
-                      .slice(
-                        playerState.playlistIndex + 1,
-                        playerState.playlist.length,
-                      )
+                      .slice(playerState.playlistIndex + 1, playerState.playlist.length)
                       .map((pe, index) => (
-                        <SongQueueItem
-                          key={pe.id}
-                          song={pe}
-                          index={playerState.playlistIndex! + 1 + index}
-                        />
+                        <SongQueueItem key={pe.id} song={pe} index={playerState.playlistIndex! + 1 + index} />
                       ))}
                   </>
                 )}

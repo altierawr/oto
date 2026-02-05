@@ -1,8 +1,9 @@
-import clsx from "clsx";
 import { Button, IconButton, Spacer } from "@awlt/design";
+import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type HTMLAttributes, type PropsWithChildren } from "react";
 import { useNavigate } from "react-router";
+
 import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 
 type TClassNameProps = {
@@ -22,12 +23,11 @@ const HorizontalMediaScroller = ({
   style,
 }: PropsWithChildren<TClassNameProps>) => {
   const navigate = useNavigate();
-  const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } =
-    useHorizontalScrollSnap({
-      id,
-      gap: 20,
-      scrollAmount: 5,
-    });
+  const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } = useHorizontalScrollSnap({
+    id,
+    gap: 20,
+    scrollAmount: 5,
+  });
 
   const handleViewAllClick = () => {
     if (viewAllUrl) {
@@ -37,15 +37,12 @@ const HorizontalMediaScroller = ({
 
   return (
     <>
-      <div className="flex justify-between items-center">
-        <h2 className="font-bold text-2xl">{title}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">{title}</h2>
         <div
-          className="gap-2 items-center"
+          className="items-center gap-2"
           style={{
-            display:
-              ref.current && ref.current.scrollWidth <= ref.current.clientWidth
-                ? "none"
-                : "flex",
+            display: ref.current && ref.current.scrollWidth <= ref.current.clientWidth ? "none" : "flex",
           }}
         >
           <IconButton
@@ -64,12 +61,7 @@ const HorizontalMediaScroller = ({
             isDisabled={!canScrollRight}
             onClick={scrollRight}
           />
-          <Button
-            variant="soft"
-            color="gray"
-            size="xs"
-            onClick={handleViewAllClick}
-          >
+          <Button variant="soft" color="gray" size="xs" onClick={handleViewAllClick}>
             View All
           </Button>
         </div>
@@ -81,7 +73,7 @@ const HorizontalMediaScroller = ({
         ref={ref}
         className={clsx(
           className,
-          "grid grid-flow-col auto-cols-[160px] gap-5 pb-2 overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-stretch",
+          "no-scrollbar grid snap-x snap-mandatory auto-cols-[160px] grid-flow-col items-stretch gap-5 overflow-x-auto overscroll-x-contain pb-2",
         )}
         style={style}
       >

@@ -1,5 +1,7 @@
 import clsx from "clsx";
+
 import type { Album } from "../../../types";
+
 import HorizontalMediaScroller from "../../horizonal-media-scroller";
 import AlbumsScrollerItem from "./item";
 
@@ -12,29 +14,17 @@ type TProps = {
   showDate?: boolean;
 };
 
-const AlbumsScroller = ({
-  id,
-  title,
-  viewAllUrl,
-  albums,
-  showArtists = true,
-  showDate,
-}: TProps) => {
+const AlbumsScroller = ({ id, title, viewAllUrl, albums, showArtists = true, showDate }: TProps) => {
   return (
     <>
       <HorizontalMediaScroller
         id={id}
         title={title}
         viewAllUrl={viewAllUrl}
-        className={clsx("col-[breakout]! px-10 scroll-px-10")}
+        className={clsx("col-[breakout]! scroll-px-10 px-10")}
       >
         {albums.map((album) => (
-          <AlbumsScrollerItem
-            key={album.id}
-            album={album}
-            showArtists={showArtists}
-            showDate={showDate}
-          />
+          <AlbumsScrollerItem key={album.id} album={album} showArtists={showArtists} showDate={showDate} />
         ))}
       </HorizontalMediaScroller>
     </>

@@ -1,13 +1,8 @@
+import { Button } from "@awlt/design";
 import { Toggle, ToggleGroup } from "@base-ui/react";
 import clsx from "clsx";
-import { Button } from "@awlt/design";
 
-export type SearchTab =
-  | "topHits"
-  | "artists"
-  | "albums"
-  | "songs"
-  | "playlists";
+export type SearchTab = "topHits" | "artists" | "albums" | "songs" | "playlists";
 
 type TProps = {
   tab: SearchTab;
@@ -16,9 +11,9 @@ type TProps = {
 
 const SearchHeader = ({ tab, onTabChange }: TProps) => {
   return (
-    <div className="flex gap-2 items-center">
+    <div className="flex items-center gap-2">
       <ToggleGroup
-        className="w-full flex -space-x-px"
+        className="flex w-full -space-x-px"
         value={[tab]}
         onValueChange={(value) => {
           if (value.length !== 0) {
@@ -49,10 +44,7 @@ const SearchHeader = ({ tab, onTabChange }: TProps) => {
               color="gray"
               variant="surface"
               size="xs"
-              className={clsx(
-                "flex-1 rounded-l-none! rounded-r-none!",
-                state.pressed && "z-0",
-              )}
+              className={clsx("flex-1 rounded-l-none! rounded-r-none!", state.pressed && "z-0")}
               {...(props as any)}
             >
               Artists
@@ -67,10 +59,7 @@ const SearchHeader = ({ tab, onTabChange }: TProps) => {
               color="gray"
               variant="surface"
               size="xs"
-              className={clsx(
-                "flex-1 rounded-l-none! rounded-r-none!",
-                state.pressed && "z-0",
-              )}
+              className={clsx("flex-1 rounded-l-none! rounded-r-none!", state.pressed && "z-0")}
               {...(props as any)}
             >
               Albums
@@ -85,10 +74,7 @@ const SearchHeader = ({ tab, onTabChange }: TProps) => {
               color="gray"
               variant="surface"
               size="xs"
-              className={clsx(
-                "flex-1 rounded-l-none! rounded-r-none!",
-                state.pressed && "z-0",
-              )}
+              className={clsx("flex-1 rounded-l-none! rounded-r-none!", state.pressed && "z-0")}
               {...(props as any)}
             >
               Songs

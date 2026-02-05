@@ -1,5 +1,6 @@
-import SearchResult from ".";
 import type { Artist } from "../../../types";
+
+import SearchResult from ".";
 import { getTidalCoverUrl } from "../../../utils/image";
 
 type TProps = {

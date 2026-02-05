@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
 import { Volume, Volume1, Volume2, VolumeOff, VolumeX } from "lucide-react";
+import { useEffect, useRef } from "react";
+
 import useBarDrag from "../../hooks/useBarDrag";
 import { usePlayerState } from "../../store";
 
@@ -40,11 +41,8 @@ const MusicControlsVolumeControl = () => {
           </>
         )}
       </div>
-      <div
-        ref={volumeBarRef}
-        className="w-[100px] h-[20px] flex items-center relative cursor-pointer"
-      >
-        <div className="bg-(--gray-5) w-full h-[6px] rounded-full overflow-hidden">
+      <div ref={volumeBarRef} className="relative flex h-[20px] w-[100px] cursor-pointer items-center">
+        <div className="h-[6px] w-full overflow-hidden rounded-full bg-(--gray-5)">
           <div
             className="h-full bg-(--gray-12)"
             style={{
@@ -54,7 +52,7 @@ const MusicControlsVolumeControl = () => {
         </div>
 
         <div
-          className="w-[7px] h-[16px] top-[50%] -translate-y-[50%] -translate-x-[50%] rounded-full bg-(--gray-12) absolute border border-(--gray-0)"
+          className="absolute top-[50%] h-[16px] w-[7px] -translate-x-[50%] -translate-y-[50%] rounded-full border border-(--gray-0) bg-(--gray-12)"
           style={{
             left: `${volume * 100}%`,
           }}

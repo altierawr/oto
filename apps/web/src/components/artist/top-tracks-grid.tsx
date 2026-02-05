@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+
 import type { Artist, Song, PaginatedResponse } from "../../types";
-import TrackGrid from "../tracks/track-grid";
+
 import { request } from "../../utils/http";
+import TrackGrid from "../tracks/track-grid";
 
 type TProps = {
   artist: Artist;
@@ -9,11 +11,7 @@ type TProps = {
   className?: string;
 };
 
-const ArtistTopTracksGrid = ({
-  artist,
-  initialTopTracks,
-  className,
-}: TProps) => {
+const ArtistTopTracksGrid = ({ artist, initialTopTracks, className }: TProps) => {
   const query = useQuery({
     queryKey: ["artist-top-tracks", artist.id],
     queryFn: async () => {
@@ -24,13 +22,7 @@ const ArtistTopTracksGrid = ({
     },
   });
 
-  return (
-    <TrackGrid
-      tracks={query.data?.items || initialTopTracks}
-      isLoading={query.isLoading}
-      className={className}
-    />
-  );
+  return <TrackGrid tracks={query.data?.items || initialTopTracks} isLoading={query.isLoading} className={className} />;
 };
 
 export default ArtistTopTracksGrid;

@@ -1,6 +1,8 @@
 import { create } from "zustand";
-import { MusicPlayer } from "./music-player";
+
 import type { MusicPlayerSong } from "./types";
+
+import { MusicPlayer } from "./music-player";
 
 export type TLocation = "home" | "artists" | "albums";
 
@@ -50,6 +52,5 @@ type TGeneralStore = {
 
 export const useGeneralStore = create<TGeneralStore>((set) => ({
   isSongQueueVisible: false,
-  setIsSongQueueVisible: (isSongQueueVisible: boolean) =>
-    set({ isSongQueueVisible }),
+  setIsSongQueueVisible: (isSongQueueVisible: boolean) => set({ isSongQueueVisible }),
 }));

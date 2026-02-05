@@ -1,4 +1,5 @@
 import { useEffect, useState, type RefObject } from "react";
+
 import useLatest from "../utils/useLatest";
 
 type TProps = {
@@ -39,10 +40,7 @@ const useBarDrag = ({ ref, initialValue, onMouseUp }: TProps) => {
       setIsMouseDown(false);
     };
 
-    const handleMouseMove = (
-      e: { clientX: number },
-      skipMouseDownCheck?: boolean,
-    ) => {
+    const handleMouseMove = (e: { clientX: number }, skipMouseDownCheck?: boolean) => {
       const currentValue = getValue(e, skipMouseDownCheck);
 
       if (currentValue !== null) {

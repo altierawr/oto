@@ -1,5 +1,7 @@
 import { Link } from "react-router";
+
 import type { Artist } from "../../types";
+
 import CoverBlock, { CoverBlockVariant } from "./cover-block";
 
 type TProps = {
@@ -13,18 +15,9 @@ type TProps = {
   onPlayClick?: () => void;
 };
 
-const MusicBlock = ({
-  title,
-  linkUrl,
-  imageUrl,
-  artists,
-  date,
-  isPlaying,
-  isPlayLoading,
-  onPlayClick,
-}: TProps) => {
+const MusicBlock = ({ title, linkUrl, imageUrl, artists, date, isPlaying, isPlayLoading, onPlayClick }: TProps) => {
   return (
-    <div className="grid grid-rows-[min-content] snap-start content-start">
+    <div className="grid snap-start grid-rows-[min-content] content-start">
       <CoverBlock
         variant={CoverBlockVariant.FULL}
         linkUrl={linkUrl}
@@ -33,10 +26,10 @@ const MusicBlock = ({
         isPlayLoading={isPlayLoading}
         isPlaying={isPlaying}
       />
-      <p className="text-(--gray-12) text-sm line-clamp-2 mt-2">
+      <p className="mt-2 line-clamp-2 text-sm text-(--gray-12)">
         <Link to={linkUrl}>{title}</Link>
       </p>
-      <p className="text-(--gray-11) text-xs line-clamp-2">
+      <p className="line-clamp-2 text-xs text-(--gray-11)">
         {artists?.map((artist, index) => (
           <span key={artist.id}>
             <Link to={`/artists/${artist.id}`}>{artist.name}</Link>
@@ -44,11 +37,7 @@ const MusicBlock = ({
           </span>
         ))}
       </p>
-      {date && (
-        <p className="text-(--gray-11) text-xs line-clamp-1">
-          {new Date(date).getFullYear()}
-        </p>
-      )}
+      {date && <p className="line-clamp-1 text-xs text-(--gray-11)">{new Date(date).getFullYear()}</p>}
     </div>
   );
 };

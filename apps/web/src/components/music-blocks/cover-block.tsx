@@ -1,9 +1,11 @@
+import type { MouseEvent, MouseEventHandler } from "react";
+
+import { Loader } from "@awlt/design";
 import clsx from "clsx";
 import { MoreVertical, Pause, Play } from "lucide-react";
-import type { MouseEvent, MouseEventHandler } from "react";
 import { Link } from "react-router";
+
 import { usePlayerState } from "../../store";
-import { Loader } from "@awlt/design";
 
 export enum CoverBlockVariant {
   COVER_ONLY,
@@ -20,14 +22,7 @@ type TProps = {
   onPlayClick?: (e: MouseEvent) => void;
 };
 
-const CoverBlock = ({
-  variant,
-  imageUrl,
-  linkUrl,
-  isPlaying,
-  isPlayLoading,
-  onPlayClick,
-}: TProps) => {
+const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPlayClick }: TProps) => {
   const { playerState } = usePlayerState();
 
   if (variant === CoverBlockVariant.FULL && linkUrl === undefined) {
@@ -46,11 +41,11 @@ const CoverBlock = ({
         <>
           {linkUrl && (
             <Link to={linkUrl}>
-              <div className="w-full aspect-square relative rounded-md overflow-hidden cursor-pointer group">
+              <div className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-md">
                 <Block imageUrl={imageUrl} />
                 <div
                   className={clsx(
-                    "absolute w-full h-full inset-0 opacity-0 hover:opacity-100 bg-[rgba(0,0,0,0.4)] transition-opacity",
+                    "absolute inset-0 h-full w-full bg-[rgba(0,0,0,0.4)] opacity-0 transition-opacity hover:opacity-100",
                     isPlaying && "opacity-100",
                   )}
                 />
@@ -64,57 +59,49 @@ const CoverBlock = ({
 
       {variant === CoverBlockVariant.PLAY_ONLY && (
         <div
-          className="w-full aspect-square relative rounded-md overflow-hidden cursor-pointer group"
+          className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-md"
           onClick={handlePlayClick}
           onDoubleClick={(e) => e.stopPropagation()}
         >
           <Block imageUrl={imageUrl} showHoverZoom />
           <div
             className={clsx(
-              "absolute w-full h-full inset-0 opacity-0 hover:opacity-100 bg-[rgba(0,0,0,0.6)] transition-opacity grid place-items-center",
+              "absolute inset-0 grid h-full w-full place-items-center bg-[rgba(0,0,0,0.6)] opacity-0 transition-opacity hover:opacity-100",
               isPlaying && "opacity-100",
             )}
           >
-            {(!isPlaying || (isPlaying && playerState.isPaused)) && (
-              <Play size={18} fill="currentColor" />
-            )}
+            {(!isPlaying || (isPlaying && playerState.isPaused)) && <Play size={18} fill="currentColor" />}
 
-            {isPlaying && !playerState.isPaused && (
-              <Pause size={18} fill="currentColor" />
-            )}
+            {isPlaying && !playerState.isPaused && <Pause size={18} fill="currentColor" />}
           </div>
         </div>
       )}
 
       {variant === CoverBlockVariant.FULL && linkUrl && (
-        <div className="w-full aspect-square rounded-md cursor-pointer transition-all relative overflow-hidden group">
+        <div className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-md transition-all">
           <Link to={linkUrl}>
             <Block imageUrl={imageUrl} />
             <div
               className={clsx(
-                "absolute w-full h-full inset-0 opacity-0 hover:opacity-100 will-change-[opacity] transition-opacity bg-linear-to-b from-[rgba(0,0,0,0.25)] to-[rgba(0,0,0,0.90)] grid place-items-center",
+                "absolute inset-0 grid h-full w-full place-items-center bg-linear-to-b from-[rgba(0,0,0,0.25)] to-[rgba(0,0,0,0.90)] opacity-0 transition-opacity will-change-[opacity] hover:opacity-100",
                 isPlaying && "opacity-100",
               )}
             >
               <div
-                className="absolute bottom-3 left-3 rounded-full overflow-hidden w-[40px] aspect-square cursor-default bg-[rgb(255_255_255/25%)] backdrop-blur-sm grid place-items-center transition-all hover:scale-105"
+                className="absolute bottom-3 left-3 grid aspect-square w-[40px] cursor-default place-items-center overflow-hidden rounded-full bg-[rgb(255_255_255/25%)] backdrop-blur-sm transition-all hover:scale-105"
                 onClick={!isPlayLoading ? handlePlayClick : undefined}
               >
                 {isPlayLoading && <Loader />}
                 {!isPlayLoading && (
                   <>
-                    {(!isPlaying || (isPlaying && playerState.isPaused)) && (
-                      <Play size={18} fill="currentColor" />
-                    )}
+                    {(!isPlaying || (isPlaying && playerState.isPaused)) && <Play size={18} fill="currentColor" />}
 
-                    {isPlaying && !playerState.isPaused && (
-                      <Pause size={18} fill="currentColor" />
-                    )}
+                    {isPlaying && !playerState.isPaused && <Pause size={18} fill="currentColor" />}
                   </>
                 )}
               </div>
               <div
-                className="hidden absolute bottom-3 right-3 rounded-full overflow-hidden w-[32px] aspect-square cursor-default bg-[rgb(255_255_255/25%)] backdrop-blur-sm grid place-items-center transition-all hover:scale-105"
+                className="absolute right-3 bottom-3 grid hidden aspect-square w-[32px] cursor-default place-items-center overflow-hidden rounded-full bg-[rgb(255_255_255/25%)] backdrop-blur-sm transition-all hover:scale-105"
                 onClick={(e) => e.preventDefault()}
               >
                 <MoreVertical size={16} fill="currentColor" />
@@ -136,7 +123,7 @@ const Block = ({ imageUrl, showHoverZoom }: TBlockProps) => {
   return (
     <div
       className={clsx(
-        "w-full h-full bg-cover rounded-md transition-transform",
+        "h-full w-full rounded-md bg-cover transition-transform",
         showHoverZoom && "group-hover:scale-[0.98]",
       )}
       style={{

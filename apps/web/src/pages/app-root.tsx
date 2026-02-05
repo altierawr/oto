@@ -1,12 +1,13 @@
-import { Outlet, useLocation } from "react-router";
-import Sidebar from "../components/sidebar";
 import { useEffect, useRef, useState } from "react";
-import { useLocationStore } from "../store";
-import MusicControls from "../components/music-controls";
+import { Outlet, useLocation } from "react-router";
+
 import AudioDebugger from "../components/debugger";
-import SongQueue from "../components/song-queue";
+import MusicControls from "../components/music-controls";
 import Navbar from "../components/navbar";
+import Sidebar from "../components/sidebar";
+import SongQueue from "../components/song-queue";
 import useScrollRestoration from "../hooks/useScrollRestoration";
+import { useLocationStore } from "../store";
 
 const AppRoot = () => {
   const location = useLocation();
@@ -38,14 +39,14 @@ const AppRoot = () => {
 
   return (
     <>
-      <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative">
-        <div className="w-full flex" style={{ height: "calc(100dvh - 100px)" }}>
+      <div className="relative h-dvh bg-(--gray-0) text-(--gray-12)">
+        <div className="flex w-full" style={{ height: "calc(100dvh - 100px)" }}>
           <Sidebar />
 
-          <div className="relative w-full h-full min-w-0 flex justify-center">
-            <div className="relative w-full h-full max-w-[1800px]">
+          <div className="relative flex h-full w-full min-w-0 justify-center">
+            <div className="relative h-full w-full max-w-[1800px]">
               <div
-                className="absolute w-full inset-0 pointer-events-none z-1 grid"
+                className="pointer-events-none absolute inset-0 z-1 grid w-full"
                 style={{
                   gridTemplateColumns:
                     "[breakout-start] var(--space-10) [content-start] 1fr [content-end] var(--space-10) [breakout-end]",
@@ -54,22 +55,20 @@ const AppRoot = () => {
                 <div
                   className="col-[breakout-start/content-start] h-full"
                   style={{
-                    background:
-                      "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+                    background: "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
                   }}
                 />
                 <div
                   className="col-[content-end/breakout-end] h-full"
                   style={{
-                    background:
-                      "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+                    background: "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
                   }}
                 />
               </div>
 
               <main
                 ref={scrollRef}
-                className="w-full h-full overflow-y-auto grid *:col-[content] items-start content-start auto-rows-max"
+                className="grid h-full w-full auto-rows-max content-start items-start overflow-y-auto *:col-[content]"
                 style={{
                   gridTemplateColumns:
                     "[breakout-start] var(--space-10) [content-start] 1fr [content-end] var(--space-10) [breakout-end]",

@@ -1,6 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
 import { Button, Spacer } from "@awlt/design";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+
 import { request } from "../utils/http";
 
 const InvitePage = () => {
@@ -30,8 +31,8 @@ const InvitePage = () => {
   });
 
   return (
-    <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative grid place-items-center">
-      <div className="min-w-[350px] max-w-[370px] grid content-start">
+    <div className="relative grid h-dvh place-items-center bg-(--gray-0) text-(--gray-12)">
+      <div className="grid max-w-[370px] min-w-[350px] content-start">
         {inviteCode && (
           <p>
             Invite code: <span className="select-text">{inviteCode}</span>
@@ -40,12 +41,10 @@ const InvitePage = () => {
 
         {!inviteCode && (
           <>
-            <h1 className="font-semibold text-2xl text-center">
-              Create invite code
-            </h1>
-            <p className="text-sm text-(--gray-11) text-center mx-auto">
-              User registration requires an invite code. Create one here and
-              give it to a user who wants access to the server.
+            <h1 className="text-center text-2xl font-semibold">Create invite code</h1>
+            <p className="mx-auto text-center text-sm text-(--gray-11)">
+              User registration requires an invite code. Create one here and give it to a user who wants access to the
+              server.
             </p>
 
             <Spacer size="8" />

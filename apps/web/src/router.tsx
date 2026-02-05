@@ -1,16 +1,17 @@
 import { createBrowserRouter } from "react-router";
-import Root from "./pages/root";
+
+import AccountPage from "./pages/account";
 import AlbumPage, { loader as albumPageLoader } from "./pages/album";
+import AppRoot from "./pages/app-root";
 import ArtistPage, { loader as artistPageLoader } from "./pages/artist";
 import ArtistPageAlbums from "./pages/artist/albums";
-import ArtistPageSinglesAndEps from "./pages/artist/singles-eps";
-import ArtistPageCompilations from "./pages/artist/compilations";
 import ArtistPageAppearsOn from "./pages/artist/appears-on";
-import LoginRegisterPage from "./pages/login-register";
-import AppRoot from "./pages/app-root";
-import InvitePage from "./pages/invite";
-import AccountPage from "./pages/account";
+import ArtistPageCompilations from "./pages/artist/compilations";
+import ArtistPageSinglesAndEps from "./pages/artist/singles-eps";
 import HomePage from "./pages/home";
+import InvitePage from "./pages/invite";
+import LoginRegisterPage from "./pages/login-register";
+import Root from "./pages/root";
 
 const router = createBrowserRouter([
   {

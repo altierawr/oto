@@ -1,3 +1,4 @@
+import { Loader } from "@awlt/design";
 import {
   IconArrowsShuffle,
   IconPlayerPause,
@@ -6,9 +7,9 @@ import {
   IconPlayerSkipForward,
   IconRepeat,
 } from "@tabler/icons-react";
-import { usePlayerState } from "../../store";
 import clsx from "clsx";
-import { Loader } from "@awlt/design";
+
+import { usePlayerState } from "../../store";
 
 const MusicControlsControlButtons = () => {
   const { player, song, playerState } = usePlayerState();
@@ -46,7 +47,7 @@ const MusicControlsControlButtons = () => {
   };
 
   return (
-    <div className="flex gap-4 justify-center w-full items-center h-[28px]">
+    <div className="flex h-[28px] w-full items-center justify-center gap-4">
       <IconArrowsShuffle
         size={20}
         stroke={1.5}
@@ -63,12 +64,9 @@ const MusicControlsControlButtons = () => {
         onClick={handlePrevClick}
         className={clsx(song && !playerState.isJumping && "cursor-pointer")}
       />
-      <div
-        className={clsx(song && !playerState.isJumping && "cursor-pointer")}
-        onClick={handlePlayPauseClick}
-      >
+      <div className={clsx(song && !playerState.isJumping && "cursor-pointer")} onClick={handlePlayPauseClick}>
         {(playerState.isBuffering || playerState.isJumping) && (
-          <div className="w-[28px] aspect-square grid place-content-center cursor-default">
+          <div className="grid aspect-square w-[28px] cursor-default place-content-center">
             <Loader />
           </div>
         )}

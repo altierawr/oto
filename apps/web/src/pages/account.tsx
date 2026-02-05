@@ -1,17 +1,15 @@
+import { Button, Input, Loader, Spacer } from "@awlt/design";
 import { IconExclamationMark } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { Button, Input, Loader, Spacer } from "@awlt/design";
 import { useState } from "react";
-import { z } from "zod";
-import { request } from "../utils/http";
-import useCurrentUser from "../hooks/useCurrentUser";
 import { useNavigate } from "react-router";
+import { z } from "zod";
+
+import useCurrentUser from "../hooks/useCurrentUser";
+import { request } from "../utils/http";
 
 const validators = {
-  password: z
-    .string()
-    .min(8, "must be at least 8 characters long")
-    .max(72, "must be at most 72 characters long"),
+  password: z.string().min(8, "must be at least 8 characters long").max(72, "must be at most 72 characters long"),
 };
 
 const AccountPage = () => {
@@ -100,17 +98,13 @@ const AccountPage = () => {
   }
 
   return (
-    <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative grid place-items-center">
-      <div className="min-w-[350px] grid content-start">
-        <h1 className="font-semibold text-2xl text-center">
-          Hello, {user.username}
-        </h1>
+    <div className="relative grid h-dvh place-items-center bg-(--gray-0) text-(--gray-12)">
+      <div className="grid min-w-[350px] content-start">
+        <h1 className="text-center text-2xl font-semibold">Hello, {user.username}</h1>
 
         <Spacer size="2" />
 
-        <p className="text-sm text-(--gray-11) text-center">
-          Here you can change the password for your account
-        </p>
+        <p className="text-center text-sm text-(--gray-11)">Here you can change the password for your account</p>
 
         <Spacer size="8" />
 
@@ -121,7 +115,7 @@ const AccountPage = () => {
             form.handleSubmit();
           }}
         >
-          <div className="grid gap-4 content-start">
+          <div className="grid content-start gap-4">
             <form.Field
               name="password"
               validators={{
@@ -192,8 +186,8 @@ const AccountPage = () => {
 
             {/* Form-level error display */}
             {formError && (
-              <div className="text-(--red-11) bg-(--red-2) border border-(--red-6) rounded-md px-3 py-2 flex gap-2 items-center">
-                <div className="rounded-full w-[24px] aspect-square grid place-items-center bg-(--red-3)">
+              <div className="flex items-center gap-2 rounded-md border border-(--red-6) bg-(--red-2) px-3 py-2 text-(--red-11)">
+                <div className="grid aspect-square w-[24px] place-items-center rounded-full bg-(--red-3)">
                   <IconExclamationMark size={16} stroke={1.5} />
                 </div>
                 <p className="text-sm">{formError}</p>

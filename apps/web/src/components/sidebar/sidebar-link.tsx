@@ -1,6 +1,8 @@
 import type { ReactElement } from "react";
-import { Link } from "react-router";
+
 import clsx from "clsx";
+import { Link } from "react-router";
+
 import { type TLocation, useLocationStore } from "../../store";
 
 type TProps = {
@@ -24,8 +26,8 @@ const SidebarLink = ({ icon, text, url, location: linkLocation }: TProps) => {
     <Link to={url} onClick={handleLinkClick}>
       <div
         className={clsx(
-          "flex items-center gap-2 p-2 rounded-md text-[14px] text-(--gray-11) border border-transparent",
-          isActive && "text-(--gray-12) bg-(--gray-0) shadow font-medium",
+          "flex items-center gap-2 rounded-md border border-transparent p-2 text-[14px] text-(--gray-11)",
+          isActive && "bg-(--gray-0) font-medium text-(--gray-12) shadow",
         )}
       >
         {icon} {text}

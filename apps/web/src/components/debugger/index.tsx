@@ -1,8 +1,9 @@
 import clsx from "clsx";
+import { useEffect, useState } from "react";
+import { Fragment } from "react/jsx-runtime";
+
 import { usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
-import { Fragment } from "react/jsx-runtime";
-import { useEffect, useState } from "react";
 
 const AudioDebugger = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -22,16 +23,14 @@ const AudioDebugger = () => {
     return;
   }
 
-  const audio: HTMLAudioElement = document.getElementsByTagName(
-    "audio",
-  )[0] as HTMLAudioElement;
+  const audio: HTMLAudioElement = document.getElementsByTagName("audio")[0] as HTMLAudioElement;
   if (!audio) {
     return;
   }
 
   return (
     <div
-      className="absolute top-[20px] right-[20px] min-w-[600px] min-h-[300px] p-5 max-h-[600px] overflow-y-auto"
+      className="absolute top-[20px] right-[20px] max-h-[600px] min-h-[300px] min-w-[600px] overflow-y-auto p-5"
       style={{
         backgroundColor: "rgba(0, 0, 0, 0.6)",
         backdropFilter: "blur(5px)",
@@ -52,7 +51,7 @@ const AudioDebugger = () => {
                 : "Not set"}
             </div>
 
-            <div className="flex w-full relative h-[8px]">
+            <div className="relative flex h-[8px] w-full">
               {pe.segments.map((seg, index) => {
                 if (!seg) {
                   return null;
@@ -65,10 +64,7 @@ const AudioDebugger = () => {
                 return (
                   <div
                     key={index}
-                    className={clsx(
-                      seg.bufferInfo && "bg-(--green-9)",
-                      !seg.bufferInfo && "bg-(--red-9)",
-                    )}
+                    className={clsx(seg.bufferInfo && "bg-(--green-9)", !seg.bufferInfo && "bg-(--red-9)")}
                     style={{
                       position: "absolute",
                       left: `calc(${(start / duration) * 100}% + 1px)`,

@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+
 import type { Album } from "../types";
+
 import { usePlayerState } from "../store";
 import { request } from "../utils/http";
 

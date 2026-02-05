@@ -1,18 +1,17 @@
-import { useRouteLoaderData } from "react-router";
-import ArtistTopTracksGrid from "../../components/artist/top-tracks-grid";
-import AlbumsScroller from "../../components/scrollers/albums";
-import type { ArtistPage } from "../../types";
-import LatestRelease from "../../components/albums/latest-release";
 import { Spacer } from "@awlt/design";
 import clsx from "clsx";
+import { useRouteLoaderData } from "react-router";
+
+import type { ArtistPage } from "../../types";
+
+import LatestRelease from "../../components/albums/latest-release";
+import ArtistTopTracksGrid from "../../components/artist/top-tracks-grid";
+import AlbumsScroller from "../../components/scrollers/albums";
 
 const ArtistPageOverview = () => {
   const data = useRouteLoaderData("artist") as { artist: ArtistPage };
 
-  const releasesByDate = [
-    ...(data.artist.albums || []),
-    ...(data.artist.topSingles || []),
-  ].sort((a, b) => {
+  const releasesByDate = [...(data.artist.albums || []), ...(data.artist.topSingles || [])].sort((a, b) => {
     const ad = new Date(a.releaseDate || 0);
     const bd = new Date(b.releaseDate || 0);
 
@@ -23,22 +22,14 @@ const ArtistPageOverview = () => {
 
   return (
     <>
-      <div
-        className={clsx(
-          "flex flex-col lg:flex-row gap-8 lg:gap-10 col-[breakout]!",
-        )}
-      >
+      <div className={clsx("col-[breakout]! flex flex-col gap-8 lg:flex-row lg:gap-10")}>
         {releasesByDate.length > 0 && (
           <div className="pl-10">
             <LatestRelease album={releasesByDate[0]} />
           </div>
         )}
         {data.artist.topTracks && (
-          <ArtistTopTracksGrid
-            artist={data.artist}
-            initialTopTracks={data.artist.topTracks}
-            className="flex-1"
-          />
+          <ArtistTopTracksGrid artist={data.artist} initialTopTracks={data.artist.topTracks} className="flex-1" />
         )}
       </div>
 

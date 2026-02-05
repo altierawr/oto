@@ -1,7 +1,8 @@
 import type { Album } from "../../../types";
+
+import useAlbumPlayback from "../../../hooks/useAlbumPlayback";
 import { getTidalCoverUrl } from "../../../utils/image";
 import MusicBlock from "../../music-blocks/music-block";
-import useAlbumPlayback from "../../../hooks/useAlbumPlayback";
 
 type TProps = {
   album: Album;

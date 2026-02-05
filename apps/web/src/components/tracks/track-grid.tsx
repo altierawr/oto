@@ -1,12 +1,11 @@
-import clsx from "clsx";
-import type { Song } from "../../types";
-import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 import { Skeleton } from "@awlt/design";
+import { IconChevronCompactLeft, IconChevronCompactRight } from "@tabler/icons-react";
+import clsx from "clsx";
+
+import type { Song } from "../../types";
+
+import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 import TrackGridItem from "./item";
-import {
-  IconChevronCompactLeft,
-  IconChevronCompactRight,
-} from "@tabler/icons-react";
 
 type TProps = {
   tracks: Song[];
@@ -15,36 +14,29 @@ type TProps = {
   expectedNrMaxItems?: number;
 };
 
-const TrackGrid = ({
-  tracks,
-  className,
-  isLoading,
-  expectedNrMaxItems = 50,
-}: TProps) => {
-  const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } =
-    useHorizontalScrollSnap({
-      id: "artistTopTracks",
-      gap: 20,
-      scrollAmount: 1,
-      isLoading,
-    });
+const TrackGrid = ({ tracks, className, isLoading, expectedNrMaxItems = 50 }: TProps) => {
+  const { ref, scrollLeft, scrollRight, canScrollLeft, canScrollRight } = useHorizontalScrollSnap({
+    id: "artistTopTracks",
+    gap: 20,
+    scrollAmount: 1,
+    isLoading,
+  });
 
   return (
     <div className={clsx("relative overflow-x-hidden", className)}>
       <div
         className={clsx(
-          "absolute z-1 left-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-full",
+          "absolute top-1/2 left-0 z-1 flex h-full w-10 -translate-y-1/2 items-center justify-center",
           isLoading && "hidden",
         )}
         onClick={scrollLeft}
         style={{
-          background:
-            "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+          background: "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
         }}
       >
         <div
           className={clsx(
-            "rounded-md py-5 hover:bg-(--gray-3) transition-colors",
+            "rounded-md py-5 transition-colors hover:bg-(--gray-3)",
             (!canScrollLeft || isLoading) && "hidden",
           )}
           onClick={scrollLeft}
@@ -54,17 +46,16 @@ const TrackGrid = ({
       </div>
       <div
         className={clsx(
-          "absolute z-1 right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-full",
+          "absolute top-1/2 right-0 z-1 flex h-full w-10 -translate-y-1/2 items-center justify-center",
           isLoading && "hidden",
         )}
         style={{
-          background:
-            "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+          background: "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
         }}
       >
         <div
           className={clsx(
-            "rounded-md py-5 hover:bg-(--gray-3) transition-colors",
+            "rounded-md py-5 transition-colors hover:bg-(--gray-3)",
             (!canScrollRight || isLoading) && "hidden",
           )}
           onClick={scrollRight}
@@ -74,16 +65,10 @@ const TrackGrid = ({
       </div>
       <div
         ref={ref}
-        className="grid grid-flow-col auto-cols-[320px] scroll-px-10 px-10 grid-rows-[58px_58px_58px] gap-x-5 w-full overscroll-x-contain no-scrollbar overflow-x-auto snap-x snap-mandatory items-start content-start"
+        className="no-scrollbar grid w-full snap-x snap-mandatory scroll-px-10 auto-cols-[320px] grid-flow-col grid-rows-[58px_58px_58px] content-start items-start gap-x-5 overflow-x-auto overscroll-x-contain px-10"
       >
         {tracks.map((track, idx) => (
-          <TrackGridItem
-            key={track.id}
-            track={track}
-            tracks={tracks}
-            trackIndex={idx}
-            isLoading={isLoading}
-          />
+          <TrackGridItem key={track.id} track={track} tracks={tracks} trackIndex={idx} isLoading={isLoading} />
         ))}
 
         {isLoading &&
@@ -91,14 +76,14 @@ const TrackGrid = ({
             <div
               key={idx}
               className={clsx(
-                "flex gap-3 py-2 border-t border-(--gray-3) snap-start",
+                "flex snap-start gap-3 border-t border-(--gray-3) py-2",
                 (idx + 1 + tracks.length) % 3 === 0 && "border-b",
               )}
             >
-              <div className="bg-(--gray-1) h-[40px] aspect-square rounded-md overflow-hidden">
+              <div className="aspect-square h-[40px] overflow-hidden rounded-md bg-(--gray-1)">
                 <Skeleton />
               </div>
-              <div className="bg-(--gray-1) h-[40px] flex-1 rounded-md overflow-hidden">
+              <div className="h-[40px] flex-1 overflow-hidden rounded-md bg-(--gray-1)">
                 <Skeleton />
               </div>
             </div>

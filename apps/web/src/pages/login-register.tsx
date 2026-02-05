@@ -1,22 +1,17 @@
-import { z } from "zod";
 import { Button, Input, Spacer } from "@awlt/design";
-import { Link, useNavigate, useSearchParams } from "react-router";
-import { useLocation } from "react-router";
+import { IconCheck, IconExclamationMark } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useEffect, useState } from "react";
-import { IconCheck, IconExclamationMark } from "@tabler/icons-react";
-import { request } from "../utils/http";
+import { Link, useNavigate, useSearchParams } from "react-router";
+import { useLocation } from "react-router";
+import { z } from "zod";
+
 import useCurrentUser, { invalidateUserQuery } from "../hooks/useCurrentUser";
+import { request } from "../utils/http";
 
 const validators = {
-  username: z
-    .string()
-    .min(3, "must be at least 3 characters long")
-    .max(20, "must be at most 20 characters long"),
-  password: z
-    .string()
-    .min(8, "must be at least 8 characters long")
-    .max(72, "must be at most 72 characters long"),
+  username: z.string().min(3, "must be at least 3 characters long").max(20, "must be at most 20 characters long"),
+  password: z.string().min(8, "must be at least 8 characters long").max(72, "must be at most 72 characters long"),
   inviteCode: z.string().min(1, "is required"),
 };
 
@@ -60,9 +55,7 @@ const LoginRegisterPage = () => {
         const data = await resp.json();
 
         if (resp.status === 201) {
-          setFormSuccess(
-            "Your account has been registered! You can now log in.",
-          );
+          setFormSuccess("Your account has been registered! You can now log in.");
           return;
         }
 
@@ -164,16 +157,16 @@ const LoginRegisterPage = () => {
   }, [user, isLoading, isStale, navigate]);
 
   return (
-    <div className="h-dvh bg-(--gray-0) text-(--gray-12) relative grid place-items-center">
-      <div className="min-w-[350px] grid content-start">
-        <h1 className="font-semibold text-2xl text-center">
+    <div className="relative grid h-dvh place-items-center bg-(--gray-0) text-(--gray-12)">
+      <div className="grid min-w-[350px] content-start">
+        <h1 className="text-center text-2xl font-semibold">
           {isRegister && "Create an account"}
           {isLogin && "Log in"}
         </h1>
 
         <Spacer size="2" />
 
-        <p className="text-sm text-(--gray-11) text-center">
+        <p className="text-center text-sm text-(--gray-11)">
           {isRegister && "Enter your details below to create an account"}
           {isLogin && "Welcome back to oto!"}
         </p>
@@ -187,7 +180,7 @@ const LoginRegisterPage = () => {
             form.handleSubmit();
           }}
         >
-          <div className="grid gap-4 content-start">
+          <div className="grid content-start gap-4">
             <form.Field
               name="username"
               validators={{
@@ -285,8 +278,8 @@ const LoginRegisterPage = () => {
 
             {/* Form-level error display */}
             {formError && (
-              <div className="text-(--red-11) bg-(--red-2) border border-(--red-6) rounded-md px-3 py-2 flex gap-2 items-center">
-                <div className="rounded-full w-[24px] aspect-square grid place-items-center bg-(--red-3)">
+              <div className="flex items-center gap-2 rounded-md border border-(--red-6) bg-(--red-2) px-3 py-2 text-(--red-11)">
+                <div className="grid aspect-square w-[24px] place-items-center rounded-full bg-(--red-3)">
                   <IconExclamationMark size={16} stroke={1.5} />
                 </div>
                 <p className="text-sm">{formError}</p>
@@ -295,8 +288,8 @@ const LoginRegisterPage = () => {
 
             {/* Form-level success display */}
             {formSuccess && (
-              <div className="text-(--green-11) bg-(--green-2) border border-(--green-6) rounded-md px-3 py-2 flex gap-2 items-center">
-                <div className="rounded-full w-[24px] aspect-square grid place-items-center bg-(--green-3)">
+              <div className="flex items-center gap-2 rounded-md border border-(--green-6) bg-(--green-2) px-3 py-2 text-(--green-11)">
+                <div className="grid aspect-square w-[24px] place-items-center rounded-full bg-(--green-3)">
                   <IconCheck size={16} stroke={1.5} />
                 </div>
                 <p className="text-sm">{formSuccess}</p>
@@ -324,15 +317,12 @@ const LoginRegisterPage = () => {
               )}
             />
 
-            <p className="text-(--gray-11) text-sm text-center">
+            <p className="text-center text-sm text-(--gray-11)">
               <span>
                 {isRegister && "Already have an account?"}
                 {isLogin && "Don't have an account?"}
               </span>{" "}
-              <Link
-                to={isRegister ? "/login" : "/register"}
-                className="text-(--blue-11)"
-              >
+              <Link to={isRegister ? "/login" : "/register"} className="text-(--blue-11)">
                 {isRegister && "Log in"}
                 {isLogin && "Register"}
               </Link>

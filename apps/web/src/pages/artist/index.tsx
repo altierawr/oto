@@ -1,26 +1,19 @@
-import {
-  Outlet,
-  useLoaderData,
-  useNavigate,
-  useParams,
-  type LoaderFunction,
-} from "react-router";
-import { Fragment } from "react";
-import { Link } from "react-router";
-import type {
-  PaginatedResponse,
-  Song,
-  ArtistPage as TArtistPage,
-} from "../../types";
-import { Button, Spacer, Tabs } from "@awlt/design";
-import { Pause, Play } from "lucide-react";
-import ArtistPageOverview from "./overview";
 import type { TabsTab } from "@base-ui/react";
-import { getTidalCoverUrl } from "../../utils/image";
+
+import { Button, Spacer, Tabs } from "@awlt/design";
 import { useQuery } from "@tanstack/react-query";
-import { usePlayerState } from "../../store";
+import { Pause, Play } from "lucide-react";
+import { Fragment } from "react";
 import { Helmet } from "react-helmet-async";
+import { Outlet, useLoaderData, useNavigate, useParams, type LoaderFunction } from "react-router";
+import { Link } from "react-router";
+
+import type { PaginatedResponse, Song, ArtistPage as TArtistPage } from "../../types";
+
+import { usePlayerState } from "../../store";
 import { request } from "../../utils/http";
+import { getTidalCoverUrl } from "../../utils/image";
+import ArtistPageOverview from "./overview";
 
 const parseTidalRichTextIntoComponent = (text: string) => {
   const regex = /\[wimpLink (artistId|albumId)="(\d+)"\](.*?)\[\/wimpLink\]/g;
@@ -42,11 +35,7 @@ const parseTidalRichTextIntoComponent = (text: string) => {
 
     // Add the Link component
     parts.push(
-      <Link
-        className="text-(--blue-11)"
-        key={`link-${idType}-${id}-${matchStart}`}
-        to={path}
-      >
+      <Link className="text-(--blue-11)" key={`link-${idType}-${id}-${matchStart}`} to={path}>
         {linkText}
       </Link>,
     );
@@ -114,10 +103,7 @@ const ArtistPage = () => {
     for (let i = 0; i < player.playlist.length; i++) {
       const { song } = (player.originalPlaylist || player.playlist)[i];
 
-      if (
-        i >= topTracksQuery.data.items.length ||
-        song.id !== topTracksQuery.data.items[i].id
-      ) {
+      if (i >= topTracksQuery.data.items.length || song.id !== topTracksQuery.data.items[i].id) {
         isArtistPlaying = false;
         break;
       }
@@ -146,49 +132,44 @@ const ArtistPage = () => {
         </Helmet>
 
         <div
-          className="w-full h-[140px] bg-cover bg-center rounded-xl overflow-hidden"
+          className="h-[140px] w-full overflow-hidden rounded-xl bg-cover bg-center"
           style={{
             backgroundImage: `url(${getTidalCoverUrl(
-              data.artist.albums?.[1]?.cover ||
-                data.artist.picture ||
-                data.artist.selectedAlbumCoverFallback,
+              data.artist.albums?.[1]?.cover || data.artist.picture || data.artist.selectedAlbumCoverFallback,
               80,
             )})`,
           }}
         >
           <div
-            className="w-full h-full backdrop-blur-2xl"
+            className="h-full w-full backdrop-blur-2xl"
             style={{
               backgroundColor: "rgba(0,0,0,0.2)",
             }}
           ></div>
         </div>
-        <div className="flex gap-4 items-end">
+        <div className="flex items-end gap-4">
           <div
-            className="w-[180px] aspect-square rounded-[45px] border-4 border-(--gray-0) bg-cover ml-6 -mt-[40px] z-0"
+            className="z-0 -mt-[40px] ml-6 aspect-square w-[180px] rounded-[45px] border-4 border-(--gray-0) bg-cover"
             style={{
               backgroundImage: data.artist.picture
                 ? `url(${getTidalCoverUrl(data.artist.picture, 750)})`
                 : `url(${getTidalCoverUrl(data.artist.selectedAlbumCoverFallback, 1280)})`,
             }}
           />
-          <div className="flex flex-col items-start overflow-hidden flex-1 pb-3">
-            <h1 className="text-4xl font-bold text-(--gray-12) line-clamp-1">
-              {data.artist.name}
-            </h1>
+          <div className="flex flex-1 flex-col items-start overflow-hidden pb-3">
+            <h1 className="line-clamp-1 text-4xl font-bold text-(--gray-12)">{data.artist.name}</h1>
             {data.artist.biography && (
-              <p className="text-(--gray-11) text-xs line-clamp-2">
+              <p className="line-clamp-2 text-xs text-(--gray-11)">
                 {parseTidalRichTextIntoComponent(
                   data.artist.biography?.slice(
                     0,
-                    data.artist.biography.indexOf("<br/>") ||
-                      data.artist.biography?.length,
+                    data.artist.biography.indexOf("<br/>") || data.artist.biography?.length,
                   ),
                 )}
               </p>
             )}
             <Spacer size="2" />
-            <div className="flex gap-3 items-center">
+            <div className="flex items-center gap-3">
               <Button
                 variant="solid"
                 color="blue"
@@ -219,7 +200,7 @@ const ArtistPage = () => {
         <Spacer size="4" />
 
         <Tabs.Root
-          className="grid grid-cols-subgrid col-[breakout]! *:col-[content]"
+          className="col-[breakout]! grid grid-cols-subgrid *:col-[content]"
           value={getActiveTab()}
           onValueChange={handleTabChange}
           orientation="vertical"
@@ -238,10 +219,7 @@ const ArtistPage = () => {
 
           <Spacer size="6" />
 
-          <Tabs.Panel
-            value="overview"
-            className="grid grid-cols-subgrid col-[breakout]! *:col-[content] px-0!"
-          >
+          <Tabs.Panel value="overview" className="col-[breakout]! grid grid-cols-subgrid px-0! *:col-[content]">
             {!isChildRoute && <ArtistPageOverview />}
           </Tabs.Panel>
 

@@ -1,14 +1,13 @@
-import useCurrentUser, {
-  invalidateUserQuery,
-} from "../../hooks/useCurrentUser";
+import { Menu } from "@awlt/design";
+import clsx from "clsx";
 import { Facehash } from "facehash";
 import { ChevronUp } from "lucide-react";
-import { Menu } from "@awlt/design";
-import { request } from "../../utils/http";
-import { Link, useNavigate } from "react-router";
 import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+
 import logo from "../../assets/oto-logo.svg";
-import clsx from "clsx";
+import useCurrentUser, { invalidateUserQuery } from "../../hooks/useCurrentUser";
+import { request } from "../../utils/http";
 
 const Sidebar = () => {
   const { user } = useCurrentUser();
@@ -40,21 +39,18 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="h-full lg:min-w-[220px] py-4 px-2 flex flex-col justify-between border-r border-r-(--gray-3)">
-      <Link
-        to="/"
-        className="flex items-center px-1 lg:px-3 gap-3 no-underline! mx-auto lg:mx-0"
-      >
+    <div className="flex h-full flex-col justify-between border-r border-r-(--gray-3) px-2 py-4 lg:min-w-[220px]">
+      <Link to="/" className="mx-auto flex items-center gap-3 px-1 no-underline! lg:mx-0 lg:px-3">
         <img src={logo} width="20" height="20" />
-        <p className="font-medium text-2xl hidden lg:inline-block">oto</p>
+        <p className="hidden text-2xl font-medium lg:inline-block">oto</p>
       </Link>
 
       <div className="lg:w-full lg:*:w-full">
         {user && (
           <Menu.Root onOpenChange={(open) => setIsUserMenuOpen(open)}>
             <Menu.Trigger>
-              <div className="flex items-center justify-between py-1 lg:py-2 px-1 lg:px-3 rounded-md transition-colors group hover:bg-(--gray-4) cursor-pointer">
-                <div className="flex gap-2 items-center w-full">
+              <div className="group flex cursor-pointer items-center justify-between rounded-md px-1 py-1 transition-colors hover:bg-(--gray-4) lg:px-3 lg:py-2">
+                <div className="flex w-full items-center gap-2">
                   <Facehash
                     className="rounded-md select-none"
                     name={user.username}
@@ -62,11 +58,9 @@ const Sidebar = () => {
                     size={32}
                   />
 
-                  <div className="overflow-hidden flex-1 items-center hidden lg:grid">
-                    <p className="text-(--gray-12) text-sm max-w-[100px] truncate text-left">
-                      {user.username}
-                    </p>
-                    <p className="text-(--gray-11) text-xs line-clamp-1 text-left">
+                  <div className="hidden flex-1 items-center overflow-hidden lg:grid">
+                    <p className="max-w-[100px] truncate text-left text-sm text-(--gray-12)">{user.username}</p>
+                    <p className="line-clamp-1 text-left text-xs text-(--gray-11)">
                       {user.isAdmin ? "Admin user" : "Regular user"}
                     </p>
                   </div>
@@ -74,7 +68,7 @@ const Sidebar = () => {
                   <ChevronUp
                     size={16}
                     className={clsx(
-                      "text-(--gray-11) group-hover:text-(--gray-12) transition-[rotate,color] rotate-0 hidden lg:block",
+                      "hidden rotate-0 text-(--gray-11) transition-[rotate,color] group-hover:text-(--gray-12) lg:block",
                       isUserMenuOpen && "rotate-180",
                     )}
                   />
@@ -82,9 +76,7 @@ const Sidebar = () => {
               </div>
             </Menu.Trigger>
             <Menu.Content>
-              <Menu.Item onClick={handleChangePassword}>
-                Change password
-              </Menu.Item>
+              <Menu.Item onClick={handleChangePassword}>Change password</Menu.Item>
               <Menu.Item onClick={handleLogOut}>Log out</Menu.Item>
             </Menu.Content>
           </Menu.Root>

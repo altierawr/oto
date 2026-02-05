@@ -14,11 +14,7 @@ type TProps = {
   dimension?: ScrollDimension;
 };
 
-const useScrollRestoration = ({
-  scrollRef,
-  id,
-  dimension = ScrollDimension.VERTICAL,
-}: TProps) => {
+const useScrollRestoration = ({ scrollRef, id, dimension = ScrollDimension.VERTICAL }: TProps) => {
   const { pathname } = useLocation();
   const navigationType = useNavigationType();
   const key = pathname + (id || "");
@@ -29,14 +25,10 @@ const useScrollRestoration = ({
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
 
-    const scrollProperty =
-      dimension === ScrollDimension.HORIZONTAL ? "scrollLeft" : "scrollTop";
+    const scrollProperty = dimension === ScrollDimension.HORIZONTAL ? "scrollLeft" : "scrollTop";
 
     const handleScroll = () => {
-      scrollPositions.set(
-        currentKeyRef.current,
-        scrollContainer[scrollProperty],
-      );
+      scrollPositions.set(currentKeyRef.current, scrollContainer[scrollProperty]);
     };
 
     scrollContainer.addEventListener("scrollend", handleScroll, {
@@ -53,8 +45,7 @@ const useScrollRestoration = ({
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
 
-    const scrollProperty =
-      dimension === ScrollDimension.HORIZONTAL ? "scrollLeft" : "scrollTop";
+    const scrollProperty = dimension === ScrollDimension.HORIZONTAL ? "scrollLeft" : "scrollTop";
 
     if (navigationType === "POP") {
       // Back/forward navigation - restore position

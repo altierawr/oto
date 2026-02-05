@@ -1,14 +1,16 @@
-import { Link } from "react-router";
-import type { Song } from "../../types";
-import { formatDuration } from "../../utils/utils";
-import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
-import { usePlayerState } from "../../store";
-import { Heart, ListPlus, MoreHorizontal } from "lucide-react";
-import { useSearchParams } from "react-router";
-import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
-import styles from "./song-list.module.css";
 import { Menu } from "@awlt/design";
+import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
+import clsx from "clsx";
+import { Heart, ListPlus, MoreHorizontal } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
+import { useSearchParams } from "react-router";
+
+import type { Song } from "../../types";
+
+import { usePlayerState } from "../../store";
+import { formatDuration } from "../../utils/utils";
+import styles from "./song-list.module.css";
 
 type TProps = {
   song: Song;
@@ -22,9 +24,7 @@ const SongListItem = ({ song, songs }: TProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
   const highlightedTrackIdStr = searchParams.get("track");
-  const highlightedTrackId = highlightedTrackIdStr
-    ? parseInt(highlightedTrackIdStr)
-    : null;
+  const highlightedTrackId = highlightedTrackIdStr ? parseInt(highlightedTrackIdStr) : null;
 
   const { player, playerState, song: playerSong } = usePlayerState();
 
@@ -64,7 +64,7 @@ const SongListItem = ({ song, songs }: TProps) => {
     <div
       ref={ref}
       className={clsx(
-        "rounded-md py-2 group text-sm outline-2 outline-transparent",
+        "group rounded-md py-2 text-sm outline-2 outline-transparent",
         styles.songListItem,
         isHighlighted && "bg-(--gray-4)! outline-(--gray-7)!",
       )}
@@ -75,70 +75,36 @@ const SongListItem = ({ song, songs }: TProps) => {
       data-is-highlighted={isHighlighted}
       data-is-active={isActive}
     >
-      <div
-        className="text-center shrink-0 basis-[24px] cursor-pointer"
-        onClick={handleClick}
-      >
-        <span
-          className={clsx(
-            !isPlaying && "group-hover:hidden",
-            isPlaying && "hidden",
-          )}
-        >
-          {song.trackNumber}
-        </span>
+      <div className="shrink-0 basis-[24px] cursor-pointer text-center" onClick={handleClick}>
+        <span className={clsx(!isPlaying && "group-hover:hidden", isPlaying && "hidden")}>{song.trackNumber}</span>
         <div className={clsx(isPlaying && "text-(--blue-11)")}>
           {(!song || !isPlaying || (isPlaying && playerState.isPaused)) && (
-            <IconPlayerPlay
-              className={clsx(!isPlaying && "hidden group-hover:block")}
-              size={20}
-              fill="currentColor"
-            />
+            <IconPlayerPlay className={clsx(!isPlaying && "hidden group-hover:block")} size={20} fill="currentColor" />
           )}
 
-          {isPlaying && !playerState.isPaused && (
-            <IconPlayerPause size={20} fill="currentColor" />
-          )}
+          {isPlaying && !playerState.isPaused && <IconPlayerPause size={20} fill="currentColor" />}
         </div>
       </div>
-      <div className="overflow-hidden text-ellipsis text-nowrap cursor-default select-none tracking-tight">
+      <div className="cursor-default overflow-hidden tracking-tight text-nowrap text-ellipsis select-none">
         <p className={clsx(isPlaying && "text-(--blue-11)")}>{song.title}</p>
         {song.artists.map((artist, index) => (
-          <span
-            key={artist.id}
-            className={clsx(
-              "text-(--gray-11)",
-              isPlaying && "text-(--blue-11)!",
-            )}
-          >
-            <Link
-              to={`/artists/${artist.id}`}
-              className={clsx(
-                "text-(--gray-11)",
-                isPlaying && "text-(--blue-11)!",
-              )}
-            >
+          <span key={artist.id} className={clsx("text-(--gray-11)", isPlaying && "text-(--blue-11)!")}>
+            <Link to={`/artists/${artist.id}`} className={clsx("text-(--gray-11)", isPlaying && "text-(--blue-11)!")}>
               {artist.name}
             </Link>
             {index < song.artists.length - 1 && ", "}
           </span>
         ))}
       </div>
-      <div className="cursor-default select-none">
-        {formatDuration(song.duration, "digital")}
-      </div>
+      <div className="cursor-default select-none">{formatDuration(song.duration, "digital")}</div>
       <div
-        className="flex items-center justify-end h-full"
+        className="flex h-full items-center justify-end"
         onDoubleClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <Menu.Root>
           <Menu.Trigger render={<ActionButton />}>
-            <MoreHorizontal
-              size={20}
-              strokeWidth={1.5}
-              className="opacity-0 group-hover:opacity-100"
-            />
+            <MoreHorizontal size={20} strokeWidth={1.5} className="opacity-0 group-hover:opacity-100" />
           </Menu.Trigger>
           <Menu.Content>
             <Menu.Item onClick={handlePlayNextClick}>Play Next</Menu.Item>
@@ -151,11 +117,7 @@ const SongListItem = ({ song, songs }: TProps) => {
         <div className="hidden">
           <ActionButton>
             {/* The left margin is to help visually center the icon (it's not symmetrical) */}
-            <ListPlus
-              size={18}
-              strokeWidth={1.5}
-              className="opacity-0 group-hover:opacity-100 ml-[3px]"
-            />
+            <ListPlus size={18} strokeWidth={1.5} className="ml-[3px] opacity-0 group-hover:opacity-100" />
           </ActionButton>
           <ActionButton>
             <Heart size={18} strokeWidth={1.5} />
@@ -169,7 +131,7 @@ const SongListItem = ({ song, songs }: TProps) => {
 const ActionButton = ({ ...props }) => {
   return (
     <button
-      className="h-full aspect-square grid place-items-center cursor-pointer hover:bg-(--gray-4) active:bg-(--gray-5) rounded-full outline-0"
+      className="grid aspect-square h-full cursor-pointer place-items-center rounded-full outline-0 hover:bg-(--gray-4) active:bg-(--gray-5)"
       {...props}
     />
   );

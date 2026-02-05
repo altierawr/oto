@@ -1,16 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "eslint",
-    "typescript",
-    "unicorn",
-    "react",
-    "react-perf",
-    "oxc",
-    "import",
-    "promise",
-    "vitest"
-  ],
+  "plugins": ["eslint", "typescript", "unicorn", "react", "react-perf", "oxc", "import", "promise", "vitest"],
   "categories": {},
   "rules": {
     "react/no-children-prop": "off"

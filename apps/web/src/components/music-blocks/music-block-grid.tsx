@@ -4,7 +4,7 @@ type TProps = PropsWithChildren;
 
 const MusicBlockGrid = ({ children }: TProps) => {
   return (
-    <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(140px,1fr))]">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
       {children}
       {/* Add empty divs to keep all grid items the same size regardless of number of items */}
       {Children.count(children) < 10 && (

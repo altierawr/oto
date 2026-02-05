@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import useScrollRestoration, { ScrollDimension } from "./useScrollRestoration";
 import { useLocation } from "react-router";
+
+import useScrollRestoration, { ScrollDimension } from "./useScrollRestoration";
 
 enum ScrollDirection {
   LEFT,
@@ -14,12 +15,7 @@ type TProps = {
   isLoading?: boolean;
 };
 
-const useHorizontalScrollSnap = ({
-  id,
-  gap = 20,
-  scrollAmount = 5,
-  isLoading,
-}: TProps) => {
+const useHorizontalScrollSnap = ({ id, gap = 20, scrollAmount = 5, isLoading }: TProps) => {
   const { pathname } = useLocation();
   const ref = useRef<HTMLDivElement>(null);
   const [scrollIndex, setScrollIndex] = useState(0);
@@ -55,17 +51,13 @@ const useHorizontalScrollSnap = ({
     for (let i = 0; i < amount; i++) {
       if (
         (isLeft && scrollPos <= 0) ||
-        (isRight &&
-          ref.current.scrollWidth - ref.current.clientWidth - scrollPos <= 1)
+        (isRight && ref.current.scrollWidth - ref.current.clientWidth - scrollPos <= 1)
       ) {
         break;
       }
 
       const itemScrollWidth = ref.current.children[0].clientWidth;
-      scrollPos = Math.max(
-        0,
-        scrollPos + (isRight ? 1 : -1) * (itemScrollWidth + gap),
-      );
+      scrollPos = Math.max(0, scrollPos + (isRight ? 1 : -1) * (itemScrollWidth + gap));
 
       idx += direction === ScrollDirection.LEFT ? -1 : 1;
     }
@@ -117,20 +109,14 @@ const useHorizontalScrollSnap = ({
     }
 
     const listener = (e: WheelEvent) => {
-      if (
-        !ref.current ||
-        ref.current.children.length === 0 ||
-        latestScrollPos === undefined
-      ) {
+      if (!ref.current || ref.current.children.length === 0 || latestScrollPos === undefined) {
         return;
       }
 
       if (e.shiftKey) {
         e.preventDefault();
 
-        tryToScroll(
-          e.deltaY > 0 ? ScrollDirection.RIGHT : ScrollDirection.LEFT,
-        );
+        tryToScroll(e.deltaY > 0 ? ScrollDirection.RIGHT : ScrollDirection.LEFT);
       }
     };
 
@@ -159,16 +145,9 @@ const useHorizontalScrollSnap = ({
     tryToScroll(ScrollDirection.RIGHT, scrollAmount);
   };
 
-  const canScrollLeft = isLoading
-    ? false
-    : latestScrollPos !== undefined && latestScrollPos > 0;
+  const canScrollLeft = isLoading ? false : latestScrollPos !== undefined && latestScrollPos > 0;
   const canScrollRight =
-    !isLoading && ref.current
-      ? ref.current.scrollWidth -
-          ref.current.clientWidth -
-          (latestScrollPos || 0) >
-        1
-      : false;
+    !isLoading && ref.current ? ref.current.scrollWidth - ref.current.clientWidth - (latestScrollPos || 0) > 1 : false;
 
   return {
     ref,

@@ -1,22 +1,22 @@
-import { useEffect, useRef, useState } from "react";
 import { Input, Spacer, ScrollArea } from "@awlt/design";
-import SearchHeader, { type SearchTab } from "./header";
-import type { SearchResults } from "../../types";
-import ArtistSearchResult from "./results/artist";
-import AlbumSearchResult from "./results/album";
-import SongSearchResult from "./results/song";
-import PlaylistSearchResult from "./results/playlist";
-import TopHitSearchResult from "./results/top-hit";
 import { Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
+
+import type { SearchResults } from "../../types";
+
 import { request } from "../../utils/http";
+import SearchHeader, { type SearchTab } from "./header";
+import AlbumSearchResult from "./results/album";
+import ArtistSearchResult from "./results/artist";
+import PlaylistSearchResult from "./results/playlist";
+import SongSearchResult from "./results/song";
+import TopHitSearchResult from "./results/top-hit";
 
 const SearchInput = () => {
   const [searchValue, setSearchValue] = useState("");
   const [searchTab, setSearchTab] = useState<SearchTab>("topHits");
-  const [searchResults, setSearchResults] = useState<SearchResults | null>(
-    null,
-  );
+  const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -98,7 +98,7 @@ const SearchInput = () => {
 
       <div
         tabIndex={0}
-        className="absolute z-1 left-0 top-full mt-2 w-full h-[500px] bg-(--gray-0) rounded-md flex flex-col pt-3 pb-1 border border-(--gray-6)"
+        className="absolute top-full left-0 z-1 mt-2 flex h-[500px] w-full flex-col rounded-md border border-(--gray-6) bg-(--gray-0) pt-3 pb-1"
         style={{
           pointerEvents: isVisible ? "unset" : "none",
           opacity: isVisible ? "1" : "0",
@@ -133,38 +133,22 @@ const SearchInput = () => {
 
               {searchTab === "artists" &&
                 searchResults?.artists?.map((artist) => (
-                  <ArtistSearchResult
-                    key={artist.id}
-                    artist={artist}
-                    onClose={handleFocusLoss}
-                  />
+                  <ArtistSearchResult key={artist.id} artist={artist} onClose={handleFocusLoss} />
                 ))}
 
               {searchTab === "albums" &&
                 searchResults?.albums?.map((album) => (
-                  <AlbumSearchResult
-                    key={album.id}
-                    album={album}
-                    onClose={handleFocusLoss}
-                  />
+                  <AlbumSearchResult key={album.id} album={album} onClose={handleFocusLoss} />
                 ))}
 
               {searchTab === "songs" &&
                 searchResults?.songs?.map((song) => (
-                  <SongSearchResult
-                    key={song.id}
-                    song={song}
-                    onClose={handleFocusLoss}
-                  />
+                  <SongSearchResult key={song.id} song={song} onClose={handleFocusLoss} />
                 ))}
 
               {searchTab === "playlists" &&
                 searchResults?.playlists?.map((playlist) => (
-                  <PlaylistSearchResult
-                    key={playlist.uuid}
-                    playlist={playlist}
-                    onClose={handleFocusLoss}
-                  />
+                  <PlaylistSearchResult key={playlist.uuid} playlist={playlist} onClose={handleFocusLoss} />
                 ))}
             </div>
           </ScrollArea>

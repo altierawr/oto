@@ -1,10 +1,12 @@
 import { Link } from "react-router";
-import SearchResult from ".";
-import type { Song } from "../../../types";
-import { getTidalCoverUrl } from "../../../utils/image";
 import { Fragment } from "react/jsx-runtime";
-import { CoverBlockVariant } from "../../music-blocks/cover-block";
+
+import type { Song } from "../../../types";
+
+import SearchResult from ".";
 import { usePlayerState } from "../../../store";
+import { getTidalCoverUrl } from "../../../utils/image";
+import { CoverBlockVariant } from "../../music-blocks/cover-block";
 
 type TProps = {
   song: Song;
@@ -41,9 +43,7 @@ const SongSearchResult = ({ song, onClose }: TProps) => {
         </>
       }
       imageUrl={song.album?.cover ? getTidalCoverUrl(song.album.cover, 80) : ""}
-      linkUrl={
-        song.album?.id ? `/albums/${song.album.id}?track=${song.id}` : undefined
-      }
+      linkUrl={song.album?.id ? `/albums/${song.album.id}?track=${song.id}` : undefined}
       coverBlockVariant={CoverBlockVariant.PLAY_ONLY}
       isPlaying={isPlaying}
       onPlayClick={handlePlayClick}

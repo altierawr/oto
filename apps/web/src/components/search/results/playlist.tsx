@@ -1,7 +1,9 @@
-import { Fragment } from "react/jsx-runtime";
 import { Link } from "react-router";
-import SearchResult from ".";
+import { Fragment } from "react/jsx-runtime";
+
 import type { Playlist } from "../../../types";
+
+import SearchResult from ".";
 import { getTidalCoverUrl } from "../../../utils/image";
 
 type TProps = {

@@ -1,6 +1,8 @@
-import { Link, useNavigate } from "react-router";
-import CoverBlock, { CoverBlockVariant } from "../../music-blocks/cover-block";
 import type { MouseEvent } from "react";
+
+import { Link, useNavigate } from "react-router";
+
+import CoverBlock, { CoverBlockVariant } from "../../music-blocks/cover-block";
 
 type TProps = {
   imageUrl: string;
@@ -35,10 +37,10 @@ const SearchResult = ({
 
   return (
     <div
-      className="w-full flex gap-3 h-11 min-h-11 rounded-md p-1 transition-colors hover:bg-(--gray-2) active:bg-(--gray-3)"
+      className="flex h-11 min-h-11 w-full gap-3 rounded-md p-1 transition-colors hover:bg-(--gray-2) active:bg-(--gray-3)"
       onDoubleClick={sendToUrl}
     >
-      <div className="h-full aspect-square">
+      <div className="aspect-square h-full">
         <CoverBlock
           variant={coverBlockVariant}
           imageUrl={imageUrl}
@@ -48,8 +50,8 @@ const SearchResult = ({
         />
       </div>
 
-      <div className="flex flex-col justify-center flex-1">
-        <p className="font-semibold text-sm line-clamp-1">
+      <div className="flex flex-1 flex-col justify-center">
+        <p className="line-clamp-1 text-sm font-semibold">
           {linkUrl && (
             <Link to={linkUrl} onClick={onClose}>
               {primaryText}
@@ -57,7 +59,7 @@ const SearchResult = ({
           )}
           {!linkUrl && primaryText}
         </p>
-        <p className="text-xs text-(--gray-11) line-clamp-1">{secondaryText}</p>
+        <p className="line-clamp-1 text-xs text-(--gray-11)">{secondaryText}</p>
       </div>
     </div>
   );
