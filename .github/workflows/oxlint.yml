@@ -2,11 +2,11 @@ name: Lint
 
 on:
   pull_request:
-    branches: [main]
+    branches: [master]
     paths:
       - "apps/web/**"
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - "apps/web/**"
 
