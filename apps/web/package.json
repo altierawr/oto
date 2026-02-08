@@ -11,10 +11,11 @@
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "rm -rf node_modules/oxfmt && rm -rf node_modules/oxlint && cp -R ../../node_modules/oxlint node_modules && cp -R ../../node_modules/oxfmt node_modules"
   },
   "dependencies": {
-    "@awlt/design": "^0.0.2",
+    "@awlt/design": "^0.1.1",
     "@base-ui/react": "^1.0.0",
     "@tabler/icons-react": "^3.35.0",
     "@tailwindcss/vite": "^4.1.17",
@@ -49,10 +50,5 @@
     "vite": "npm:rolldown-vite@7.2.5",
     "vite-plugin-oxlint": "^1.6.0"
   },
-  "packageManager": "pnpm@10.26.0",
-  "pnpm": {
-    "overrides": {
-      "vite": "npm:rolldown-vite@7.2.5"
-    }
-  }
+  "packageManager": "pnpm@10.26.0"
 }
