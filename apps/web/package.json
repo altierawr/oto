@@ -12,7 +12,7 @@
     "fmt:check": "oxfmt --check",
     "preview": "vite preview",
     "prepare": "husky",
-    "postinstall": "rm -rf node_modules/oxfmt && rm -rf node_modules/oxlint && cp -R ../../node_modules/oxlint node_modules && cp -R ../../node_modules/oxfmt node_modules"
+    "postinstall": "rm -rf node_modules/oxfmt && rm -rf node_modules/oxlint && if [ -d ../../node_modules/oxlint ]; then cp -R ../../node_modules/oxlint node_modules; fi && if [ -d ../../node_modules/oxfmt ]; then cp -R ../../node_modules/oxfmt node_modules; fi"
   },
   "dependencies": {
     "@awlt/design": "^0.1.1",
