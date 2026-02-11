@@ -15,7 +15,7 @@
     "postinstall": "if [ -d ../../node_modules/oxlint ]; then rm -rf node_modules/oxlint && cp -R ../../node_modules/oxlint node_modules; fi && if [ -d ../../node_modules/oxfmt ]; then rm -rf node_modules/oxfmt && cp -R ../../node_modules/oxfmt node_modules; fi"
   },
   "dependencies": {
-    "@awlt/design": "^0.1.1",
+    "@awlt/design": "0.2.0",
     "@base-ui/react": "^1.0.0",
     "@tabler/icons-react": "^3.35.0",
     "@tailwindcss/vite": "^4.1.17",

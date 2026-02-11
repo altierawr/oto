@@ -37,7 +37,7 @@ const SearchResult = ({
 
   return (
     <div
-      className="flex h-11 min-h-11 w-full gap-3 rounded-md p-1 transition-colors hover:bg-(--gray-2) active:bg-(--gray-3)"
+      className="flex h-11 min-h-11 w-full gap-3 rounded-md p-1 transition-colors hover:bg-(--gray-4) active:bg-(--gray-5)"
       onDoubleClick={sendToUrl}
     >
       <div className="aspect-square h-full">

@@ -1,7 +1,7 @@
 import { Menu } from "@awlt/design";
 import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
 import clsx from "clsx";
-import { Heart, ListPlus, MoreHorizontal } from "lucide-react";
+import { Heart, ListEndIcon, ListPlus, ListStartIcon, MoreHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useSearchParams } from "react-router";
@@ -106,13 +106,19 @@ const SongListItem = ({ song, songs }: TProps) => {
           <Menu.Trigger render={<ActionButton />}>
             <MoreHorizontal size={20} strokeWidth={1.5} className="opacity-0 group-hover:opacity-100" />
           </Menu.Trigger>
-          <Menu.Content>
-            <Menu.Item onClick={handlePlayNextClick}>Play Next</Menu.Item>
-            <Menu.Item onClick={handleAddToQueueClick}>Add to Queue</Menu.Item>
+          <Menu.Popup>
+            <Menu.Item onClick={handlePlayNextClick}>
+              <ListStartIcon />
+              Play Next
+            </Menu.Item>
+            <Menu.Item onClick={handleAddToQueueClick}>
+              <ListEndIcon />
+              Add to Queue
+            </Menu.Item>
             {/*<Menu.Separator />
             <Menu.Item>Favorite</Menu.Item>
             <Menu.Item>Share</Menu.Item>*/}
-          </Menu.Content>
+          </Menu.Popup>
         </Menu.Root>
         <div className="hidden">
           <ActionButton>

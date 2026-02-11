@@ -157,7 +157,7 @@ const LoginRegisterPage = () => {
   }, [user, isLoading, isStale, navigate]);
 
   return (
-    <div className="relative grid h-dvh place-items-center bg-(--gray-0) text-(--gray-12)">
+    <div className="relative grid h-dvh place-items-center bg-(--gray-1) text-(--gray-12)">
       <div className="grid min-w-[350px] content-start">
         <h1 className="text-center text-2xl font-semibold">
           {isRegister && "Create an account"}

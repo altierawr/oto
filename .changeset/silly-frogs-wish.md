@@ -1,5 +1,5 @@
 ---
-"web": patch
+"web": minor
 ---
 
-Updated @awlt/design to 0.1.1
+Updated @awlt/design to 0.2.0

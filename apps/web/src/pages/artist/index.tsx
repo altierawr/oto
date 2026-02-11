@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Pause, Play } from "lucide-react";
 import { Fragment } from "react";
 import { Helmet } from "react-helmet-async";
-import { Outlet, useLoaderData, useNavigate, useParams, type LoaderFunction } from "react-router";
+import { Outlet, useLoaderData, useLocation, useNavigate, useParams, type LoaderFunction } from "react-router";
 import { Link } from "react-router";
 
 import type { PaginatedResponse, Song, ArtistPage as TArtistPage } from "../../types";
@@ -63,6 +63,7 @@ const ArtistPage = () => {
   const data = useLoaderData() as { artist: TArtistPage };
   const { player, playerState, song } = usePlayerState();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const topTracksQuery = useQuery({
     queryKey: ["artist-top-tracks", id],
@@ -149,7 +150,7 @@ const ArtistPage = () => {
         </div>
         <div className="flex items-end gap-4">
           <div
-            className="z-0 -mt-[40px] ml-6 aspect-square w-[180px] rounded-[45px] border-4 border-(--gray-0) bg-cover"
+            className="z-0 -mt-[40px] ml-6 aspect-square w-[180px] rounded-[45px] border-4 border-(--gray-1) bg-cover"
             style={{
               backgroundImage: data.artist.picture
                 ? `url(${getTidalCoverUrl(data.artist.picture, 750)})`
@@ -203,9 +204,8 @@ const ArtistPage = () => {
           className="col-[breakout]! grid grid-cols-subgrid *:col-[content]"
           value={getActiveTab()}
           onValueChange={handleTabChange}
-          orientation="vertical"
         >
-          <Tabs.List className="bg-(--gray-1)!">
+          <Tabs.List>
             <Tabs.Tab value="overview">Overview</Tabs.Tab>
             <Tabs.TabSeparator />
             <Tabs.Tab value="albums">Albums</Tabs.Tab>

@@ -27,11 +27,10 @@ const SongQueue = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 w-dvw bg-[rgba(0,0,0,0.3)] transition-opacity"
+      className="fixed inset-0 z-40 h-dvh w-dvw bg-[rgba(0,0,0,0.3)] transition-opacity"
       style={{
         pointerEvents: isVisible ? "unset" : "none",
         opacity: isVisible ? "1" : "0",
-        height: "calc(100dvh - 100px)",
       }}
       onClick={handleBlur}
     >

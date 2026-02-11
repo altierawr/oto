@@ -39,8 +39,8 @@ const AppRoot = () => {
 
   return (
     <>
-      <div className="relative h-dvh bg-(--gray-0) text-(--gray-12)">
-        <div className="flex w-full" style={{ height: "calc(100dvh - 100px)" }}>
+      <div className="relative h-dvh bg-(--gray-1) text-(--gray-12)">
+        <div className="flex h-full w-full">
           <Sidebar />
 
           <div className="relative flex h-full w-full min-w-0 justify-center">
@@ -55,33 +55,37 @@ const AppRoot = () => {
                 <div
                   className="col-[breakout-start/content-start] h-full"
                   style={{
-                    background: "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+                    background:
+                      "linear-gradient(to left, rgba(0,0,0,0.0), color-mix(in srgb, var(--gray-1) 90%, transparent) 60%, var(--gray-1) 100%)",
                   }}
                 />
                 <div
                   className="col-[content-end/breakout-end] h-full"
                   style={{
-                    background: "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+                    background:
+                      "linear-gradient(to right, rgba(0,0,0,0.0),color-mix(in srgb, var(--gray-1) 90%, transparent) 60%, var(--gray-1) 100%)",
                   }}
                 />
               </div>
 
               <main
                 ref={scrollRef}
-                className="grid h-full w-full auto-rows-max content-start items-start overflow-y-auto *:col-[content]"
+                className="grid h-full w-full grid-rows-[1fr_auto] content-start items-start overflow-y-auto *:col-[content]"
                 style={{
                   gridTemplateColumns:
                     "[breakout-start] var(--space-10) [content-start] 1fr [content-end] var(--space-10) [breakout-end]",
                 }}
               >
-                <Navbar />
-                <Outlet />
+                <div className="col-[breakout]! grid grid-cols-subgrid *:col-[content]">
+                  <Navbar scrollRef={scrollRef} />
+                  <Outlet />
+                </div>
+                <MusicControls />
               </main>
             </div>
           </div>
         </div>
 
-        <MusicControls />
         <AudioDebugger />
         <SongQueue />
       </div>

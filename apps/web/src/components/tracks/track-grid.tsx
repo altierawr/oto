@@ -31,7 +31,8 @@ const TrackGrid = ({ tracks, className, isLoading, expectedNrMaxItems = 50 }: TP
         )}
         onClick={scrollLeft}
         style={{
-          background: "linear-gradient(to left, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+          background:
+            "linear-gradient(to left, rgba(0,0,0,0.0), color-mix(in srgb, var(--gray-1) 90%, transparent) 60%, var(--gray-1) 100%)",
         }}
       >
         <div
@@ -50,7 +51,8 @@ const TrackGrid = ({ tracks, className, isLoading, expectedNrMaxItems = 50 }: TP
           isLoading && "hidden",
         )}
         style={{
-          background: "linear-gradient(to right, rgba(0,0,0,0.0), rgba(0,0,0,0.9) 60%, rgba(0,0,0,1.0) 100%)",
+          background:
+            "linear-gradient(to right, rgba(0,0,0,0.0), color-mix(in srgb, var(--gray-1) 90%, transparent) 60%, var(--gray-1) 100%)",
         }}
       >
         <div

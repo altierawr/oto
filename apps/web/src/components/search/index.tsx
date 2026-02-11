@@ -1,4 +1,4 @@
-import { Input, Spacer, ScrollArea } from "@awlt/design";
+import { Input, ScrollArea } from "@awlt/design";
 import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
@@ -87,7 +87,7 @@ const SearchInput = () => {
     <div className="relative w-[360px]">
       <Input
         placeholder="Search..."
-        className="w-full"
+        className="w-full rounded-full! not-focus:shadow-none!"
         value={searchValue}
         leftIcon={Search}
         isLoading={isFetching}
@@ -98,7 +98,7 @@ const SearchInput = () => {
 
       <div
         tabIndex={0}
-        className="absolute top-full left-0 z-1 mt-2 flex h-[500px] w-full flex-col rounded-md border border-(--gray-6) bg-(--gray-0) pt-3 pb-1"
+        className="absolute top-full left-0 z-1 mt-2 flex h-[500px] w-full flex-col rounded-md border border-(--gray-6) bg-(--gray-3) pt-3 pb-1 shadow-2xl"
         style={{
           pointerEvents: isVisible ? "unset" : "none",
           opacity: isVisible ? "1" : "0",
@@ -111,12 +111,11 @@ const SearchInput = () => {
         <div className="px-3">
           <SearchHeader tab={searchTab} onTabChange={handleSearchTabChange} />
         </div>
-        <Spacer size="2" />
 
         <div className="flex-1 overflow-y-hidden">
           <ScrollArea
             ref={resultsListRef}
-            className="flex flex-col gap-2 pl-3"
+            className="flex flex-col gap-2 pt-2 pl-3"
             removeScrollbarVerticalMargins
             includeScrollbarLeftMargin
           >

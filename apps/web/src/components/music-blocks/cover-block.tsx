@@ -41,7 +41,7 @@ const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPl
         <>
           {linkUrl && (
             <Link to={linkUrl}>
-              <div className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-md">
+              <div className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl">
                 <Block imageUrl={imageUrl} />
                 <div
                   className={clsx(
@@ -78,7 +78,7 @@ const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPl
       )}
 
       {variant === CoverBlockVariant.FULL && linkUrl && (
-        <div className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-md transition-all">
+        <div className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl transition-all">
           <Link to={linkUrl}>
             <Block imageUrl={imageUrl} />
             <div
@@ -123,7 +123,7 @@ const Block = ({ imageUrl, showHoverZoom }: TBlockProps) => {
   return (
     <div
       className={clsx(
-        "h-full w-full rounded-md bg-cover transition-transform",
+        "h-full w-full rounded-xl bg-cover transition-transform",
         showHoverZoom && "group-hover:scale-[0.98]",
       )}
       style={{
