@@ -124,6 +124,10 @@ const ArtistPage = () => {
     player.playSongs(topTracksQuery.data.items, 0);
   };
 
+  const artistImageUrl = data.artist.picture
+    ? getTidalCoverUrl(data.artist.picture, 750)
+    : getTidalCoverUrl(data.artist.selectedAlbumCoverFallback, 1280);
+
   return (
     <>
       {/* Use key so components get re-rendered when navigating between artists */}
@@ -133,7 +137,7 @@ const ArtistPage = () => {
         </Helmet>
 
         <div
-          className="h-[140px] w-full overflow-hidden rounded-xl bg-cover bg-center"
+          className="hidden h-[140px] w-full overflow-hidden rounded-xl bg-cover bg-center lg:block"
           style={{
             backgroundImage: `url(${getTidalCoverUrl(
               data.artist.albums?.[1]?.cover || data.artist.picture || data.artist.selectedAlbumCoverFallback,
@@ -148,52 +152,63 @@ const ArtistPage = () => {
             }}
           ></div>
         </div>
-        <div className="flex items-end gap-4">
+        <div
+          className="col-[breakout]! -mt-(--navbar-height) bg-cover max-lg:h-dvw max-lg:max-h-[400px] lg:mt-0 lg:min-h-auto lg:bg-none!"
+          style={{
+            backgroundImage: `url(${artistImageUrl})`,
+          }}
+        >
           <div
-            className="z-0 -mt-[40px] ml-6 aspect-square w-[180px] rounded-[45px] border-4 border-(--gray-1) bg-cover"
+            className="flex h-full items-end gap-4 px-(--content-side-padding)"
             style={{
-              backgroundImage: data.artist.picture
-                ? `url(${getTidalCoverUrl(data.artist.picture, 750)})`
-                : `url(${getTidalCoverUrl(data.artist.selectedAlbumCoverFallback, 1280)})`,
+              background:
+                "linear-gradient(to bottom, color-mix(in srgb, var(--gray-1) 90%, transparent), color-mix(in srgb, var(--gray-1) 30%, transparent) 50%, var(--gray-1) 100%)",
             }}
-          />
-          <div className="flex flex-1 flex-col items-start overflow-hidden pb-3">
-            <h1 className="line-clamp-1 text-4xl font-bold text-(--gray-12)">{data.artist.name}</h1>
-            {data.artist.biography && (
-              <p className="line-clamp-2 text-xs text-(--gray-11)">
-                {parseTidalRichTextIntoComponent(
-                  data.artist.biography?.slice(
-                    0,
-                    data.artist.biography.indexOf("<br/>") || data.artist.biography?.length,
-                  ),
-                )}
-              </p>
-            )}
-            <Spacer size="2" />
-            <div className="flex items-center gap-3">
-              <Button
-                variant="solid"
-                color="blue"
-                size="sm"
-                isDisabled={topTracksQuery.isLoading || !topTracksQuery.data}
-                isLoading={topTracksQuery.isLoading}
-                onClick={handlePlayClick}
-              >
-                {isArtistPlaying && !playerState.isPaused && (
-                  <>
-                    <Pause size={16} fill="currentColor" />
-                    Pause
-                  </>
-                )}
-                {(!isArtistPlaying || playerState.isPaused) && (
-                  <>
-                    <Play size={16} fill="currentColor" />
-                    Play
-                  </>
-                )}
-              </Button>
-              {/*<IconButton color="gray" variant="soft" icon={Heart} size="sm" />
-              <IconButton color="gray" variant="soft" icon={Share} size="sm" />*/}
+          >
+            <div
+              className="z-0 -mt-[40px] ml-6 hidden aspect-square w-[180px] rounded-[45px] border-4 border-(--gray-1) bg-cover lg:block"
+              style={{
+                backgroundImage: `url(${artistImageUrl})`,
+              }}
+            />
+            <div className="flex flex-1 flex-col items-start overflow-hidden lg:pb-3">
+              <h1 className="line-clamp-1 text-4xl font-bold text-(--gray-12)">{data.artist.name}</h1>
+              {data.artist.biography && (
+                <p className="line-clamp-2 w-full text-xs font-medium lg:font-normal lg:text-(--gray-11)">
+                  {parseTidalRichTextIntoComponent(
+                    data.artist.biography?.slice(
+                      0,
+                      data.artist.biography.indexOf("<br/>") || data.artist.biography?.length,
+                    ),
+                  )}
+                </p>
+              )}
+              <Spacer size="2" />
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="solid"
+                  color="blue"
+                  size="md"
+                  isDisabled={topTracksQuery.isLoading || !topTracksQuery.data}
+                  isLoading={topTracksQuery.isLoading}
+                  onClick={handlePlayClick}
+                >
+                  {isArtistPlaying && !playerState.isPaused && (
+                    <>
+                      <Pause size={16} fill="currentColor" />
+                      Pause
+                    </>
+                  )}
+                  {(!isArtistPlaying || playerState.isPaused) && (
+                    <>
+                      <Play size={16} fill="currentColor" />
+                      Play
+                    </>
+                  )}
+                </Button>
+                {/*<IconButton color="gray" variant="soft" icon={Heart} size="sm" />
+                <IconButton color="gray" variant="soft" icon={Share} size="sm" />*/}
+              </div>
             </div>
           </div>
         </div>
@@ -205,16 +220,27 @@ const ArtistPage = () => {
           value={getActiveTab()}
           onValueChange={handleTabChange}
         >
-          <Tabs.List>
-            <Tabs.Tab value="overview">Overview</Tabs.Tab>
+          <Tabs.List className="max-md:justify-center">
+            <Tabs.Tab value="overview" className="max-md:flex-1">
+              Overview
+            </Tabs.Tab>
             <Tabs.TabSeparator />
-            <Tabs.Tab value="albums">Albums</Tabs.Tab>
+            <Tabs.Tab value="albums" className="max-md:flex-1">
+              Albums
+            </Tabs.Tab>
             <Tabs.TabSeparator />
-            <Tabs.Tab value="singles-eps">Singles & EPs</Tabs.Tab>
+            <Tabs.Tab value="singles-eps" className="max-md:flex-1">
+              Singles & EPs
+            </Tabs.Tab>
+            <Tabs.TabSeparator className="hidden md:block" />
+            <div className="h-0 basis-full md:hidden" />
+            <Tabs.Tab value="compilations" className="max-md:flex-1">
+              Compilations
+            </Tabs.Tab>
             <Tabs.TabSeparator />
-            <Tabs.Tab value="compilations">Compilations</Tabs.Tab>
-            <Tabs.TabSeparator />
-            <Tabs.Tab value="appears-on">Appears on</Tabs.Tab>
+            <Tabs.Tab value="appears-on" className="max-md:flex-1">
+              Appears on
+            </Tabs.Tab>
           </Tabs.List>
 
           <Spacer size="6" />

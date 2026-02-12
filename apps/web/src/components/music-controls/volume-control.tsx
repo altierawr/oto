@@ -30,21 +30,21 @@ const MusicControlsVolumeControl = () => {
 
   return (
     <div className="flex items-center gap-2">
-      <div onClick={handleMuteToggleClick}>
-        {playerState.isMuted && <VolumeOff strokeWidth={1.5} />}
+      <div className="cursor-pointer rounded-md p-1 hover:bg-(--gray-4)" onClick={handleMuteToggleClick}>
+        {playerState.isMuted && <VolumeOff size={20} strokeWidth={1.5} />}
         {!playerState.isMuted && (
           <>
-            {volume === 0 && <VolumeX strokeWidth={1.5} />}
-            {volume > 0 && volume < 0.1 && <Volume strokeWidth={1.5} />}
-            {volume >= 0.1 && volume < 0.6 && <Volume1 strokeWidth={1.5} />}
-            {volume >= 0.6 && <Volume2 strokeWidth={1.5} />}
+            {volume === 0 && <VolumeX size={20} strokeWidth={1.5} />}
+            {volume > 0 && volume < 0.1 && <Volume size={20} strokeWidth={1.5} />}
+            {volume >= 0.1 && volume < 0.6 && <Volume1 size={20} strokeWidth={1.5} />}
+            {volume >= 0.6 && <Volume2 size={20} strokeWidth={1.5} />}
           </>
         )}
       </div>
-      <div ref={volumeBarRef} className="relative flex h-[20px] w-[100px] cursor-pointer items-center">
+      <div ref={volumeBarRef} className="group relative flex h-[20px] w-[100px] cursor-pointer items-center">
         <div className="h-[6px] w-full overflow-hidden rounded-full bg-(--gray-5)">
           <div
-            className="h-full bg-(--gray-12)"
+            className="h-full bg-(--gray-11) transition-colors group-hover:bg-(--blue-11)"
             style={{
               width: `${volume * 100}%`,
             }}
@@ -52,7 +52,7 @@ const MusicControlsVolumeControl = () => {
         </div>
 
         <div
-          className="absolute top-[50%] h-[16px] w-[7px] -translate-x-[50%] -translate-y-[50%] rounded-full border border-(--gray-0) bg-(--gray-12)"
+          className="absolute top-[50%] h-[13px] w-[13px] -translate-x-[50%] -translate-y-[50%] rounded-full border border-(--blue-2) bg-(--blue-11) opacity-0 transition-opacity group-hover:opacity-100"
           style={{
             left: `${volume * 100}%`,
           }}

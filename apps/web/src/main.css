@@ -20,7 +20,16 @@
   --spacing-11: var(--space-11);
   --spacing-12: var(--space-12);
   --music-controls-padding-vertical: var(--spacing-6);
-  --music-controls-height: 90px;
+}
+
+:root {
+  --content-side-padding: var(--spacing-4);
+  --navbar-height: 78px;
+
+  /* lg */
+  @media (width >= 64rem) {
+    --content-side-padding: var(--spacing-10);
+  }
 }
 
 @utility no-scrollbar {

@@ -21,7 +21,7 @@ const AlbumsScroller = ({ id, title, viewAllUrl, albums, showArtists = true, sho
         id={id}
         title={title}
         viewAllUrl={viewAllUrl}
-        className={clsx("col-[breakout]! scroll-px-10 px-10")}
+        className={clsx("col-[breakout]! scroll-px-(--content-side-padding) px-(--content-side-padding)")}
       >
         {albums.map((album) => (
           <AlbumsScrollerItem key={album.id} album={album} showArtists={showArtists} showDate={showDate} />

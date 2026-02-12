@@ -1,4 +1,4 @@
-import { Input, ScrollArea } from "@awlt/design";
+import { Input, ScrollArea, Spacer, Tabs } from "@awlt/design";
 import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
@@ -6,7 +6,7 @@ import { useLocation } from "react-router";
 import type { SearchResults } from "../../types";
 
 import { request } from "../../utils/http";
-import SearchHeader, { type SearchTab } from "./header";
+import { type SearchTab } from "./header";
 import AlbumSearchResult from "./results/album";
 import ArtistSearchResult from "./results/artist";
 import PlaylistSearchResult from "./results/playlist";
@@ -21,8 +21,6 @@ const SearchInput = () => {
   const [isFetching, setIsFetching] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { pathname } = useLocation();
-
-  const resultsListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (searchTimeoutRef.current) {
@@ -74,17 +72,12 @@ const SearchInput = () => {
 
   const handleSearchTabChange = (tab: SearchTab) => {
     setSearchTab(tab);
-
-    resultsListRef.current?.scrollTo({
-      top: 0,
-      behavior: "instant",
-    });
   };
 
   const isVisible = isFocused && searchValue.trim() !== "";
 
   return (
-    <div className="relative w-[360px]">
+    <div className="relative w-full md:w-[360px]">
       <Input
         placeholder="Search..."
         className="w-full rounded-full! not-focus:shadow-none!"
@@ -98,7 +91,7 @@ const SearchInput = () => {
 
       <div
         tabIndex={0}
-        className="absolute top-full left-0 z-1 mt-2 flex h-[500px] w-full flex-col rounded-md border border-(--gray-6) bg-(--gray-3) pt-3 pb-1 shadow-2xl"
+        className="absolute top-full left-0 z-1 mt-2 flex h-[500px] w-full flex-col rounded-2xl border border-(--gray-6) bg-(--gray-2) pt-2 pb-1 shadow-2xl"
         style={{
           pointerEvents: isVisible ? "unset" : "none",
           opacity: isVisible ? "1" : "0",
@@ -108,50 +101,72 @@ const SearchInput = () => {
         onFocus={handleFocusGain}
         onBlur={handleFocusLoss}
       >
-        <div className="px-3">
-          <SearchHeader tab={searchTab} onTabChange={handleSearchTabChange} />
-        </div>
+        <Tabs.Root value={searchTab} onValueChange={handleSearchTabChange} className="flex h-full flex-col">
+          <Tabs.List size="sm" className="mx-2 border border-(--gray-4) bg-(--gray-3)! max-md:justify-center">
+            <Tabs.Tab value="topHits" className="max-md:flex-1 max-sm:text-[11px]!">
+              Top Hits
+            </Tabs.Tab>
+            <Tabs.Tab value="artists" className="max-md:flex-1 max-sm:text-[11px]!">
+              Artists
+            </Tabs.Tab>
+            <Tabs.Tab value="albums" className="max-md:flex-1 max-sm:text-[11px]!">
+              Albums
+            </Tabs.Tab>
+            <Tabs.Tab value="songs" className="max-md:flex-1 max-sm:text-[11px]!">
+              Songs
+            </Tabs.Tab>
+            <Tabs.Tab value="playlists" className="max-md:flex-1 max-sm:text-[11px]!">
+              Playlists
+            </Tabs.Tab>
+          </Tabs.List>
 
-        <div className="flex-1 overflow-y-hidden">
-          <ScrollArea
-            ref={resultsListRef}
-            className="flex flex-col gap-2 pt-2 pl-3"
-            removeScrollbarVerticalMargins
-            includeScrollbarLeftMargin
-          >
-            <div>
-              {searchTab === "topHits" &&
-                searchResults?.topHits?.map((topHit) => (
-                  <TopHitSearchResult
-                    // @ts-ignore
-                    key={topHit.value.id || topHit.value.uuid}
-                    topHit={topHit}
-                    onClose={handleFocusLoss}
-                  />
-                ))}
+          <Spacer size="2" />
 
-              {searchTab === "artists" &&
-                searchResults?.artists?.map((artist) => (
-                  <ArtistSearchResult key={artist.id} artist={artist} onClose={handleFocusLoss} />
-                ))}
+          <Tabs.Panel value="topHits" className="h-full flex-1 overflow-y-hidden">
+            <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchResults?.topHits?.map((topHit) => (
+                <TopHitSearchResult
+                  // @ts-ignore
+                  key={topHit.value.id || topHit.value.uuid}
+                  topHit={topHit}
+                  onClose={handleFocusLoss}
+                />
+              ))}
+            </ScrollArea>
+          </Tabs.Panel>
 
-              {searchTab === "albums" &&
-                searchResults?.albums?.map((album) => (
-                  <AlbumSearchResult key={album.id} album={album} onClose={handleFocusLoss} />
-                ))}
+          <Tabs.Panel value="artists" className="h-full flex-1 overflow-y-hidden">
+            <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchResults?.artists?.map((artist) => (
+                <ArtistSearchResult key={artist.id} artist={artist} onClose={handleFocusLoss} />
+              ))}
+            </ScrollArea>
+          </Tabs.Panel>
 
-              {searchTab === "songs" &&
-                searchResults?.songs?.map((song) => (
-                  <SongSearchResult key={song.id} song={song} onClose={handleFocusLoss} />
-                ))}
+          <Tabs.Panel value="albums" className="h-full flex-1 overflow-y-hidden">
+            <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchResults?.albums?.map((album) => (
+                <AlbumSearchResult key={album.id} album={album} onClose={handleFocusLoss} />
+              ))}
+            </ScrollArea>
+          </Tabs.Panel>
 
-              {searchTab === "playlists" &&
-                searchResults?.playlists?.map((playlist) => (
-                  <PlaylistSearchResult key={playlist.uuid} playlist={playlist} onClose={handleFocusLoss} />
-                ))}
-            </div>
-          </ScrollArea>
-        </div>
+          <Tabs.Panel value="songs" className="h-full flex-1 overflow-y-hidden">
+            <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchResults?.songs?.map((song) => (
+                <SongSearchResult key={song.id} song={song} onClose={handleFocusLoss} />
+              ))}
+            </ScrollArea>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="playlists" className="h-full flex-1 overflow-y-hidden">
+            <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchResults?.playlists?.map((playlist) => (
+                <PlaylistSearchResult key={playlist.uuid} playlist={playlist} onClose={handleFocusLoss} />
+              ))}
+            </ScrollArea>
+          </Tabs.Panel>
+        </Tabs.Root>
       </div>
     </div>
   );

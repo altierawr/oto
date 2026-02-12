@@ -26,7 +26,7 @@ const TrackGrid = ({ tracks, className, isLoading, expectedNrMaxItems = 50 }: TP
     <div className={clsx("relative overflow-x-hidden", className)}>
       <div
         className={clsx(
-          "absolute top-1/2 left-0 z-1 flex h-full w-10 -translate-y-1/2 items-center justify-center",
+          "absolute top-1/2 left-0 z-1 hidden h-full w-(--content-side-padding) -translate-y-1/2 items-center justify-center lg:flex",
           isLoading && "hidden",
         )}
         onClick={scrollLeft}
@@ -47,7 +47,7 @@ const TrackGrid = ({ tracks, className, isLoading, expectedNrMaxItems = 50 }: TP
       </div>
       <div
         className={clsx(
-          "absolute top-1/2 right-0 z-1 flex h-full w-10 -translate-y-1/2 items-center justify-center",
+          "absolute top-1/2 right-0 z-1 hidden h-full w-(--content-side-padding) -translate-y-1/2 items-center justify-center lg:flex",
           isLoading && "hidden",
         )}
         style={{
@@ -67,7 +67,7 @@ const TrackGrid = ({ tracks, className, isLoading, expectedNrMaxItems = 50 }: TP
       </div>
       <div
         ref={ref}
-        className="no-scrollbar grid w-full snap-x snap-mandatory scroll-px-10 auto-cols-[320px] grid-flow-col grid-rows-[58px_58px_58px] content-start items-start gap-x-5 overflow-x-auto overscroll-x-contain px-10"
+        className="no-scrollbar grid w-full snap-x snap-mandatory scroll-px-(--content-side-padding) auto-cols-[320px] grid-flow-col grid-rows-[58px_58px_58px] content-start items-start gap-x-5 overflow-x-auto overscroll-x-contain px-(--content-side-padding)"
       >
         {tracks.map((track, idx) => (
           <TrackGridItem key={track.id} track={track} tracks={tracks} trackIndex={idx} isLoading={isLoading} />

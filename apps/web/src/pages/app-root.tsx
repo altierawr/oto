@@ -46,10 +46,10 @@ const AppRoot = () => {
           <div className="relative flex h-full w-full min-w-0 justify-center">
             <div className="relative h-full w-full max-w-[1800px]">
               <div
-                className="pointer-events-none absolute inset-0 z-1 grid w-full"
+                className="pointer-events-none absolute inset-0 z-1 grid hidden w-full"
                 style={{
                   gridTemplateColumns:
-                    "[breakout-start] var(--space-10) [content-start] 1fr [content-end] var(--space-10) [breakout-end]",
+                    "[breakout-start] var(--content-side-padding) [content-start] 1fr [content-end] var(--content-side-padding) [breakout-end]",
                 }}
               >
                 <div
@@ -73,7 +73,7 @@ const AppRoot = () => {
                 className="grid h-full w-full grid-rows-[1fr_auto] content-start items-start overflow-y-auto *:col-[content]"
                 style={{
                   gridTemplateColumns:
-                    "[breakout-start] var(--space-10) [content-start] 1fr [content-end] var(--space-10) [breakout-end]",
+                    "[breakout-start] var(--content-side-padding) [content-start] 1fr [content-end] var(--content-side-padding) [breakout-end]",
                 }}
               >
                 <div className="col-[breakout]! grid grid-cols-subgrid *:col-[content]">

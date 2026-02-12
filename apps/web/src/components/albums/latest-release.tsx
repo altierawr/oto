@@ -17,8 +17,8 @@ const LatestRelease = ({ album }: TProps) => {
   });
 
   return (
-    <div className="flex h-full min-h-[169px] w-full gap-4">
-      <div className="aspect-square h-full">
+    <div className="flex w-full gap-4 lg:h-full lg:min-h-[169px]">
+      <div className="aspect-square h-[135px] lg:h-full">
         <CoverBlock
           variant={CoverBlockVariant.FULL}
           imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}

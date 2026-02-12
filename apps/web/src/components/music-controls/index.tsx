@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { TextAlignJustify } from "lucide-react";
+import { ListIcon } from "lucide-react";
 
 import { useGeneralStore, usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
@@ -18,13 +18,13 @@ const MusicControls = () => {
 
   return (
     <div className="sticky bottom-0 z-50 col-[breakout]! flex items-center justify-center p-3">
-      <div className="flex h-(--music-controls-height) w-full justify-between rounded-4xl border-t border-t-(--gray-4) bg-[color-mix(in_srgb,var(--gray-2)_80%,transparent)] p-4 shadow-2xl backdrop-blur-lg">
+      <div className="hidden w-full justify-between rounded-3xl border-t border-t-(--gray-4) bg-[color-mix(in_srgb,var(--gray-2)_80%,transparent)] px-6 py-4 shadow-2xl backdrop-blur-lg lg:flex lg:h-[90px]">
         <div className="flex-1">
           <MusicControlsSongInfo />
         </div>
         <div className={clsx("flex flex-1 flex-col gap-2", !song && "text-(--gray-11)")}>
           <MusicControlsControlButtons />
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center justify-center gap-3 text-sm">
             <p className="w-[30px]">
               {playerState.currentTime !== null
                 ? formatDuration(
@@ -41,10 +41,17 @@ const MusicControls = () => {
         </div>
         <div className="flex flex-1 items-center justify-end gap-6">
           {playerState && (
-            <>
-              <TextAlignJustify className="cursor-pointer" strokeWidth={1.5} onClick={handleQueueClick} />
+            <div className="grid">
+              <div className="flex items-center justify-end gap-1">
+                <div
+                  className="grid size-7 cursor-pointer place-items-center rounded-md transition-colors hover:bg-(--gray-4) active:bg-(--gray-5)"
+                  onClick={handleQueueClick}
+                >
+                  <ListIcon size={20} strokeWidth={1.5} />
+                </div>
+              </div>
               <MusicControlsVolumeControl />
-            </>
+            </div>
           )}
         </div>
       </div>

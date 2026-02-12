@@ -22,14 +22,14 @@ const ArtistPageOverview = () => {
 
   return (
     <>
-      <div className={clsx("col-[breakout]! flex flex-col gap-8 lg:flex-row lg:gap-10")}>
+      <div className={clsx("col-[breakout]! flex flex-col gap-8 overflow-x-hidden lg:flex-row lg:gap-10")}>
         {releasesByDate.length > 0 && (
-          <div className="pl-10">
+          <div className="px-(--content-side-padding) lg:pr-0">
             <LatestRelease album={releasesByDate[0]} />
           </div>
         )}
         {data.artist.topTracks && (
-          <ArtistTopTracksGrid artist={data.artist} initialTopTracks={data.artist.topTracks} className="flex-1" />
+          <ArtistTopTracksGrid artist={data.artist} initialTopTracks={data.artist.topTracks} className="lg:flex-1" />
         )}
       </div>
 

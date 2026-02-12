@@ -18,7 +18,11 @@ const Navbar = ({ scrollRef }: TProps) => {
     const current = scrollRef.current;
     let lastScrollTop = current.scrollTop;
 
-    const scrollListener = () => {
+    const scrollListener = (e: Event) => {
+      if (e.target !== current) {
+        return;
+      }
+
       if (current.scrollTop > lastScrollTop) {
         setIsAtTop(current.scrollTop === 0);
       }
@@ -26,12 +30,16 @@ const Navbar = ({ scrollRef }: TProps) => {
       lastScrollTop = current.scrollTop;
     };
 
-    const scrollEndListener = () => {
+    const scrollEndListener = (e: Event) => {
+      if (e.target !== current) {
+        return;
+      }
+
       setIsAtTop(current.scrollTop === 0);
     };
 
     const wheelListener = (e: WheelEvent) => {
-      if (e.shiftKey) {
+      if (e.shiftKey || e.target !== current) {
         return;
       }
 
@@ -54,11 +62,12 @@ const Navbar = ({ scrollRef }: TProps) => {
   }, [scrollRef, setIsAtTop]);
 
   return (
-    <div className="sticky top-0 z-30 col-[breakout]! flex w-full px-5">
+    <div className="sticky top-0 z-30 col-[breakout]! flex w-full lg:px-5">
       <div
         className={clsx(
-          "flex w-full rounded-full bg-transparent px-5 py-4 ring ring-transparent backdrop-blur-xl transition-[translate,background-color,box-shadow]",
-          !isAtTop && "translate-y-3 bg-[color-mix(in_srgb,var(--gray-1)_90%,transparent)]! shadow-md ring-(--gray-3)!",
+          "flex h-(--navbar-height) w-full items-center bg-transparent px-(--content-side-padding) ring ring-transparent backdrop-blur-none transition-[translate,background-color,box-shadow,backdrop-filter] lg:rounded-full lg:px-5",
+          !isAtTop &&
+            "bg-[color-mix(in_srgb,var(--gray-1)_50%,transparent)]! backdrop-blur-xl lg:translate-y-3 lg:bg-[color-mix(in_srgb,var(--gray-1)_90%,transparent)]! lg:shadow-md lg:ring-(--gray-3)!",
         )}
       >
         <Search />

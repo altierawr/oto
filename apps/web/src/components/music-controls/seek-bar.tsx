@@ -33,7 +33,7 @@ const MusicControlsSeekBar = () => {
     <div
       ref={seekBarRef}
       className={clsx(
-        "group relative h-[13px] flex-1 py-[4px] select-none",
+        "group relative h-[13px] w-[300px] py-[4px] select-none",
         song && !playerState.isBuffering && "cursor-pointer",
       )}
     >
