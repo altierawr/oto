@@ -588,6 +588,13 @@ export class MusicPlayer {
   }
 
   async playSongs(songs: Song[], index?: number) {
+    if (!window.MediaSource) {
+      alert(
+        "Your device or operating system is not supported. iOS on iPhone does not support modern media playback (trillion dollar company btw)",
+      );
+      return;
+    }
+
     this.#audio.pause();
     await this.#reset();
 
