@@ -5,6 +5,11 @@
   align-items: center;
   padding-inline: var(--spacing-4);
   gap: var(--spacing-2);
+
+  @media (width < 40rem) {
+    grid-template-columns: 24px 1fr 40px;
+    padding-inline: 0;
+  }
 }
 
 .songListItem {
@@ -40,6 +45,14 @@
 
     &:hover::before {
       background-color: var(--gray-2);
+    }
+  }
+
+  @media (pointer: coarse) {
+    &[data-is-highlighted="false"] {
+      &:hover::before {
+        background-color: var(--gray-3);
+      }
     }
   }
 }

@@ -8,6 +8,7 @@ import { useSearchParams } from "react-router";
 
 import type { Song } from "../../types";
 
+import useHasTouch from "../../hooks/useHasTouch";
 import { usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
 import styles from "./song-list.module.css";
@@ -21,6 +22,7 @@ const SongListItem = ({ song, songs }: TProps) => {
   const [searchParams] = useSearchParams();
   const [isActive, setIsActive] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const hasTouch = useHasTouch();
   const ref = useRef<HTMLDivElement>(null);
 
   const highlightedTrackIdStr = searchParams.get("track");
@@ -71,6 +73,7 @@ const SongListItem = ({ song, songs }: TProps) => {
       onMouseDown={() => setIsActive(true)}
       onMouseLeave={() => setIsActive(false)}
       onMouseUp={() => setIsActive(false)}
+      onClick={hasTouch ? handleClick : undefined}
       onDoubleClick={handleClick}
       data-is-highlighted={isHighlighted}
       data-is-active={isActive}
@@ -86,7 +89,7 @@ const SongListItem = ({ song, songs }: TProps) => {
         </div>
       </div>
       <div className="cursor-default overflow-hidden tracking-tight text-nowrap text-ellipsis select-none">
-        <p className={clsx(isPlaying && "text-(--blue-11)")}>{song.title}</p>
+        <p className={clsx("truncate", isPlaying && "text-(--blue-11)")}>{song.title}</p>
         {song.artists.map((artist, index) => (
           <span key={artist.id} className={clsx("text-(--gray-11)", isPlaying && "text-(--blue-11)!")}>
             <Link to={`/artists/${artist.id}`} className={clsx("text-(--gray-11)", isPlaying && "text-(--blue-11)!")}>
@@ -96,7 +99,7 @@ const SongListItem = ({ song, songs }: TProps) => {
           </span>
         ))}
       </div>
-      <div className="cursor-default select-none">{formatDuration(song.duration, "digital")}</div>
+      <div className="cursor-default select-none max-sm:hidden">{formatDuration(song.duration, "digital")}</div>
       <div
         className="flex h-full items-center justify-end"
         onDoubleClick={(e) => e.stopPropagation()}
@@ -104,7 +107,10 @@ const SongListItem = ({ song, songs }: TProps) => {
       >
         <Menu.Root>
           <Menu.Trigger render={<ActionButton />}>
-            <MoreHorizontal size={20} strokeWidth={1.5} className="opacity-0 group-hover:opacity-100" />
+            <MoreHorizontal
+              size={16}
+              className="text-(--gray-11) group-hover:text-(--gray-12) group-hover:opacity-100 lg:opacity-0"
+            />
           </Menu.Trigger>
           <Menu.Popup>
             <Menu.Item onClick={handlePlayNextClick}>

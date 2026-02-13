@@ -46,7 +46,7 @@
 
 body {
   overflow-y: hidden;
-  background-color: #000;
+  background-color: var(--gray-1);
 }
 
 a {

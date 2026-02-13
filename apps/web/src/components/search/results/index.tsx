@@ -2,6 +2,7 @@ import type { MouseEvent } from "react";
 
 import { Link, useNavigate } from "react-router";
 
+import useHasTouch from "../../../hooks/useHasTouch";
 import CoverBlock, { CoverBlockVariant } from "../../music-blocks/cover-block";
 
 type TProps = {
@@ -26,6 +27,7 @@ const SearchResult = ({
   onClose,
 }: TProps) => {
   const navigate = useNavigate();
+  const hasTouch = useHasTouch();
 
   const sendToUrl = () => {
     onClose?.();
@@ -39,6 +41,7 @@ const SearchResult = ({
     <div
       className="flex h-11 min-h-11 w-full gap-3 rounded-md p-1 transition-colors hover:bg-(--gray-4) active:bg-(--gray-5)"
       onDoubleClick={sendToUrl}
+      onClick={hasTouch ? sendToUrl : undefined}
     >
       <div className="aspect-square h-full">
         <CoverBlock

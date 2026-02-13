@@ -297,6 +297,14 @@ export class MusicPlayer {
     });
   }
 
+  async enableShuffle() {
+    if (this.#isShuffleEnabled) {
+      return;
+    }
+
+    await this.toggleShuffle();
+  }
+
   async toggleShuffle() {
     if (this.#isTogglingShuffle) {
       return;
@@ -401,6 +409,8 @@ export class MusicPlayer {
 
     // Immediately update offsets for the sequence
     this.#updateTrackTimestampOffsets(0);
+
+    this.#updatePlayerStatePlaylist();
   }
 
   #disableShuffle() {
@@ -577,36 +587,45 @@ export class MusicPlayer {
     });
   }
 
-  async playSongs(songs: Song[], index: number) {
+  async playSongs(songs: Song[], index?: number) {
     this.#audio.pause();
     await this.#reset();
 
     console.log("Play songs\n\n\n\n\n\n\n");
 
-    this.#lastPlayingSongIndex = index;
+    let startIndex = index ?? 0;
+
     this.playlist = songs.map((song) => this.#getInitialPlaylistSongFromSong(song));
+
+    if (this.#isShuffleEnabled && index === undefined) {
+      this.originalPlaylist = [...this.playlist];
+      this.playlist = shuffleArray([...this.playlist]);
+      startIndex = 0;
+    }
+
+    this.#lastPlayingSongIndex = startIndex;
 
     this.#updatePlayerState({
       playlist: this.playlist.map((pe) => pe.song),
       isBuffering: true,
     });
 
-    this.playlist[index].timestampOffset = 0;
+    this.playlist[startIndex].timestampOffset = 0;
 
-    this.#handleTrackChange(index);
+    this.#handleTrackChange(startIndex);
 
     await this.#maybeFetchNextSegment({
-      playlistIndex: index,
+      playlistIndex: startIndex,
       segmentIndex: 0,
     });
     await this.#maybeLoadNextSegment({
-      playlistIndex: index,
+      playlistIndex: startIndex,
       segmentIndex: 0,
     });
 
     this.#audio.currentTime = 0;
 
-    if (this.#isShuffleEnabled) {
+    if (this.#isShuffleEnabled && index !== undefined) {
       this.#enableShuffle();
     }
 

@@ -20,8 +20,8 @@ importers:
   apps/web:
     dependencies:
       '@awlt/design':
-        specifier: 0.3.0
-        version: 0.3.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        specifier: 0.4.0
+        version: 0.4.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@base-ui/react':
         specifier: ^1.0.0
         version: 1.1.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -119,8 +119,8 @@ importers:
 
 packages:
 
-  '@awlt/design@0.3.0':
-    resolution: {integrity: sha512-BMXFm0bslTKOfCJR3teX6E0iJ1ZSbJekD7NdH4cpn7Pteir2ojeY/E27q8TQ3YuoQBlr+RjVqkTfgfl6vjX06Q==}
+  '@awlt/design@0.4.0':
+    resolution: {integrity: sha512-//9lj87ioGQ/Q6IFWoz9wjSf7+TwYcfRu4MmAIWABRFBMy098LvZ2relH8u1dTYcS0W22nCZBXUu7U7Y1pgxPg==}
     engines: {node: '24'}
     peerDependencies:
       react: ^19.2.0
@@ -2509,7 +2509,7 @@ packages:
 
 snapshots:
 
-  '@awlt/design@0.3.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@awlt/design@0.4.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       '@base-ui/react': 1.1.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@radix-ui/colors': 3.0.0

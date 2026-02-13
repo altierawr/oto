@@ -5,6 +5,7 @@ import { useLocation } from "react-router";
 
 import type { SearchResults } from "../../types";
 
+import { useGeneralStore } from "../../store";
 import { request } from "../../utils/http";
 import { type SearchTab } from "./header";
 import AlbumSearchResult from "./results/album";
@@ -17,10 +18,22 @@ const SearchInput = () => {
   const [searchValue, setSearchValue] = useState("");
   const [searchTab, setSearchTab] = useState<SearchTab>("topHits");
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
-  const [isFocused, setIsFocused] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const { setIsSearching } = useGeneralStore();
   const { pathname } = useLocation();
+
+  useEffect(() => {
+    if (searchInputRef.current) {
+      useGeneralStore.setState({
+        ...useGeneralStore.getState(),
+        searchInputRef,
+      });
+    }
+  }, [searchInputRef]);
 
   useEffect(() => {
     if (searchTimeoutRef.current) {
@@ -55,30 +68,62 @@ const SearchInput = () => {
   }, [searchValue]);
 
   useEffect(() => {
-    setIsFocused(false);
+    setIsOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    const handlePointerDown = (e: PointerEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, []);
+
   const handleSearchValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value);
+    const value = e.target.value;
+    setSearchValue(value);
+
+    if (value.trim() !== "") {
+      setIsOpen(true);
+    }
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
   };
 
   const handleFocusGain = () => {
-    setIsFocused(true);
+    setIsSearching(true);
+    if (searchValue.trim() !== "") {
+      setIsOpen(true);
+    }
   };
 
   const handleFocusLoss = () => {
-    setIsFocused(false);
+    if (!isOpen) {
+      setIsSearching(false);
+    }
   };
 
   const handleSearchTabChange = (tab: SearchTab) => {
     setSearchTab(tab);
   };
 
-  const isVisible = isFocused && searchValue.trim() !== "";
+  useEffect(() => {
+    setIsSearching(isOpen);
+  }, [setIsSearching, isOpen]);
+
+  const isVisible = isOpen && searchValue.trim() !== "";
 
   return (
-    <div className="relative w-full md:w-[360px]">
+    <div ref={searchContainerRef} className="relative w-full md:w-[360px]">
       <Input
+        ref={searchInputRef}
         placeholder="Search..."
         className="w-full rounded-full! not-focus:shadow-none!"
         value={searchValue}
@@ -99,7 +144,6 @@ const SearchInput = () => {
           transition: "opacity 0.15s ease-out, transform 0.15s ease-out",
         }}
         onFocus={handleFocusGain}
-        onBlur={handleFocusLoss}
       >
         <Tabs.Root value={searchTab} onValueChange={handleSearchTabChange} className="flex h-full flex-col">
           <Tabs.List size="sm" className="mx-2 border border-(--gray-4) bg-(--gray-3)! max-md:justify-center">
@@ -129,7 +173,7 @@ const SearchInput = () => {
                   // @ts-ignore
                   key={topHit.value.id || topHit.value.uuid}
                   topHit={topHit}
-                  onClose={handleFocusLoss}
+                  onClose={handleClose}
                 />
               ))}
             </ScrollArea>
@@ -138,7 +182,7 @@ const SearchInput = () => {
           <Tabs.Panel value="artists" className="h-full flex-1 overflow-y-hidden">
             <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
               {searchResults?.artists?.map((artist) => (
-                <ArtistSearchResult key={artist.id} artist={artist} onClose={handleFocusLoss} />
+                <ArtistSearchResult key={artist.id} artist={artist} onClose={handleClose} />
               ))}
             </ScrollArea>
           </Tabs.Panel>
@@ -146,7 +190,7 @@ const SearchInput = () => {
           <Tabs.Panel value="albums" className="h-full flex-1 overflow-y-hidden">
             <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
               {searchResults?.albums?.map((album) => (
-                <AlbumSearchResult key={album.id} album={album} onClose={handleFocusLoss} />
+                <AlbumSearchResult key={album.id} album={album} onClose={handleClose} />
               ))}
             </ScrollArea>
           </Tabs.Panel>
@@ -154,7 +198,7 @@ const SearchInput = () => {
           <Tabs.Panel value="songs" className="h-full flex-1 overflow-y-hidden">
             <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
               {searchResults?.songs?.map((song) => (
-                <SongSearchResult key={song.id} song={song} onClose={handleFocusLoss} />
+                <SongSearchResult key={song.id} song={song} onClose={handleClose} />
               ))}
             </ScrollArea>
           </Tabs.Panel>
@@ -162,7 +206,7 @@ const SearchInput = () => {
           <Tabs.Panel value="playlists" className="h-full flex-1 overflow-y-hidden">
             <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
               {searchResults?.playlists?.map((playlist) => (
-                <PlaylistSearchResult key={playlist.uuid} playlist={playlist} onClose={handleFocusLoss} />
+                <PlaylistSearchResult key={playlist.uuid} playlist={playlist} onClose={handleClose} />
               ))}
             </ScrollArea>
           </Tabs.Panel>

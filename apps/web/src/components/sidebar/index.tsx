@@ -38,7 +38,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="h-full pr-0 lg:p-3">
+    <div className="h-full pr-0 md:p-3">
       <div className="hidden h-full flex-col justify-between rounded-xl border-r border-r-(--gray-3) bg-(--gray-2) px-2 pt-4 pb-2 shadow-2xl md:flex lg:min-w-[220px]">
         <Link to="/" className="mx-auto flex items-center gap-3 px-1 no-underline! lg:mx-0 lg:px-3">
           <img src={logo} width="20" height="20" />

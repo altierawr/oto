@@ -1,3 +1,5 @@
+import type { RefObject } from "react";
+
 import { create } from "zustand";
 
 import type { MusicPlayerSong } from "./types";
@@ -47,10 +49,16 @@ export const usePlayerState = create<TPlayerState>(() => ({
 
 type TGeneralStore = {
   isSongQueueVisible: boolean;
+  isSearching: boolean;
+  searchInputRef: RefObject<HTMLInputElement | null> | null;
+  setIsSearching: (isSearching: boolean) => void;
   setIsSongQueueVisible: (isSongQueueVisible: boolean) => void;
 };
 
 export const useGeneralStore = create<TGeneralStore>((set) => ({
   isSongQueueVisible: false,
+  isSearching: false,
+  searchInputRef: null,
+  setIsSearching: (isSearching: boolean) => set({ isSearching }),
   setIsSongQueueVisible: (isSongQueueVisible: boolean) => set({ isSongQueueVisible }),
 }));

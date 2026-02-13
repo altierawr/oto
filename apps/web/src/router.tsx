@@ -10,6 +10,7 @@ import ArtistPageCompilations from "./pages/artist/compilations";
 import ArtistPageSinglesAndEps from "./pages/artist/singles-eps";
 import HomePage from "./pages/home";
 import InvitePage from "./pages/invite";
+import LibraryPage from "./pages/library";
 import LoginRegisterPage from "./pages/login-register";
 import Root from "./pages/root";
 
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
           {
             path: "/",
             element: <HomePage />,
+          },
+          {
+            path: "library",
+            element: <LibraryPage />,
           },
           {
             path: "artists/:id",

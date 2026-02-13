@@ -14,7 +14,7 @@ type TProps = {
 const SongList = ({ songs }: TProps) => {
   return (
     <div className={clsx("grid", styles.songList)}>
-      <div className="rounded-md bg-(--gray-2) py-4 font-semibold">
+      <div className="rounded-md bg-(--gray-2) py-4 font-semibold max-sm:hidden!">
         <div className="text-center text-xs">#</div>
         <div className="overflow-hidden text-xs text-nowrap text-ellipsis uppercase">Title</div>
         <div className="text-xs uppercase">Duration</div>

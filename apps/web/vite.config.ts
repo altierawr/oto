@@ -31,5 +31,8 @@ export default defineConfig(() => {
     resolve: {
       alias,
     },
+    server: {
+      host: true,
+    },
   };
 });

@@ -2,7 +2,7 @@ import type { TabsTab } from "@base-ui/react";
 
 import { Button, Spacer, Tabs } from "@awlt/design";
 import { useQuery } from "@tanstack/react-query";
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, ShuffleIcon } from "lucide-react";
 import { Fragment } from "react";
 import { Helmet } from "react-helmet-async";
 import { Outlet, useLoaderData, useLocation, useNavigate, useParams, type LoaderFunction } from "react-router";
@@ -124,6 +124,15 @@ const ArtistPage = () => {
     player.playSongs(topTracksQuery.data.items, 0);
   };
 
+  const handleShuffleClick = async () => {
+    if (!topTracksQuery.data) {
+      return;
+    }
+
+    await player.enableShuffle();
+    player.playSongs(topTracksQuery.data.items);
+  };
+
   const artistImageUrl = data.artist.picture
     ? getTidalCoverUrl(data.artist.picture, 750)
     : getTidalCoverUrl(data.artist.selectedAlbumCoverFallback, 1280);
@@ -153,7 +162,7 @@ const ArtistPage = () => {
           ></div>
         </div>
         <div
-          className="col-[breakout]! -mt-(--navbar-height) bg-cover max-lg:h-dvw max-lg:max-h-[400px] lg:mt-0 lg:min-h-auto lg:bg-none!"
+          className="col-[breakout]! -mt-(--navbar-height) bg-cover bg-center max-lg:h-dvw max-lg:max-h-[400px] lg:mt-0 lg:min-h-auto lg:bg-none!"
           style={{
             backgroundImage: `url(${artistImageUrl})`,
           }}
@@ -184,14 +193,14 @@ const ArtistPage = () => {
                 </p>
               )}
               <Spacer size="2" />
-              <div className="flex items-center gap-3">
+              <div className="flex w-full items-center gap-3">
                 <Button
                   variant="solid"
                   color="blue"
-                  size="md"
                   isDisabled={topTracksQuery.isLoading || !topTracksQuery.data}
                   isLoading={topTracksQuery.isLoading}
                   onClick={handlePlayClick}
+                  className="max-sm:flex-1"
                 >
                   {isArtistPlaying && !playerState.isPaused && (
                     <>
@@ -206,6 +215,17 @@ const ArtistPage = () => {
                     </>
                   )}
                 </Button>
+                <Button
+                  variant="soft"
+                  color="gray"
+                  isDisabled={topTracksQuery.isLoading || !topTracksQuery.data}
+                  isLoading={topTracksQuery.isLoading}
+                  onClick={handleShuffleClick}
+                  className="max-sm:flex-1"
+                >
+                  <ShuffleIcon size={16} />
+                  Shuffle
+                </Button>
                 {/*<IconButton color="gray" variant="soft" icon={Heart} size="sm" />
                 <IconButton color="gray" variant="soft" icon={Share} size="sm" />*/}
               </div>
@@ -216,31 +236,16 @@ const ArtistPage = () => {
         <Spacer size="4" />
 
         <Tabs.Root
-          className="col-[breakout]! grid grid-cols-subgrid *:col-[content]"
+          className="col-[breakout]! grid grid-cols-subgrid *:col-[content] max-lg:mt-8"
           value={getActiveTab()}
           onValueChange={handleTabChange}
         >
-          <Tabs.List className="max-md:justify-center">
-            <Tabs.Tab value="overview" className="max-md:flex-1">
-              Overview
-            </Tabs.Tab>
-            <Tabs.TabSeparator />
-            <Tabs.Tab value="albums" className="max-md:flex-1">
-              Albums
-            </Tabs.Tab>
-            <Tabs.TabSeparator />
-            <Tabs.Tab value="singles-eps" className="max-md:flex-1">
-              Singles & EPs
-            </Tabs.Tab>
-            <Tabs.TabSeparator className="hidden md:block" />
-            <div className="h-0 basis-full md:hidden" />
-            <Tabs.Tab value="compilations" className="max-md:flex-1">
-              Compilations
-            </Tabs.Tab>
-            <Tabs.TabSeparator />
-            <Tabs.Tab value="appears-on" className="max-md:flex-1">
-              Appears on
-            </Tabs.Tab>
+          <Tabs.List className="flex-nowrap! overflow-x-auto">
+            <Tabs.Tab value="overview">Overview</Tabs.Tab>
+            <Tabs.Tab value="albums">Albums</Tabs.Tab>
+            <Tabs.Tab value="singles-eps">Singles & EPs</Tabs.Tab>
+            <Tabs.Tab value="compilations">Compilations</Tabs.Tab>
+            <Tabs.Tab value="appears-on">Appears on</Tabs.Tab>
           </Tabs.List>
 
           <Spacer size="6" />

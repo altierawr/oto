@@ -1,6 +1,6 @@
 import { Button, Spacer } from "@awlt/design";
 import clsx from "clsx";
-import { Play } from "lucide-react";
+import { PlayIcon, ShuffleIcon } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link, useLoaderData, type LoaderFunction } from "react-router";
 import { Fragment } from "react/jsx-runtime";
@@ -23,11 +23,18 @@ const loader: LoaderFunction = async ({ params }) => {
 
 const AlbumPage = () => {
   const data = useLoaderData() as { album: Album };
-  const player = usePlayerState((s) => s.player);
+  const { player } = usePlayerState();
 
   const handlePlayClick = async () => {
     if (data.album.songs) {
       player.playSongs(data.album.songs, 0);
+    }
+  };
+
+  const handleShuffleClick = async () => {
+    if (data.album.songs) {
+      await player.enableShuffle();
+      player.playSongs(data.album.songs);
     }
   };
 
@@ -42,20 +49,22 @@ const AlbumPage = () => {
         </title>
       </Helmet>
       <div className="max-w-[900px]">
-        <div className="flex gap-4">
-          <div className="aspect-square min-w-[200px]">
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="mx-auto aspect-square w-[75%] min-w-[200px] sm:mx-0 sm:w-auto">
             <CoverBlock
               variant={CoverBlockVariant.COVER_ONLY}
               imageUrl={data.album.cover ? getTidalCoverUrl(data.album.cover, 1280) : ""}
             />
           </div>
 
-          <div className="flex flex-col items-start justify-between">
+          <div className="flex flex-col items-center sm:justify-between md:items-start">
             <div>
               <h1
                 className={clsx(
                   "font-bold",
                   "tracking-tight",
+                  "max-sm:text-2xl!",
+                  "max-sm:text-center",
                   data.album.title.length <= 45 && "text-5xl",
                   data.album.title.length > 45 && "text-4xl",
                   "line-clamp-2",
@@ -63,7 +72,7 @@ const AlbumPage = () => {
               >
                 {data.album.title}
               </h1>
-              <p className="text-sm">
+              <p className="text-sm max-sm:text-center">
                 Album by{" "}
                 {data.album.artists?.[0] && (
                   <Link to={`/artists/${data.album.artists[0].id}`} className="text-(--blue-11)">
@@ -71,15 +80,19 @@ const AlbumPage = () => {
                   </Link>
                 )}
               </p>
-              <p className="text-sm">
+              <p className="text-sm max-sm:text-center">
                 {data.album.releaseDate?.slice(0, 4)} • {data.album.numberOfTracks} songs •{" "}
                 {formatDuration(data.album.duration || 0, "written")}
               </p>
             </div>
-            <div className="flex gap-4">
-              <Button variant="solid" color="blue" onClick={handlePlayClick}>
-                <Play size={16} fill="currentColor" />
-                Play Album
+            <div className="mt-4 flex w-full gap-4 md:mt-0">
+              <Button variant="solid" color="blue" onClick={handlePlayClick} className="max-sm:flex-1">
+                <PlayIcon size={16} fill="currentColor" />
+                Play
+              </Button>
+              <Button variant="soft" color="gray" onClick={handleShuffleClick} className="max-sm:flex-1">
+                <ShuffleIcon size={16} />
+                Shuffle
               </Button>
               {/*<IconButton color="gray" variant="soft" icon={Heart} />
               <IconButton color="gray" variant="soft" icon={Share} />*/}
