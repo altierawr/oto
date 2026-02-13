@@ -1,5 +1,11 @@
 # web
 
+## 0.2.1
+
+### Patch Changes
+
+- 35d78bf: Added an alert if media playback isn't supported on the user's device (iPhone iOS)
+
 ## 0.2.0
 
 ### Minor Changes
