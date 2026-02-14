@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/altierawr/oto/internal/tidal"
@@ -32,7 +33,17 @@ func (app *application) toggleFavoriteArtistHandler(w http.ResponseWriter, r *ht
 	if isFavorited {
 		err = app.db.RemoveFavoriteArtist(*userId, input.ID)
 	} else {
-		err = app.db.AddFavoriteArtist(*userId, input.ID)
+		artist, err := tidal.GetArtistBasicInfo(input.ID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		if artist == nil || int64(artist.ID) != input.ID {
+			app.badRequestResponse(w, r, errors.New("invalid artist id"))
+			return
+		}
+
+		err = app.db.AddFavoriteArtist(*userId, artist)
 	}
 
 	if err != nil {
@@ -72,7 +83,18 @@ func (app *application) toggleFavoriteAlbumHandler(w http.ResponseWriter, r *htt
 	if isFavorited {
 		err = app.db.RemoveFavoriteAlbum(*userId, input.ID)
 	} else {
-		err = app.db.AddFavoriteAlbum(*userId, input.ID)
+		album, err := tidal.GetAlbum(input.ID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		if album == nil || int64(album.ID) != input.ID {
+			app.badRequestResponse(w, r, errors.New("invalid album id"))
+			return
+		}
+		album.Songs = nil
+
+		err = app.db.AddFavoriteAlbum(*userId, album)
 	}
 
 	if err != nil {
@@ -112,7 +134,17 @@ func (app *application) toggleFavoriteTrackHandler(w http.ResponseWriter, r *htt
 	if isFavorited {
 		err = app.db.RemoveFavoriteTrack(*userId, input.ID)
 	} else {
-		err = app.db.AddFavoriteTrack(*userId, input.ID)
+		track, err := tidal.GetSong(input.ID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		if track == nil || int64(track.ID) != input.ID {
+			app.badRequestResponse(w, r, errors.New("invalid track id"))
+			return
+		}
+
+		err = app.db.AddFavoriteTrack(*userId, track)
 	}
 
 	if err != nil {
@@ -208,21 +240,7 @@ func (app *application) getFavoriteArtistsHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	ids, err := app.db.GetFavoriteArtistIDs(*userId)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	if len(ids) == 0 {
-		err = app.writeJSON(w, http.StatusOK, []any{}, nil)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	artists, err := tidal.GetArtistInfoBatch(ids)
+	artists, err := app.db.GetFavoriteArtists(*userId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -241,21 +259,7 @@ func (app *application) getFavoriteAlbumsHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	ids, err := app.db.GetFavoriteAlbumIDs(*userId)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	if len(ids) == 0 {
-		err = app.writeJSON(w, http.StatusOK, []any{}, nil)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	albums, err := tidal.GetAlbumInfoBatch(ids)
+	albums, err := app.db.GetFavoriteAlbums(*userId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -274,21 +278,7 @@ func (app *application) getFavoriteTracksHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	ids, err := app.db.GetFavoriteTrackIDs(*userId)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	if len(ids) == 0 {
-		err = app.writeJSON(w, http.StatusOK, []any{}, nil)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	tracks, err := tidal.GetSongBatch(ids)
+	tracks, err := app.db.GetFavoriteTracks(*userId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
