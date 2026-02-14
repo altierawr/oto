@@ -13,7 +13,7 @@ func (app *application) viewArtistHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	artist, err := tidal.GetArtist(id)
+	artist, err := tidal.GetArtistPage(id)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

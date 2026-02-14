@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/altierawr/oto/internal/types"
 )
@@ -200,7 +201,7 @@ type TidalArtistAlbumTypeResponse struct {
 	} `json:"items"`
 }
 
-func GetArtist(id int64) (any, error) {
+func GetArtistPage(id int64) (any, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -342,6 +343,84 @@ func GetArtist(id int64) (any, error) {
 	}
 
 	return page, nil
+}
+
+type TidalArtistInfoResponse struct {
+	ID                         int    `json:"id"`
+	Name                       string `json:"name"`
+	Picture                    string `json:"picture,omitempty"`
+	SelectedAlbumCoverFallback string `json:"selectedAlbumCoverFallback"`
+}
+
+func GetArtistBasicInfo(id int64) (*types.TidalArtist, error) {
+	err := refreshTokens()
+	if err != nil {
+		return nil, err
+	}
+
+	artistUrl := &url.URL{
+		Scheme: "https",
+		Host:   "api.tidal.com",
+		Path:   fmt.Sprintf("/v1/artists/%d", id),
+	}
+
+	q := artistUrl.Query()
+	q.Set("countryCode", "US")
+	artistUrl.RawQuery = q.Encode()
+
+	req, _ := http.NewRequest(http.MethodGet, artistUrl.String(), nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tidalAccessToken))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var artistResp TidalArtistInfoResponse
+	if err = json.Unmarshal(body, &artistResp); err != nil {
+		return nil, err
+	}
+
+	return &types.TidalArtist{
+		ID:      artistResp.ID,
+		Name:    artistResp.Name,
+		Picture: artistResp.Picture,
+	}, nil
+}
+
+func GetArtistInfoBatch(ids []int64) ([]types.TidalArtist, error) {
+	artists := make([]types.TidalArtist, len(ids))
+	errs := make([]error, len(ids))
+	var wg sync.WaitGroup
+
+	for i, id := range ids {
+		wg.Add(1)
+		go func(idx int, artistId int64) {
+			defer wg.Done()
+			artist, err := GetArtistBasicInfo(artistId)
+			if err != nil {
+				errs[idx] = err
+				return
+			}
+			artists[idx] = *artist
+		}(i, id)
+	}
+
+	wg.Wait()
+
+	for _, err := range errs {
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return artists, nil
 }
 
 type TidalArtistTopTracksResponse struct {

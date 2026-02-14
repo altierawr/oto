@@ -11,6 +11,7 @@ type TClassNameProps = {
   title: string;
   viewAllUrl?: string;
   className?: string;
+  isLoading?: boolean;
   style?: HTMLAttributes<HTMLDivElement>["style"];
 };
 
@@ -20,6 +21,7 @@ const HorizontalMediaScroller = ({
   viewAllUrl,
   children,
   className,
+  isLoading,
   style,
 }: PropsWithChildren<TClassNameProps>) => {
   const navigate = useNavigate();
@@ -38,29 +40,19 @@ const HorizontalMediaScroller = ({
   return (
     <>
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-2xl font-semibold">{title}</h2>
         <div
-          className="items-center gap-2"
-          style={{
-            display: ref.current && ref.current.scrollWidth <= ref.current.clientWidth ? "none" : "flex",
-          }}
+          className={clsx(
+            "flex items-center gap-2",
+            isLoading || (ref.current && ref.current.scrollWidth <= ref.current.clientWidth && "hidden"),
+          )}
         >
-          <IconButton
-            variant="soft"
-            color="gray"
-            icon={ChevronLeft}
-            size="xs"
-            isDisabled={!canScrollLeft}
-            onClick={scrollLeft}
-          />
-          <IconButton
-            variant="soft"
-            color="gray"
-            icon={ChevronRight}
-            size="xs"
-            isDisabled={!canScrollRight}
-            onClick={scrollRight}
-          />
+          <IconButton variant="soft" color="gray" size="xs" isDisabled={!canScrollLeft} onClick={scrollLeft}>
+            <ChevronLeft />
+          </IconButton>
+          <IconButton variant="soft" color="gray" size="xs" isDisabled={!canScrollRight} onClick={scrollRight}>
+            <ChevronRight />
+          </IconButton>
           <Button variant="soft" color="gray" size="xs" onClick={handleViewAllClick}>
             View All
           </Button>

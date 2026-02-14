@@ -1,8 +1,9 @@
 import type { TabsTab } from "@base-ui/react";
 
-import { Button, Spacer, Tabs } from "@awlt/design";
+import { Button, IconButton, Spacer, Tabs } from "@awlt/design";
 import { useQuery } from "@tanstack/react-query";
-import { Pause, Play, ShuffleIcon } from "lucide-react";
+import clsx from "clsx";
+import { HeartIcon, Pause, Play, ShuffleIcon } from "lucide-react";
 import { Fragment } from "react";
 import { Helmet } from "react-helmet-async";
 import { Outlet, useLoaderData, useLocation, useNavigate, useParams, type LoaderFunction } from "react-router";
@@ -10,6 +11,7 @@ import { Link } from "react-router";
 
 import type { PaginatedResponse, Song, ArtistPage as TArtistPage } from "../../types";
 
+import useFavoriteArtist from "../../hooks/useFavoriteArtist";
 import { usePlayerState } from "../../store";
 import { request } from "../../utils/http";
 import { getTidalCoverUrl } from "../../utils/image";
@@ -64,6 +66,7 @@ const ArtistPage = () => {
   const { player, playerState, song } = usePlayerState();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isFavorited, toggleFavorite } = useFavoriteArtist(id!);
 
   const topTracksQuery = useQuery({
     queryKey: ["artist-top-tracks", id],
@@ -226,7 +229,15 @@ const ArtistPage = () => {
                   <ShuffleIcon size={16} />
                   Shuffle
                 </Button>
-                {/*<IconButton color="gray" variant="soft" icon={Heart} size="sm" />
+                <IconButton
+                  color="gray"
+                  variant="soft"
+                  onClick={toggleFavorite}
+                  className={clsx(isFavorited && "text-(--red-9)!")}
+                >
+                  <HeartIcon fill={isFavorited ? "currentColor" : "transparent"} className="transition-colors" />
+                </IconButton>
+                {/*
                 <IconButton color="gray" variant="soft" icon={Share} size="sm" />*/}
               </div>
             </div>

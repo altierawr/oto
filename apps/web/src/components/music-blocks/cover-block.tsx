@@ -101,7 +101,7 @@ const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPl
                 )}
               </div>
               <div
-                className="absolute right-3 bottom-3 grid hidden aspect-square w-[32px] cursor-default place-items-center overflow-hidden rounded-full bg-[rgb(255_255_255/25%)] backdrop-blur-sm transition-all hover:scale-105"
+                className="absolute right-3 bottom-3 hidden aspect-square w-[32px] cursor-default place-items-center overflow-hidden rounded-full bg-[rgb(255_255_255/25%)] backdrop-blur-sm transition-all hover:scale-105"
                 onClick={(e) => e.preventDefault()}
               >
                 <MoreVertical size={16} fill="currentColor" />

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/altierawr/oto/internal/types"
 )
@@ -214,4 +215,35 @@ func GetAlbum(id int64) (*types.TidalAlbum, error) {
 	}
 
 	return &album, nil
+}
+
+func GetAlbumInfoBatch(ids []int64) ([]types.TidalAlbum, error) {
+	albums := make([]types.TidalAlbum, len(ids))
+	errs := make([]error, len(ids))
+	var wg sync.WaitGroup
+
+	for i, id := range ids {
+		wg.Add(1)
+		go func(idx int, albumId int64) {
+			defer wg.Done()
+			album, err := GetAlbum(albumId)
+			if err != nil {
+				errs[idx] = err
+				return
+			}
+			// Clear songs to keep the response lightweight
+			album.Songs = nil
+			albums[idx] = *album
+		}(i, id)
+	}
+
+	wg.Wait()
+
+	for _, err := range errs {
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return albums, nil
 }

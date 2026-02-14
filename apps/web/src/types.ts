@@ -19,6 +19,7 @@ export type Artist = {
   id: number;
   name: string;
   picture?: string;
+  selectedAlbumCoverFallback?: string;
 };
 
 export type ArtistPage = Artist & {

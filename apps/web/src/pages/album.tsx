@@ -1,5 +1,6 @@
-import { Button, Spacer } from "@awlt/design";
+import { Button, IconButton, Spacer } from "@awlt/design";
 import clsx from "clsx";
+import { HeartIcon } from "lucide-react";
 import { PlayIcon, ShuffleIcon } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link, useLoaderData, type LoaderFunction } from "react-router";
@@ -9,6 +10,7 @@ import type { Album } from "../types";
 
 import CoverBlock, { CoverBlockVariant } from "../components/music-blocks/cover-block";
 import SongList from "../components/song-list";
+import useFavoriteAlbum from "../hooks/useFavoriteAlbum";
 import { usePlayerState } from "../store";
 import { request } from "../utils/http";
 import { getTidalCoverUrl } from "../utils/image";
@@ -24,6 +26,7 @@ const loader: LoaderFunction = async ({ params }) => {
 const AlbumPage = () => {
   const data = useLoaderData() as { album: Album };
   const { player } = usePlayerState();
+  const { isFavorited, toggleFavorite } = useFavoriteAlbum(data.album.id);
 
   const handlePlayClick = async () => {
     if (data.album.songs) {
@@ -94,7 +97,15 @@ const AlbumPage = () => {
                 <ShuffleIcon size={16} />
                 Shuffle
               </Button>
-              {/*<IconButton color="gray" variant="soft" icon={Heart} />
+              <IconButton
+                color="gray"
+                variant="soft"
+                onClick={toggleFavorite}
+                className={clsx(isFavorited && "text-(--red-9)!")}
+              >
+                <HeartIcon fill={isFavorited ? "currentColor" : "transparent"} className="transition-colors" />
+              </IconButton>
+              {/*
               <IconButton color="gray" variant="soft" icon={Share} />*/}
             </div>
           </div>

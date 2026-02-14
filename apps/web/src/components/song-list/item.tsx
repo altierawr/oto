@@ -1,13 +1,14 @@
 import { Menu } from "@awlt/design";
 import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
 import clsx from "clsx";
-import { Heart, ListEndIcon, ListPlus, ListStartIcon, MoreHorizontal } from "lucide-react";
+import { Heart, HeartIcon, ListEndIcon, ListPlus, ListStartIcon, MoreHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useSearchParams } from "react-router";
 
 import type { Song } from "../../types";
 
+import useFavoriteTrack from "../../hooks/useFavoriteTrack";
 import useHasTouch from "../../hooks/useHasTouch";
 import { usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
@@ -24,6 +25,7 @@ const SongListItem = ({ song, songs }: TProps) => {
   const [hasScrolled, setHasScrolled] = useState(false);
   const hasTouch = useHasTouch();
   const ref = useRef<HTMLDivElement>(null);
+  const { isFavorited, toggleFavorite } = useFavoriteTrack(song.id);
 
   const highlightedTrackIdStr = searchParams.get("track");
   const highlightedTrackId = highlightedTrackIdStr ? parseInt(highlightedTrackIdStr) : null;
@@ -121,9 +123,14 @@ const SongListItem = ({ song, songs }: TProps) => {
               <ListEndIcon />
               Add to Queue
             </Menu.Item>
-            {/*<Menu.Separator />
-            <Menu.Item>Favorite</Menu.Item>
-            <Menu.Item>Share</Menu.Item>*/}
+            <Menu.Separator />
+            <Menu.Item onClick={toggleFavorite} closeOnClick={false}>
+              <HeartIcon
+                fill={isFavorited ? "currentColor" : "none"}
+                className={clsx(isFavorited && "text-(--red-9)!")}
+              />
+              {isFavorited ? "Unfavorite" : "Favorite"}
+            </Menu.Item>
           </Menu.Popup>
         </Menu.Root>
         <div className="hidden">

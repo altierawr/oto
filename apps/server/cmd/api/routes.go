@@ -43,6 +43,16 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/streams/:id/seek", app.requireAuthenticatedUser(app.seekHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/streams/:id/end", app.requireAuthenticatedUser(app.endStreamHandler))
 
+	router.HandlerFunc(http.MethodPost, "/v1/favorites/artists", app.requireAuthenticatedUser(app.toggleFavoriteArtistHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/favorites/artists", app.requireAuthenticatedUser(app.getFavoriteArtistsHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/favorites/artists/:id", app.requireAuthenticatedUser(app.isFavoriteArtistHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/favorites/albums", app.requireAuthenticatedUser(app.toggleFavoriteAlbumHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/favorites/albums", app.requireAuthenticatedUser(app.getFavoriteAlbumsHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/favorites/albums/:id", app.requireAuthenticatedUser(app.isFavoriteAlbumHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/favorites/tracks", app.requireAuthenticatedUser(app.toggleFavoriteTrackHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/favorites/tracks", app.requireAuthenticatedUser(app.getFavoriteTracksHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/favorites/tracks/:id", app.requireAuthenticatedUser(app.isFavoriteTrackHandler))
+
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 
 	return app.enableCORS(app.authenticate(router))

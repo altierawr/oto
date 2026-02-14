@@ -1,8 +1,11 @@
+import { Menu } from "@awlt/design";
 import clsx from "clsx";
+import { MoreHorizontal, ListStartIcon, ListEndIcon, HeartIcon } from "lucide-react";
 import { Link } from "react-router";
 
 import type { Song } from "../../types";
 
+import useFavoriteTrack from "../../hooks/useFavoriteTrack";
 import { usePlayerState } from "../../store";
 import { getTidalCoverUrl } from "../../utils/image";
 import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
@@ -17,6 +20,7 @@ type TProps = {
 const TrackGridItem = ({ track, tracks, trackIndex, isLoading }: TProps) => {
   const { player, song } = usePlayerState((s) => s);
   const isPlaying = song?.id === track.id;
+  const { isFavorited, toggleFavorite } = useFavoriteTrack(track.id);
 
   const handlePlayClick = () => {
     if (isPlaying) {
@@ -29,7 +33,7 @@ const TrackGridItem = ({ track, tracks, trackIndex, isLoading }: TProps) => {
   return (
     <div
       className={clsx(
-        "flex snap-start items-center gap-3 border-t border-(--gray-3) py-2",
+        "group flex h-full snap-start items-center gap-3 border-t border-(--gray-3) py-2",
         ((trackIndex + 1) % 3 === 0 || (trackIndex === tracks.length - 1 && !isLoading)) && "border-b",
       )}
     >
@@ -56,7 +60,48 @@ const TrackGridItem = ({ track, tracks, trackIndex, isLoading }: TProps) => {
           ))}
         </p>
       </div>
+      <div
+        className="flex h-full items-center justify-end"
+        onDoubleClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <Menu.Root>
+          <Menu.Trigger render={<ActionButton />}>
+            <MoreHorizontal
+              size={16}
+              className="text-(--gray-11) group-hover:text-(--gray-12) group-hover:opacity-100 lg:opacity-0"
+            />
+          </Menu.Trigger>
+          <Menu.Popup>
+            <Menu.Item>
+              <ListStartIcon />
+              Play Next
+            </Menu.Item>
+            <Menu.Item>
+              <ListEndIcon />
+              Add to Queue
+            </Menu.Item>
+            <Menu.Separator />
+            <Menu.Item onClick={toggleFavorite}>
+              <HeartIcon
+                fill={isFavorited ? "currentColor" : "none"}
+                className={clsx(isFavorited && "text-(--red-9)!")}
+              />
+              {isFavorited ? "Unfavorite" : "Favorite"}
+            </Menu.Item>
+          </Menu.Popup>
+        </Menu.Root>
+      </div>
     </div>
+  );
+};
+
+const ActionButton = ({ ...props }) => {
+  return (
+    <button
+      className="grid size-9 cursor-pointer place-items-center rounded-full transition-colors hover:bg-(--gray-4) active:bg-(--gray-5)"
+      {...props}
+    />
   );
 };
 
