@@ -1,5 +1,15 @@
 # web
 
+## 0.3.0
+
+### Minor Changes
+
+- 101e93a: Added favoriting functionality & library page for viewing favorited content
+
+### Patch Changes
+
+- 25a7639: Fixed an issue where album playback wasn't working on any album blocks other than on the artist overview page.
+
 ## 0.2.1
 
 ### Patch Changes
