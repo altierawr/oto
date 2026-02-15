@@ -1,0 +1,58 @@
+.mixedTrackList > * {
+  display: grid;
+  grid-template-columns: 24px 40px 1fr minmax(140px, 0.8fr) 72px 100px;
+  grid-auto-flow: column;
+  align-items: center;
+  padding-inline: var(--spacing-4);
+  gap: var(--spacing-2);
+
+  @media (width < 40rem) {
+    grid-template-columns: 24px 40px 1fr 40px;
+    padding-inline: 0;
+  }
+}
+
+.mixedTrackListItem {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  outline-offset: 3px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: transparent;
+    z-index: -1;
+  }
+
+  &:not(:hover) {
+    transition:
+      background-color 0.5s ease-in,
+      outline 0.5s ease-in;
+  }
+
+  &[data-is-highlighted="true"] {
+    &[data-is-active="true"]::before {
+      background-color: var(--gray-5) !important;
+    }
+  }
+
+  &[data-is-highlighted="false"] {
+    &[data-is-active="true"]::before {
+      background-color: var(--gray-3) !important;
+    }
+
+    &:hover::before {
+      background-color: var(--gray-2);
+    }
+  }
+
+  @media (pointer: coarse) {
+    &[data-is-highlighted="false"] {
+      &:hover::before {
+        background-color: var(--gray-3);
+      }
+    }
+  }
+}

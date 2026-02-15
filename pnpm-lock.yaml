@@ -20,8 +20,8 @@ importers:
   apps/web:
     dependencies:
       '@awlt/design':
-        specifier: 0.5.0
-        version: 0.5.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        specifier: 0.6.0
+        version: 0.6.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown-vite@7.2.5(@types/node@24.10.11)(jiti@2.6.1)(yaml@2.8.2))
       '@base-ui/react':
         specifier: ^1.0.0
         version: 1.1.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -119,8 +119,8 @@ importers:
 
 packages:
 
-  '@awlt/design@0.5.0':
-    resolution: {integrity: sha512-Hw2F1h7tdWUi0orSCA+q7MOBEHJf1kN8/+Nha1sDdpE79cba3+XeS+qiW+d5jhNoJ55NTstDm0lNwXJD7w0Esg==}
+  '@awlt/design@0.6.0':
+    resolution: {integrity: sha512-LqOoVpaaqmqkKHLg+wyAkU62QZbQUgT9PTOQXrd6pBWZCQvfRfaJAnGWX/LBjD1Q76iH2cnDmA5AT5GS2Ybqow==}
     engines: {node: '24'}
     peerDependencies:
       react: ^19.2.0
@@ -2509,18 +2509,21 @@ packages:
 
 snapshots:
 
-  '@awlt/design@0.5.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@awlt/design@0.6.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown-vite@7.2.5(@types/node@24.10.11)(jiti@2.6.1)(yaml@2.8.2))':
     dependencies:
       '@base-ui/react': 1.1.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@radix-ui/colors': 3.0.0
       '@tabler/icons-react': 3.36.1(react@19.2.4)
+      '@tailwindcss/vite': 4.1.18(rolldown-vite@7.2.5(@types/node@24.10.11)(jiti@2.6.1)(yaml@2.8.2))
       clsx: 2.1.1
       lucide-react: 0.562.0(react@19.2.4)
       react: 19.2.4
       react-aria-components: 1.15.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react-dom: 19.2.4(react@19.2.4)
+      tailwindcss: 4.1.18
     transitivePeerDependencies:
       - '@types/react'
+      - vite
 
   '@babel/code-frame@7.29.0':
     dependencies:

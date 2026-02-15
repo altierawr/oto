@@ -123,7 +123,7 @@ const Block = ({ imageUrl, showHoverZoom }: TBlockProps) => {
   return (
     <div
       className={clsx(
-        "h-full w-full rounded-md bg-cover transition-transform md:rounded-xl",
+        "h-full w-full rounded-md bg-(--gray-3) bg-cover transition-transform md:rounded-xl",
         showHoverZoom && "group-hover:scale-[0.98]",
       )}
       style={{

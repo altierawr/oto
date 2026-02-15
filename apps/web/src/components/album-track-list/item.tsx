@@ -12,14 +12,14 @@ import useFavoriteTrack from "../../hooks/useFavoriteTrack";
 import useHasTouch from "../../hooks/useHasTouch";
 import { usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
-import styles from "./song-list.module.css";
+import styles from "./album-track-list.module.css";
 
 type TProps = {
   song: Song;
   songs: Song[];
 };
 
-const SongListItem = ({ song, songs }: TProps) => {
+const AlbumTrackListItem = ({ song, songs }: TProps) => {
   const [searchParams] = useSearchParams();
   const [isActive, setIsActive] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
@@ -69,7 +69,7 @@ const SongListItem = ({ song, songs }: TProps) => {
       ref={ref}
       className={clsx(
         "group rounded-md py-2 text-sm outline-2 outline-transparent",
-        styles.songListItem,
+        styles.albumTrackListItem,
         isHighlighted && "bg-(--gray-4)! outline-(--gray-7)!",
       )}
       onMouseDown={() => setIsActive(true)}
@@ -156,4 +156,4 @@ const ActionButton = ({ ...props }) => {
   );
 };
 
-export default SongListItem;
+export default AlbumTrackListItem;

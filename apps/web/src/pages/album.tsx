@@ -8,8 +8,8 @@ import { Fragment } from "react/jsx-runtime";
 
 import type { Album } from "../types";
 
+import AlbumTrackList from "../components/album-track-list";
 import CoverBlock, { CoverBlockVariant } from "../components/music-blocks/cover-block";
-import SongList from "../components/song-list";
 import useFavoriteAlbum from "../hooks/useFavoriteAlbum";
 import { usePlayerState } from "../store";
 import { request } from "../utils/http";
@@ -114,7 +114,7 @@ const AlbumPage = () => {
         {songsByVolumeKeys?.map((key) => (
           <Fragment key={key}>
             {songsByVolumeKeys.length > 1 && <h2 className="mb-2 text-lg font-bold">Volume {key}</h2>}
-            <SongList songs={songsByVolume![parseInt(key)]!} />
+            <AlbumTrackList songs={songsByVolume![parseInt(key)]!} />
             <Spacer size="8" />
           </Fragment>
         ))}

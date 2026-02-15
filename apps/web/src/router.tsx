@@ -11,6 +11,9 @@ import ArtistPageSinglesAndEps from "./pages/artist/singles-eps";
 import HomePage from "./pages/home";
 import InvitePage from "./pages/invite";
 import LibraryPage from "./pages/library";
+import LibraryAlbumsPage from "./pages/library/albums";
+import LibraryArtistsPage from "./pages/library/artists";
+import LibraryTracksPage from "./pages/library/tracks";
 import LoginRegisterPage from "./pages/login-register";
 import Root from "./pages/root";
 
@@ -50,6 +53,18 @@ const router = createBrowserRouter([
           {
             path: "library",
             element: <LibraryPage />,
+          },
+          {
+            path: "library/artists",
+            element: <LibraryArtistsPage />,
+          },
+          {
+            path: "library/albums",
+            element: <LibraryAlbumsPage />,
+          },
+          {
+            path: "library/tracks",
+            element: <LibraryTracksPage />,
           },
           {
             path: "artists/:id",
