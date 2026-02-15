@@ -4,10 +4,9 @@ import { useRouteLoaderData } from "react-router";
 
 import type { ArtistPage, Album, PaginatedResponse } from "../../types";
 
-import MusicBlock from "../../components/music-blocks/music-block";
+import AlbumBlock from "../../components/music-blocks/album-block";
 import MusicBlockGrid from "../../components/music-blocks/music-block-grid";
 import { request } from "../../utils/http";
-import { getTidalCoverUrl } from "../../utils/image";
 
 const ArtistPageAppearsOn = () => {
   const data = useRouteLoaderData("artist") as { artist: ArtistPage };
@@ -27,13 +26,7 @@ const ArtistPageAppearsOn = () => {
       {!query.isLoading && (
         <MusicBlockGrid>
           {query.data?.items.map((album: Album) => (
-            <MusicBlock
-              key={album.id}
-              title={album.title}
-              linkUrl={`/albums/${album.id}`}
-              imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}
-              date={album.releaseDate}
-            />
+            <AlbumBlock key={album.id} album={album} showDate />
           ))}
         </MusicBlockGrid>
       )}

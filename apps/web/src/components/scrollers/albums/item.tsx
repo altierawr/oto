@@ -1,8 +1,6 @@
 import type { Album } from "../../../types";
 
-import useAlbumPlayback from "../../../hooks/useAlbumPlayback";
-import { getTidalCoverUrl } from "../../../utils/image";
-import MusicBlock from "../../music-blocks/music-block";
+import AlbumBlock from "../../music-blocks/album-block";
 
 type TProps = {
   album: Album;
@@ -11,23 +9,7 @@ type TProps = {
 };
 
 const AlbumsScrollerItem = ({ album, showArtists, showDate }: TProps) => {
-  const { onPlayClick, isLoading, isPlaying } = useAlbumPlayback({
-    album,
-  });
-
-  return (
-    <MusicBlock
-      key={album.id}
-      title={album.title}
-      linkUrl={`/albums/${album.id}`}
-      imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}
-      artists={showArtists ? album.artists : undefined}
-      date={showDate ? album.releaseDate : undefined}
-      onPlayClick={onPlayClick}
-      isPlayLoading={isLoading}
-      isPlaying={isPlaying}
-    />
-  );
+  return <AlbumBlock album={album} showArtists={showArtists} showDate={showDate} />;
 };
 
 export default AlbumsScrollerItem;

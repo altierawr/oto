@@ -3,10 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { Album } from "../../types";
 
-import MusicBlock from "../../components/music-blocks/music-block";
+import AlbumBlock from "../../components/music-blocks/album-block";
 import MusicBlockGrid from "../../components/music-blocks/music-block-grid";
 import { request } from "../../utils/http";
-import { getTidalCoverUrl } from "../../utils/image";
 
 const LibraryAlbumsPage = () => {
   const query = useQuery({
@@ -30,13 +29,7 @@ const LibraryAlbumsPage = () => {
       {!query.isLoading && albums.length > 0 && (
         <MusicBlockGrid>
           {albums.map((album) => (
-            <MusicBlock
-              key={album.id}
-              title={album.title}
-              linkUrl={`/albums/${album.id}`}
-              imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}
-              date={album.releaseDate}
-            />
+            <AlbumBlock key={album.id} album={album} showDate />
           ))}
         </MusicBlockGrid>
       )}
