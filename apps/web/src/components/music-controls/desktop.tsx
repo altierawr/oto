@@ -1,6 +1,7 @@
 import clsx from "clsx";
-import { ListIcon } from "lucide-react";
+import { HeartIcon, ListIcon } from "lucide-react";
 
+import useFavoriteTrack from "../../hooks/useFavoriteTrack";
 import { useGeneralStore, usePlayerState } from "../../store";
 import { formatDuration } from "../../utils/utils";
 import MusicControlsDesktopControlButtons from "./desktop-control-buttons";
@@ -15,6 +16,7 @@ type TProps = {
 const MusicControlsDesktop = ({ className }: TProps) => {
   const { playerState, song } = usePlayerState();
   const generalState = useGeneralStore();
+  const { isFavorited, toggleFavorite } = useFavoriteTrack(song?.id);
 
   const handleQueueClick = () => {
     generalState.setIsSongQueueVisible(!generalState.isSongQueueVisible);
@@ -46,6 +48,21 @@ const MusicControlsDesktop = ({ className }: TProps) => {
         {playerState && (
           <div className="grid">
             <div className="flex items-center justify-end gap-1">
+              <div
+                className={clsx(
+                  "grid size-7 place-items-center rounded-md transition-colors",
+                  song && "cursor-pointer hover:bg-(--gray-4) active:bg-(--gray-5)",
+                  isFavorited && "text-(--red-9)",
+                )}
+                onClick={song ? toggleFavorite : undefined}
+              >
+                <HeartIcon
+                  size={18}
+                  strokeWidth={1.5}
+                  fill={isFavorited ? "currentColor" : "transparent"}
+                  className="transition-colors"
+                />
+              </div>
               <div
                 className="grid size-7 cursor-pointer place-items-center rounded-md transition-colors hover:bg-(--gray-4) active:bg-(--gray-5)"
                 onClick={handleQueueClick}
