@@ -21,7 +21,6 @@ const SongQueue = () => {
   }, [isVisible]);
 
   const handleBlur = () => {
-    console.log("blur");
     generalState.setIsSongQueueVisible(false);
   };
 
