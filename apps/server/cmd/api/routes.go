@@ -65,5 +65,5 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 
-	return app.enableCORS(app.authenticate(router))
+	return app.enableCORS(app.rateLimit(app.authenticate(router)))
 }

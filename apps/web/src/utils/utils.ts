@@ -44,3 +44,5 @@ export const formatDuration = (dur: number, type: "digital" | "written") => {
 
   return parts.join(" ");
 };
+
+export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
