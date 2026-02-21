@@ -4,6 +4,7 @@ import {
   AlbumIcon,
   ChevronsUpDownIcon,
   LibraryIcon,
+  ListMusicIcon,
   LogOutIcon,
   MusicIcon,
   SettingsIcon,
@@ -14,6 +15,7 @@ import { useLocation, useNavigate } from "react-router";
 import logo from "../../assets/oto-logo.svg";
 import useCurrentUser, { invalidateUserQuery } from "../../hooks/useCurrentUser";
 import { request } from "../../utils/http";
+import SidebarPlaylistsGroup from "./playlists";
 
 const Sidebar = () => {
   const { user } = useCurrentUser();
@@ -102,8 +104,15 @@ const Sidebar = () => {
                   <span>Tracks</span>
                 </AwltSidebar.ItemButton>
               </AwltSidebar.Item>
+              <AwltSidebar.Item tooltip="Playlists">
+                <AwltSidebar.ItemButton isActive={pathname === "/playlists"} onClick={() => navigate("/playlists")}>
+                  <ListMusicIcon />
+                  <span>Playlists</span>
+                </AwltSidebar.ItemButton>
+              </AwltSidebar.Item>
             </AwltSidebar.List>
           </AwltSidebar.Group>
+          <SidebarPlaylistsGroup />
         </AwltSidebar.Content>
 
         {user && (

@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func marshalFavoritePayload(value any) (string, error) {
+func marshalPayload(value any) (string, error) {
 	payload, err := json.Marshal(value)
 	if err != nil {
 		return "", err
@@ -26,7 +26,7 @@ func (db *DB) AddFavoriteArtist(userId uuid.UUID, artist *types.TidalArtist) err
 		return errors.New("artist is nil")
 	}
 
-	payload, err := marshalFavoritePayload(artist)
+	payload, err := marshalPayload(artist)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (db *DB) AddFavoriteAlbum(userId uuid.UUID, album *types.TidalAlbum) error 
 		return errors.New("album is nil")
 	}
 
-	payload, err := marshalFavoritePayload(album)
+	payload, err := marshalPayload(album)
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,7 @@ func (db *DB) AddFavoriteTrack(userId uuid.UUID, track *types.TidalSong) error {
 		return errors.New("track is nil")
 	}
 
-	payload, err := marshalFavoritePayload(track)
+	payload, err := marshalPayload(track)
 	if err != nil {
 		return err
 	}
@@ -322,16 +322,7 @@ func (db *DB) RemoveFavoriteTrack(userId uuid.UUID, trackId int64) error {
 		return err
 	}
 
-	cleanupTrackQuery := `
-		DELETE FROM tidal_tracks
-		WHERE id = $1
-		AND NOT EXISTS (
-			SELECT 1
-			FROM favorite_tracks
-			WHERE track_id = $1
-		)`
-	_, err = tx.ExecContext(ctx, cleanupTrackQuery, trackId)
-	if err != nil {
+	if err := tryDeleteTidalTrackIfUnreferenced(ctx, tx, trackId); err != nil {
 		return err
 	}
 

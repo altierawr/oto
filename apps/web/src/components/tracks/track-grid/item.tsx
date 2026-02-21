@@ -1,14 +1,13 @@
-import { Menu } from "@awlt/design";
 import clsx from "clsx";
-import { MoreHorizontal, ListStartIcon, ListEndIcon, HeartIcon } from "lucide-react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { Link } from "react-router";
 
-import type { Song } from "../../types";
+import type { Song } from "../../../types";
 
-import useFavoriteTrack from "../../hooks/useFavoriteTrack";
-import { usePlayerState } from "../../store";
-import { getTidalCoverUrl } from "../../utils/image";
-import CoverBlock, { CoverBlockVariant } from "../music-blocks/cover-block";
+import { usePlayerState } from "../../../store";
+import { getTidalCoverUrl } from "../../../utils/image";
+import CoverBlock, { CoverBlockVariant } from "../../music-blocks/cover-block";
+import TrackActionsMenu from "../track-actions-menu";
 
 type TProps = {
   track: Song;
@@ -20,7 +19,6 @@ type TProps = {
 const TrackGridItem = ({ track, tracks, trackIndex, isLoading }: TProps) => {
   const { player, song } = usePlayerState((s) => s);
   const isPlaying = song?.id === track.id;
-  const { isFavorited, toggleFavorite } = useFavoriteTrack(track.id);
 
   const handlePlayClick = () => {
     if (isPlaying) {
@@ -40,7 +38,7 @@ const TrackGridItem = ({ track, tracks, trackIndex, isLoading }: TProps) => {
       <div className="aspect-square h-[40px]">
         <CoverBlock
           variant={CoverBlockVariant.PLAY_ONLY}
-          imageUrl={track.album?.cover ? getTidalCoverUrl(track.album.cover, 80) : ""}
+          imageUrls={[track.album?.cover ? getTidalCoverUrl(track.album.cover, 80) : ""]}
           isPlaying={isPlaying}
           onPlayClick={handlePlayClick}
         />
@@ -65,32 +63,17 @@ const TrackGridItem = ({ track, tracks, trackIndex, isLoading }: TProps) => {
         onDoubleClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <Menu.Root>
-          <Menu.Trigger render={<ActionButton />}>
-            <MoreHorizontal
-              size={16}
-              className="text-(--gray-11) group-hover:text-(--gray-12) group-hover:opacity-100 lg:opacity-0"
-            />
-          </Menu.Trigger>
-          <Menu.Popup>
-            <Menu.Item>
-              <ListStartIcon />
-              Play Next
-            </Menu.Item>
-            <Menu.Item>
-              <ListEndIcon />
-              Add to Queue
-            </Menu.Item>
-            <Menu.Separator />
-            <Menu.Item onClick={toggleFavorite}>
-              <HeartIcon
-                fill={isFavorited ? "currentColor" : "none"}
-                className={clsx(isFavorited && "text-(--red-9)!")}
+        <TrackActionsMenu
+          track={track}
+          triggerRender={
+            <ActionButton>
+              <MoreHorizontalIcon
+                size={16}
+                className="text-(--gray-11) group-hover:text-(--gray-12) group-hover:opacity-100 lg:opacity-0"
               />
-              {isFavorited ? "Unfavorite" : "Favorite"}
-            </Menu.Item>
-          </Menu.Popup>
-        </Menu.Root>
+            </ActionButton>
+          }
+        />
       </div>
     </div>
   );

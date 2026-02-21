@@ -1,3 +1,4 @@
+import { Toast } from "@awlt/design";
 import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 
@@ -88,6 +89,7 @@ const AppRoot = () => {
 
         <AudioDebugger />
         <SongQueue />
+        <Toast />
       </div>
     </>
   );

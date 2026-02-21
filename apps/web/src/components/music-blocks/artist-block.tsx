@@ -16,11 +16,11 @@ const ArtistBlock = ({ artist }: TProps) => {
         <CoverBlock
           variant={CoverBlockVariant.COVER_ONLY}
           linkUrl={`/artists/${artist.id}`}
-          imageUrl={
+          imageUrls={[
             artist.picture
               ? getTidalCoverUrl(artist.picture, 750)
-              : getTidalCoverUrl(artist.selectedAlbumCoverFallback, 320)
-          }
+              : getTidalCoverUrl(artist.selectedAlbumCoverFallback, 320),
+          ]}
         />
       </div>
       <p className="mt-2 line-clamp-2 w-full text-center text-sm text-(--gray-12)">

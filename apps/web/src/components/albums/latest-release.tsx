@@ -21,7 +21,7 @@ const LatestRelease = ({ album }: TProps) => {
       <div className="aspect-square h-[135px] lg:h-full">
         <CoverBlock
           variant={CoverBlockVariant.FULL}
-          imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}
+          imageUrls={[album.cover ? getTidalCoverUrl(album.cover, 320) : ""]}
           linkUrl={`/albums/${album.id}`}
           onPlayClick={onPlayClick}
           isPlayLoading={isLoading}

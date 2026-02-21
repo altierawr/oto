@@ -7,7 +7,7 @@ import CoverBlock, { CoverBlockVariant } from "./cover-block";
 type TProps = {
   title: string;
   linkUrl: string;
-  imageUrl: string;
+  imageUrls: string[];
   artists?: Artist[];
   date?: string;
   isPlaying?: boolean;
@@ -15,13 +15,13 @@ type TProps = {
   onPlayClick?: () => void;
 };
 
-const MusicBlock = ({ title, linkUrl, imageUrl, artists, date, isPlaying, isPlayLoading, onPlayClick }: TProps) => {
+const MusicBlock = ({ title, linkUrl, imageUrls, artists, date, isPlaying, isPlayLoading, onPlayClick }: TProps) => {
   return (
     <div className="grid snap-start grid-rows-[min-content] content-start">
       <CoverBlock
         variant={CoverBlockVariant.FULL}
         linkUrl={linkUrl}
-        imageUrl={imageUrl}
+        imageUrls={imageUrls}
         onPlayClick={onPlayClick}
         isPlayLoading={isPlayLoading}
         isPlaying={isPlaying}

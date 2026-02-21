@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -13,6 +14,8 @@ import (
 	"github.com/altierawr/oto/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
+
+var errRequestBodyReadTimeout = errors.New("request body read timeout")
 
 func (app *application) readIDParam(r *http.Request) (int64, error) {
 	params := httprouter.ParamsFromContext(r.Context())
@@ -113,6 +116,10 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst int
 			panic(err)
 
 		default:
+			if isRequestBodyReadTimeout(err) {
+				return errRequestBodyReadTimeout
+			}
+
 			return err
 
 		}
@@ -124,6 +131,15 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst int
 	}
 
 	return nil
+}
+
+func isRequestBodyReadTimeout(err error) bool {
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+
+	return false
 }
 
 func (app *application) readString(qs url.Values, key string, defaultValue string) string {

@@ -2,9 +2,9 @@ import { Skeleton } from "@awlt/design";
 import { IconChevronCompactLeft, IconChevronCompactRight } from "@tabler/icons-react";
 import clsx from "clsx";
 
-import type { Song } from "../../types";
+import type { Song } from "../../../types";
 
-import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
+import useHorizontalScrollSnap from "../../../hooks/useHorizontalScrollSnap";
 import TrackGridItem from "./item";
 
 type TProps = {

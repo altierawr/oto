@@ -15,14 +15,14 @@ export enum CoverBlockVariant {
 
 type TProps = {
   variant: CoverBlockVariant;
-  imageUrl: string;
+  imageUrls: string[];
   linkUrl?: string;
   isPlaying?: boolean;
   isPlayLoading?: boolean;
   onPlayClick?: (e: MouseEvent) => void;
 };
 
-const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPlayClick }: TProps) => {
+const CoverBlock = ({ variant, imageUrls, linkUrl, isPlaying, isPlayLoading, onPlayClick }: TProps) => {
   const { playerState } = usePlayerState();
 
   if (variant === CoverBlockVariant.FULL && linkUrl === undefined) {
@@ -42,7 +42,7 @@ const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPl
           {linkUrl && (
             <Link to={linkUrl}>
               <div className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-md md:rounded-xl">
-                <Block imageUrl={imageUrl} />
+                <Block imageUrls={imageUrls} />
                 <div
                   className={clsx(
                     "absolute inset-0 h-full w-full bg-[rgba(0,0,0,0.4)] opacity-0 transition-opacity hover:opacity-100",
@@ -53,7 +53,7 @@ const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPl
             </Link>
           )}
 
-          {!linkUrl && <Block imageUrl={imageUrl} />}
+          {!linkUrl && <Block imageUrls={imageUrls} />}
         </>
       )}
 
@@ -63,7 +63,7 @@ const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPl
           onClick={handlePlayClick}
           onDoubleClick={(e) => e.stopPropagation()}
         >
-          <Block imageUrl={imageUrl} showHoverZoom />
+          <Block imageUrls={imageUrls} showHoverZoom />
           <div
             className={clsx(
               "absolute inset-0 grid h-full w-full place-items-center bg-[rgba(0,0,0,0.6)] opacity-0 transition-opacity hover:opacity-100",
@@ -80,7 +80,7 @@ const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPl
       {variant === CoverBlockVariant.FULL && linkUrl && (
         <div className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl transition-all">
           <Link to={linkUrl}>
-            <Block imageUrl={imageUrl} />
+            <Block imageUrls={imageUrls} />
             <div
               className={clsx(
                 "absolute inset-0 grid h-full w-full place-items-center bg-linear-to-b from-[rgba(0,0,0,0.25)] to-[rgba(0,0,0,0.90)] opacity-0 transition-opacity will-change-[opacity] hover:opacity-100",
@@ -115,21 +115,52 @@ const CoverBlock = ({ variant, imageUrl, linkUrl, isPlaying, isPlayLoading, onPl
 };
 
 type TBlockProps = {
-  imageUrl: string;
+  imageUrls: string[];
   showHoverZoom?: boolean;
 };
 
-const Block = ({ imageUrl, showHoverZoom }: TBlockProps) => {
+const getQuadrantImages = (imageUrls: string[]) => {
+  if (imageUrls.length >= 4) {
+    return [imageUrls[0], imageUrls[1], imageUrls[2], imageUrls[3]];
+  }
+
+  if (imageUrls.length === 3) {
+    return [imageUrls[0], imageUrls[1], imageUrls[2], undefined];
+  }
+
+  if (imageUrls.length === 2) {
+    return [imageUrls[0], imageUrls[1], imageUrls[0], imageUrls[1]];
+  }
+
+  return [];
+};
+
+const Block = ({ imageUrls, showHoverZoom }: TBlockProps) => {
+  const validImageUrls = imageUrls.filter(Boolean).slice(0, 4);
+  const quadrantImages = getQuadrantImages(validImageUrls);
+  const hasSingleImage = validImageUrls.length === 1;
+
   return (
     <div
       className={clsx(
-        "h-full w-full rounded-md bg-(--gray-3) bg-cover transition-transform md:rounded-xl",
+        "h-full w-full overflow-hidden rounded-md bg-(--gray-3) transition-transform md:rounded-xl",
+        hasSingleImage && "bg-cover bg-center",
         showHoverZoom && "group-hover:scale-[0.98]",
       )}
-      style={{
-        backgroundImage: `url(${imageUrl})`,
-      }}
-    />
+      style={hasSingleImage ? { backgroundImage: `url(${validImageUrls[0]})` } : undefined}
+    >
+      {quadrantImages.length > 1 && (
+        <div className="grid h-full w-full grid-cols-2 grid-rows-2">
+          {quadrantImages.map((imageUrl, index) => (
+            <div
+              key={index}
+              className="h-full w-full bg-(--gray-3) bg-cover bg-center"
+              style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 

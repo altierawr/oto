@@ -1,18 +1,17 @@
-import { Menu } from "@awlt/design";
 import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
 import clsx from "clsx";
-import { HeartIcon, ListEndIcon, ListStartIcon, MoreHorizontal } from "lucide-react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useSearchParams } from "react-router";
 
 import type { Song } from "../../types";
 
-import useFavoriteTrack from "../../hooks/useFavoriteTrack";
 import useHasTouch from "../../hooks/useHasTouch";
 import { usePlayerState } from "../../store";
 import { getTidalCoverUrl } from "../../utils/image";
 import { formatDuration } from "../../utils/utils";
+import TrackActionsMenu from "../tracks/track-actions-menu";
 import styles from "./mixed-track-list.module.css";
 
 type TProps = {
@@ -27,7 +26,6 @@ const MixedTrackListItem = ({ song, songs, trackIndex }: TProps) => {
   const [hasScrolled, setHasScrolled] = useState(false);
   const hasTouch = useHasTouch();
   const ref = useRef<HTMLDivElement>(null);
-  const { isFavorited, toggleFavorite } = useFavoriteTrack(song.id);
 
   const highlightedTrackIdStr = searchParams.get("track");
   const highlightedTrackId = highlightedTrackIdStr ? parseInt(highlightedTrackIdStr) : null;
@@ -54,14 +52,6 @@ const MixedTrackListItem = ({ song, songs, trackIndex }: TProps) => {
       }, 15000);
     }
   }, [song, highlightedTrackId, ref, hasScrolled]);
-
-  const handlePlayNextClick = () => {
-    player.playNext(song);
-  };
-
-  const handleAddToQueueClick = () => {
-    player.addToQueue(song);
-  };
 
   const isHighlighted = !hasScrolled && song.id === highlightedTrackId;
   const isPlaying = playerSong?.id === song.id;
@@ -139,32 +129,17 @@ const MixedTrackListItem = ({ song, songs, trackIndex }: TProps) => {
         onDoubleClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <Menu.Root>
-          <Menu.Trigger render={<ActionButton />}>
-            <MoreHorizontal
-              size={16}
-              className="text-(--gray-11) group-hover:text-(--gray-12) group-hover:opacity-100 lg:opacity-0"
-            />
-          </Menu.Trigger>
-          <Menu.Popup>
-            <Menu.Item onClick={handlePlayNextClick}>
-              <ListStartIcon />
-              Play Next
-            </Menu.Item>
-            <Menu.Item onClick={handleAddToQueueClick}>
-              <ListEndIcon />
-              Add to Queue
-            </Menu.Item>
-            <Menu.Separator />
-            <Menu.Item onClick={toggleFavorite} closeOnClick={false}>
-              <HeartIcon
-                fill={isFavorited ? "currentColor" : "none"}
-                className={clsx(isFavorited && "text-(--red-9)!")}
+        <TrackActionsMenu
+          track={song}
+          triggerRender={
+            <ActionButton>
+              <MoreHorizontalIcon
+                size={16}
+                className="text-(--gray-11) group-hover:text-(--gray-12) group-hover:opacity-100 lg:opacity-0"
               />
-              {isFavorited ? "Unfavorite" : "Favorite"}
-            </Menu.Item>
-          </Menu.Popup>
-        </Menu.Root>
+            </ActionButton>
+          }
+        />
       </div>
     </div>
   );

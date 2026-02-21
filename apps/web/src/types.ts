@@ -47,6 +47,20 @@ export type Song = {
   album?: Album;
 };
 
+export type UserPlaylistSummary = {
+  id: number;
+  name: string;
+  numberOfTracks: number;
+  duration: number;
+  coverUrls: string[];
+};
+
+export type UserPlaylist = UserPlaylistSummary & {
+  tracks: Song[];
+};
+
+export type TrackPlaylist = Pick<UserPlaylistSummary, "id" | "name" | "coverUrls">;
+
 export type Playlist = {
   uuid: string;
   created: string;

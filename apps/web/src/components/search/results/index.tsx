@@ -46,7 +46,7 @@ const SearchResult = ({
       <div className="aspect-square h-full">
         <CoverBlock
           variant={coverBlockVariant}
-          imageUrl={imageUrl}
+          imageUrls={[imageUrl]}
           linkUrl={linkUrl}
           isPlaying={isPlaying}
           onPlayClick={onPlayClick}

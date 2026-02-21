@@ -36,3 +36,28 @@ func (app *application) getSongStreamHandler(w http.ResponseWriter, r *http.Requ
 
 	app.startStream(w, r, id, ss)
 }
+
+func (app *application) getTrackPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
+	userID := app.contextGetUserId(r)
+	if userID == nil {
+		app.invalidAuthenticationTokenResponse(w, r)
+		return
+	}
+
+	trackID, err := app.readIDParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	playlists, err := app.db.GetTrackPlaylists(*userID, trackID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, playlists, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

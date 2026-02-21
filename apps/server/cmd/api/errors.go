@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -45,6 +46,15 @@ func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.
 
 func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
 	app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+}
+
+func (app *application) handleReadJSONError(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, errRequestBodyReadTimeout) {
+		app.errorResponse(w, r, http.StatusRequestTimeout, "request body read timed out; please retry")
+		return
+	}
+
+	app.badRequestResponse(w, r, err)
 }
 
 func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {

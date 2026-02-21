@@ -32,7 +32,7 @@ const SongQueueItem = ({ song, index, coverBlockVariant = CoverBlockVariant.PLAY
       <div className="aspect-square h-[45px]" onMouseDown={(e) => e.stopPropagation()}>
         <CoverBlock
           variant={coverBlockVariant}
-          imageUrl={getTidalCoverUrl(song.album?.cover, 80)}
+          imageUrls={[getTidalCoverUrl(song.album?.cover, 80)]}
           linkUrl={song.album ? `/albums/${song.album.id}` : undefined}
           onPlayClick={handlePlayClick}
         />

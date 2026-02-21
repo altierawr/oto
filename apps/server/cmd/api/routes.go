@@ -38,10 +38,20 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/tracks/:id/stream", app.requireAuthenticatedUser(app.getSongStreamHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/tracks/:id/streamurl", app.requireAuthenticatedUser(app.getSongStreamUrlHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/tracks/:id/playlists", app.requireAuthenticatedUser(app.getTrackPlaylistsHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/streams/:id/segments/:segment", app.requireAuthenticatedUser(app.serveHLSHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/streams/:id/seek", app.requireAuthenticatedUser(app.seekHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/streams/:id/end", app.requireAuthenticatedUser(app.endStreamHandler))
+
+	router.HandlerFunc(http.MethodPost, "/v1/playlists", app.requireAuthenticatedUser(app.createPlaylistHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/playlists", app.requireAuthenticatedUser(app.getUserPlaylistsHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/playlists/:id", app.requireAuthenticatedUser(app.getPlaylistHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/playlists/:id", app.requireAuthenticatedUser(app.renamePlaylistHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/playlists/:id", app.requireAuthenticatedUser(app.deletePlaylistHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/playlists/:id/tracks", app.requireAuthenticatedUser(app.addTrackToPlaylistHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/playlists/:id/tracks/:trackId", app.requireAuthenticatedUser(app.removeTrackFromPlaylistHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/playlists/:id/tracks/:trackId", app.requireAuthenticatedUser(app.isTrackInPlaylistHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/favorites/artists", app.requireAuthenticatedUser(app.toggleFavoriteArtistHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/favorites/artists", app.requireAuthenticatedUser(app.getFavoriteArtistsHandler))

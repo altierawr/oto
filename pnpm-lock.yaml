@@ -20,8 +20,8 @@ importers:
   apps/web:
     dependencies:
       '@awlt/design':
-        specifier: 0.6.0
-        version: 0.6.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown-vite@7.2.5(@types/node@24.10.11)(jiti@2.6.1)(yaml@2.8.2))
+        specifier: 0.7.0
+        version: 0.7.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown-vite@7.2.5(@types/node@24.10.11)(jiti@2.6.1)(yaml@2.8.2))
       '@base-ui/react':
         specifier: ^1.0.0
         version: 1.1.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -119,8 +119,8 @@ importers:
 
 packages:
 
-  '@awlt/design@0.6.0':
-    resolution: {integrity: sha512-LqOoVpaaqmqkKHLg+wyAkU62QZbQUgT9PTOQXrd6pBWZCQvfRfaJAnGWX/LBjD1Q76iH2cnDmA5AT5GS2Ybqow==}
+  '@awlt/design@0.7.0':
+    resolution: {integrity: sha512-fvWg8ZLOoNGICaQv4bbu7MSGrXzuktzXdKYeczfgxjeCcOtJoZUtb87dZgvyJ218nFnfc8H2IwgRh7ahSGbVPA==}
     engines: {node: '24'}
     peerDependencies:
       react: ^19.2.0
@@ -2509,7 +2509,7 @@ packages:
 
 snapshots:
 
-  '@awlt/design@0.6.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown-vite@7.2.5(@types/node@24.10.11)(jiti@2.6.1)(yaml@2.8.2))':
+  '@awlt/design@0.7.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown-vite@7.2.5(@types/node@24.10.11)(jiti@2.6.1)(yaml@2.8.2))':
     dependencies:
       '@base-ui/react': 1.1.0(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@radix-ui/colors': 3.0.0

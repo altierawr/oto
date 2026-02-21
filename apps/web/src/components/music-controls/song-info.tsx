@@ -15,7 +15,7 @@ const MusicControlsSongInfo = () => {
           {song?.album && (
             <CoverBlock
               variant={CoverBlockVariant.COVER_ONLY}
-              imageUrl={getTidalCoverUrl(song.album.cover, 320)}
+              imageUrls={[getTidalCoverUrl(song.album.cover, 320)]}
               linkUrl={`/albums/${song.album.id}`}
             />
           )}

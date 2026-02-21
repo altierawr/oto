@@ -19,7 +19,7 @@ const AlbumBlock = ({ album, showArtists, showDate }: TProps) => {
     <MusicBlock
       title={album.title}
       linkUrl={`/albums/${album.id}`}
-      imageUrl={album.cover ? getTidalCoverUrl(album.cover, 320) : ""}
+      imageUrls={[album.cover ? getTidalCoverUrl(album.cover, 320) : ""]}
       artists={showArtists ? album.artists : undefined}
       date={showDate ? album.releaseDate : undefined}
       onPlayClick={onPlayClick}

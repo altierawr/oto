@@ -20,7 +20,7 @@ func (app *application) toggleFavoriteArtistHandler(w http.ResponseWriter, r *ht
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.handleReadJSONError(w, r, err)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (app *application) toggleFavoriteAlbumHandler(w http.ResponseWriter, r *htt
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.handleReadJSONError(w, r, err)
 		return
 	}
 
@@ -121,7 +121,7 @@ func (app *application) toggleFavoriteTrackHandler(w http.ResponseWriter, r *htt
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.handleReadJSONError(w, r, err)
 		return
 	}
 

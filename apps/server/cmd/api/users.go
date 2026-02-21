@@ -17,7 +17,7 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.handleReadJSONError(w, r, err)
 		return
 	}
 
@@ -102,7 +102,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.handleReadJSONError(w, r, err)
 		return
 	}
 
@@ -192,7 +192,7 @@ func (app *application) changePasswordHandler(w http.ResponseWriter, r *http.Req
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.handleReadJSONError(w, r, err)
 		return
 	}
 
