@@ -1,10 +1,12 @@
 import { Button, IconButton, Spacer } from "@awlt/design";
 import clsx from "clsx";
-import { HeartIcon } from "lucide-react";
+import { HeartIcon, PauseIcon } from "lucide-react";
 import { PlayIcon, ShuffleIcon } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link, useLoaderData, type LoaderFunction } from "react-router";
 import { Fragment } from "react/jsx-runtime";
+
+import useAlbumPlayback from "@/hooks/useAlbumPlayback";
 
 import type { Album } from "../types";
 
@@ -25,10 +27,18 @@ const loader: LoaderFunction = async ({ params }) => {
 
 const AlbumPage = () => {
   const data = useLoaderData() as { album: Album };
-  const { player } = usePlayerState();
+  const { player, playerState } = usePlayerState();
   const { isFavorited, toggleFavorite } = useFavoriteAlbum(data.album.id);
+  const { isPlaying, isLoading: isPlaybackLoading } = useAlbumPlayback({
+    album: data.album,
+  });
 
   const handlePlayClick = async () => {
+    if (isPlaying) {
+      player.togglePlayPause();
+      return;
+    }
+
     if (data.album.songs) {
       player.playSongs(data.album.songs, 0);
     }
@@ -56,7 +66,7 @@ const AlbumPage = () => {
           <div className="mx-auto aspect-square w-[75%] min-w-[200px] sm:mx-0 sm:w-auto">
             <CoverBlock
               variant={CoverBlockVariant.COVER_ONLY}
-              imageUrl={data.album.cover ? getTidalCoverUrl(data.album.cover, 1280) : ""}
+              imageUrls={[data.album.cover ? getTidalCoverUrl(data.album.cover, 1280) : ""]}
             />
           </div>
 
@@ -89,9 +99,25 @@ const AlbumPage = () => {
               </p>
             </div>
             <div className="mt-4 flex w-full gap-4 md:mt-0">
-              <Button variant="solid" color="blue" onClick={handlePlayClick} className="max-sm:flex-1">
-                <PlayIcon size={16} fill="currentColor" />
-                Play
+              <Button
+                variant="solid"
+                color="blue"
+                onClick={handlePlayClick}
+                className="max-sm:flex-1"
+                isLoading={isPlaybackLoading}
+              >
+                {isPlaying && !playerState.isPaused && (
+                  <>
+                    <PauseIcon size={16} fill="currentColor" />
+                    Pause
+                  </>
+                )}
+                {(!isPlaying || playerState.isPaused) && (
+                  <>
+                    <PlayIcon size={16} fill="currentColor" />
+                    Play
+                  </>
+                )}
               </Button>
               <Button variant="soft" color="gray" onClick={handleShuffleClick} className="max-sm:flex-1">
                 <ShuffleIcon size={16} />

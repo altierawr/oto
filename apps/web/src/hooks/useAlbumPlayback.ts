@@ -25,13 +25,14 @@ const useAlbumPlayback = ({ album }: TProps) => {
   const { player, song } = usePlayerState();
 
   let isPlaying = true;
-  if (!data?.songs || !song) {
+  const songs = data?.songs || album.songs;
+  if (!songs || !song) {
     isPlaying = false;
   } else {
     for (let i = 0; i < player.playlist.length; i++) {
       const { song } = (player.originalPlaylist || player.playlist)[i];
 
-      if (i >= data.songs.length || song.id !== data.songs[i].id) {
+      if (i >= songs.length || song.id !== songs[i].id) {
         isPlaying = false;
         break;
       }
