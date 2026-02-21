@@ -16,7 +16,7 @@ const useFavoriteTrack = (trackId?: number) => {
       const json: { favorited: boolean } = await resp.json();
       return json.favorited;
     },
-    enabled: trackId !== undefined,
+    enabled: false,
   });
 
   const mutation = useMutation({
@@ -26,6 +26,7 @@ const useFavoriteTrack = (trackId?: number) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
+
       const json: { favorited: boolean } = await resp.json();
       return json.favorited;
     },
@@ -58,6 +59,8 @@ const useFavoriteTrack = (trackId?: number) => {
   return {
     isFavorited: query.data ?? false,
     isLoading: query.isLoading,
+    fetchIsFavoreite: query.refetch,
+    isFetched: query.isFetched,
     toggleFavorite: () => {
       if (trackId !== undefined) {
         mutation.mutate(trackId);
