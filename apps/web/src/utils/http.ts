@@ -7,9 +7,9 @@ let refreshPromise: Promise<Response> | null = null;
 export const request = async (input: string, init?: RequestInit & { skipRedirect?: boolean }): Promise<Response> => {
   let baseUrl = "";
   if (import.meta.env.DEV && window.location.hostname === "localhost") {
-    baseUrl = "http://localhost:3003/v1/";
+    baseUrl = "http://localhost:3003/v1";
   } else {
-    baseUrl = `${import.meta.env.VITE_SERVER_URI}/v1/`;
+    baseUrl = `${import.meta.env.VITE_SERVER_URI}/v1`;
   }
 
   if (!import.meta.env.VITE_SERVER_URI) {
