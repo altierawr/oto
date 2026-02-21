@@ -27,6 +27,11 @@ type config struct {
 		accessToken  string
 		refreshToken string
 	}
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
+	}
 }
 
 type application struct {
@@ -116,6 +121,10 @@ func main() {
 	} else {
 		cfg.env = "production"
 	}
+
+	cfg.limiter.enabled = true
+	cfg.limiter.rps = 6
+	cfg.limiter.burst = 12
 
 	cfg.port = 3003
 
