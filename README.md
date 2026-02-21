@@ -27,6 +27,13 @@ Oto is still in early development and only the core features for listening to mu
 - [ ] Automatic "play similar" functionality
 - [ ] Light theme
 
+### Screenshots
+| Artist page | Library page |
+|:---|:---------------|
+| <img width="2782" height="1708" alt="Artist page" src="https://github.com/user-attachments/assets/0d806c3e-0702-4b89-922f-f4f54e06759d" /> | <img width="2782" height="1708" alt="Library page" src="https://github.com/user-attachments/assets/fa59ace5-2b53-478e-8243-77d6f66aa9a9" /> |
+| Search | Playlist page |
+| <img width="2782" height="1708" alt="Search window" src="https://github.com/user-attachments/assets/0f67f5c7-aa5c-47ee-a8fe-04bcdd8c1c36" /> | <img width="2782" height="1708" alt="Playlist page" src="https://github.com/user-attachments/assets/e671a488-736c-483b-a976-da90437fa965" /> |
+
 ## Installation
 
 ### Server
