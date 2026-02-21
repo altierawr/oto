@@ -1,5 +1,17 @@
 # web
 
+## 0.4.0
+
+### Minor Changes
+
+- 24cf134: Added playlists.
+- 7e2223a: Added favorite button to music controls bar on desktop
+
+### Patch Changes
+
+- 1582616: Fixed an issue where network requests to the server could get stalled.
+- 9b5231d: Album page play button now updates properly when album is playing.
+
 ## 0.3.0
 
 ### Minor Changes
