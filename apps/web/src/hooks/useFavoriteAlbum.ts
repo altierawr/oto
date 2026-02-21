@@ -9,6 +9,10 @@ const useFavoriteAlbum = (albumId: number) => {
     queryKey: ["favorite-album", albumId],
     queryFn: async () => {
       const resp = await request(`/favorites/albums/${albumId}`);
+      if (!resp.ok) {
+        throw new Error(`failed to fetch favorite album ${albumId} (${resp.status})`);
+      }
+
       const json: { favorited: boolean } = await resp.json();
       return json.favorited;
     },

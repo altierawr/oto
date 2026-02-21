@@ -10,6 +10,10 @@ const useFavoriteArtist = (artistId: number | string) => {
     queryKey: ["favorite-artist", String(id)],
     queryFn: async () => {
       const resp = await request(`/favorites/artists/${id}`);
+      if (!resp.ok) {
+        throw new Error(`failed to fetch favorite artist ${id} (${resp.status})`);
+      }
+
       const json: { favorited: boolean } = await resp.json();
       return json.favorited;
     },

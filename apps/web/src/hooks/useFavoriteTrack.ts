@@ -9,6 +9,10 @@ const useFavoriteTrack = (trackId?: number) => {
     queryKey: ["favorite-track", trackId],
     queryFn: async () => {
       const resp = await request(`/favorites/tracks/${trackId}`);
+      if (!resp.ok) {
+        throw new Error(`failed to fetch favorite track ${trackId} (${resp.status})`);
+      }
+
       const json: { favorited: boolean } = await resp.json();
       return json.favorited;
     },
