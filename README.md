@@ -20,11 +20,11 @@ Oto is still in early development and only the core features for listening to mu
 
 - [x] Gapless playback
 - [x] User accounts
+- [x] Playlists
+- [x] Favoriting songs, albums & artists
 - [ ] Mixes (radio)
 - [ ] Discovery playlists
 - [ ] Automatic "play similar" functionality
-- [x] Playlists
-- [ ] Favoriting songs, albums & artists
 - [ ] Light theme
 
 ## Installation
