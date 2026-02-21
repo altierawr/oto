@@ -29,7 +29,10 @@ export default defineConfig(() => {
       tailwindcss(),
     ],
     resolve: {
-      alias,
+      alias: {
+        ...alias,
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
     server: {
       host: true,
