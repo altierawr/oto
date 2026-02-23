@@ -1,5 +1,11 @@
 # web
 
+## 0.5.0
+
+### Minor Changes
+
+- bd7e400: Added rate limiting to all api endpoints.
+
 ## 0.4.0
 
 ### Minor Changes
