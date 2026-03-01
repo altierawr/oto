@@ -22,9 +22,9 @@ Oto is still in early development and only the core features for listening to mu
 - [x] User accounts
 - [x] Playlists
 - [x] Favoriting songs, albums & artists
+- [x] Automatic "play similar" functionality
 - [ ] Mixes (radio)
 - [ ] Discovery playlists
-- [ ] Automatic "play similar" functionality
 - [ ] Light theme
 
 ### Screenshots
