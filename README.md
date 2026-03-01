@@ -48,6 +48,8 @@ TIDAL_SECRET=Secret of tidal's application
 
 ACCESS_TOKEN_SECRET=A random string (HS256 base64 for example)
 REFRESH_TOKEN_SECRET=A different random string (HS256 base64 for example)
+
+LASTFM_API_KEY=Your last.fm API key
 ```
 
 They can be either set by having a `.env` file in the same directory as the binary, or you can set them yourself in another way.
