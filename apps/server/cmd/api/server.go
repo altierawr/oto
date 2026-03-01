@@ -47,6 +47,10 @@ func (app *application) serve() error {
 			app.recs.Stop()
 		}
 
+		if app.sessions != nil {
+			app.sessions.Stop()
+		}
+
 		app.wg.Wait()
 		shutdownError <- nil
 	}()

@@ -3,13 +3,13 @@ package main
 import (
 	"log/slog"
 	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/altierawr/oto/internal/auth"
 	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/recommendations"
+	"github.com/altierawr/oto/internal/sessions"
 	"github.com/altierawr/oto/internal/tidal"
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
@@ -40,13 +40,14 @@ type config struct {
 }
 
 type application struct {
-	config config
-	logger *slog.Logger
-	auth   auth.AuthService
-	wg     sync.WaitGroup
-	db     *database.DB
-	lastFm *api.Client
-	recs   *recommendations.Service
+	config   config
+	logger   *slog.Logger
+	auth     auth.AuthService
+	wg       sync.WaitGroup
+	db       *database.DB
+	lastFm   *api.Client
+	recs     *recommendations.Service
+	sessions *sessions.Service
 }
 
 func main() {
@@ -70,13 +71,6 @@ func main() {
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
-	}
-
-	err = os.RemoveAll(filepath.Join(os.TempDir(), "oto"))
-	if err != nil {
-		logger.Error("couldn't delete app temp directory",
-			"error", err.Error(),
-		)
 	}
 
 	var cfg config
@@ -153,6 +147,9 @@ func main() {
 		app.db.SetOnTidalTrackUpsert(app.recs.Enqueue)
 		app.background(app.recs.Run)
 	}
+
+	app.sessions = sessions.New(app.db, app.logger)
+	app.background(app.sessions.RunBackground)
 
 	createdAdmin, err := createAdminUser(app)
 	if err != nil {

@@ -11,6 +11,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var sessionExpiryTime time.Duration = 24 * time.Hour
+
 func (db *DB) CreateSession(userId uuid.UUID) (*data.Session, error) {
 	query := `
 		INSERT INTO sessions (id, user_id, expiry)
@@ -20,7 +22,7 @@ func (db *DB) CreateSession(userId uuid.UUID) (*data.Session, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	args := []any{uuid.New(), userId, data.UnixTime{Time: time.Now().Add(3 * time.Hour)}}
+	args := []any{uuid.New(), userId, data.UnixTime{Time: time.Now().Add(sessionExpiryTime)}}
 
 	session := data.Session{}
 	err := db.QueryRowContext(ctx, query, args...).Scan(
@@ -340,6 +342,41 @@ func (db *DB) GetSession(userId uuid.UUID, sessionId uuid.UUID) (*data.Session, 
 	return &session, nil
 }
 
+func (db *DB) DeleteExpiredSessions() (*[]data.Session, error) {
+	query := `
+		DELETE FROM sessions
+		WHERE expiry < $1
+		RETURNING id, created_at, updated_at, expiry`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, query, time.Now().Unix())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	sessions := []data.Session{}
+	for rows.Next() {
+		session := data.Session{}
+
+		err := rows.Scan(
+			&session.ID,
+			&session.CreatedAt,
+			&session.UpdatedAt,
+			&session.Expiry,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		sessions = append(sessions, session)
+	}
+
+	return &sessions, rows.Err()
+}
+
 func (db *DB) RefreshSession(userId uuid.UUID, sessionId uuid.UUID) (*data.Session, error) {
 	query := `
 		UPDATE sessions
@@ -353,7 +390,7 @@ func (db *DB) RefreshSession(userId uuid.UUID, sessionId uuid.UUID) (*data.Sessi
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	args := []any{data.UnixTime{Time: time.Now().Add(3 * time.Hour)}, userId, sessionId, time.Now().Unix()}
+	args := []any{data.UnixTime{Time: time.Now().Add(sessionExpiryTime)}, userId, sessionId, time.Now().Unix()}
 
 	session := data.Session{}
 	err := db.QueryRowContext(ctx, query, args...).Scan(
