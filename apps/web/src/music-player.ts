@@ -1,4 +1,5 @@
 import * as mp4box from "mp4box";
+import { v4 as uuidv4 } from "uuid";
 
 import type { Song, StreamResponse, SeekResponse } from "./types";
 
@@ -636,7 +637,7 @@ export class MusicPlayer {
 
   #getInitialPlaylistSongFromSong(song: Song): PlaylistSong {
     return {
-      id: window.crypto.randomUUID(),
+      id: uuidv4(),
       song,
       segments: [],
       timestampOffset: null,

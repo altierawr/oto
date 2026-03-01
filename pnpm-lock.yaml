@@ -64,6 +64,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.17
         version: 4.1.18
+      uuid:
+        specifier: ^13.0.0
+        version: 13.0.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -2454,6 +2457,10 @@ packages:
     resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  uuid@13.0.0:
+    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
+    hasBin: true
 
   vite-plugin-oxlint@1.6.0:
     resolution: {integrity: sha512-/lFnIzI2u4aLCzeateyC91p5mhC1GG4vS9GZS73xLGCW0Jrmp48bQacul4XRl1awvHpJyL0jdQ6U9PEL8uHSew==}
@@ -5325,6 +5332,8 @@ snapshots:
   use-sync-external-store@1.6.0(react@19.2.4):
     dependencies:
       react: 19.2.4
+
+  uuid@13.0.0: {}
 
   vite-plugin-oxlint@1.6.0(oxlint@1.43.0)(rolldown-vite@7.2.5(@types/node@24.10.11)(jiti@2.6.1)(yaml@2.8.2)):
     dependencies:
