@@ -59,7 +59,7 @@ const useFavoriteTrack = (trackId?: number) => {
   return {
     isFavorited: query.data ?? false,
     isLoading: query.isLoading,
-    fetchIsFavoreite: query.refetch,
+    fetchIsFavorite: query.refetch,
     isFetched: query.isFetched,
     toggleFavorite: () => {
       if (trackId !== undefined) {

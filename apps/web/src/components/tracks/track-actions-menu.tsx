@@ -18,7 +18,7 @@ type TProps = {
 
 const TrackActionsMenu = ({ track, triggerRender }: TProps) => {
   const { player } = usePlayerState();
-  const { fetchIsFavoreite, isFavorited, isLoading, isFetched, toggleFavorite } = useFavoriteTrack(track.id);
+  const { fetchIsFavorite, isFavorited, isLoading, isFetched, toggleFavorite } = useFavoriteTrack(track.id);
   const { addTrackToPlaylist } = useTrackPlaylistActions();
   const [isCreatePlaylistDialogOpen, setIsCreatePlaylistDialogOpen] = useState(false);
 
@@ -55,7 +55,7 @@ const TrackActionsMenu = ({ track, triggerRender }: TProps) => {
           render={triggerRender}
           onMouseOver={() => {
             if (!isLoading && !isFetched) {
-              fetchIsFavoreite();
+              fetchIsFavorite();
             }
           }}
         />

@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { HeartIcon, ListIcon } from "lucide-react";
+import { useEffect } from "react";
 
 import useFavoriteTrack from "../../hooks/useFavoriteTrack";
 import { useGeneralStore, usePlayerState } from "../../store";
@@ -16,7 +17,13 @@ type TProps = {
 const MusicControlsDesktop = ({ className }: TProps) => {
   const { playerState, song } = usePlayerState();
   const generalState = useGeneralStore();
-  const { isFavorited, toggleFavorite } = useFavoriteTrack(song?.id);
+  const { isFavorited, toggleFavorite, fetchIsFavorite } = useFavoriteTrack(song?.id);
+
+  useEffect(() => {
+    if (song) {
+      fetchIsFavorite();
+    }
+  }, [song, fetchIsFavorite]);
 
   const handleQueueClick = () => {
     generalState.setIsSongQueueVisible(!generalState.isSongQueueVisible);
