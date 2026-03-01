@@ -1,5 +1,15 @@
 # web
 
+## 0.7.0
+
+### Minor Changes
+
+- 1297540: Adjusted autoplay to play more diverse tracks and avoid playing too many tracks from the same albums. The autoplay also now places higher weight on the original tracks selected to be played by the user.
+
+### Patch Changes
+
+- 581aaf9: Fixed an issue where the favorite button in the desktop music controls bar wasn't updating properly.
+
 ## 0.6.0
 
 ### Minor Changes

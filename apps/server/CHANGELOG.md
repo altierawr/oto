@@ -1,5 +1,11 @@
 # server
 
+## 0.6.0
+
+### Minor Changes
+
+- 1297540: Adjusted autoplay to play more diverse tracks and avoid playing too many tracks from the same albums. The autoplay also now places higher weight on the original tracks selected to be played by the user.
+
 ## 0.5.0
 
 ### Minor Changes
