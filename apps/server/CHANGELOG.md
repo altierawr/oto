@@ -1,5 +1,11 @@
 # server
 
+## 0.5.0
+
+### Minor Changes
+
+- bdef899: Expired sessions are now cleaned up every 30 minutes. The cleanup deletes stream files and frees session data from memory.
+
 ## 0.4.0
 
 ### Minor Changes
