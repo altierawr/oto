@@ -526,7 +526,9 @@ export class MusicPlayer {
 
       if (resp.ok) {
         const song = (await resp.json()) as Song;
-        this.addToQueue(song);
+        this.addToQueue(song, {
+          isAutoplay: true,
+        });
       } else {
         const error = (await resp.json()).error;
         console.error("Something went wrong with autoplay request:", error);
@@ -1040,7 +1042,12 @@ export class MusicPlayer {
     await this.#jumpTrack(1);
   }
 
-  addToQueue(song: Song) {
+  addToQueue(
+    song: Song,
+    options?: {
+      isAutoplay?: boolean;
+    },
+  ) {
     const entry = this.#getInitialPlaylistSongFromSong(song);
     this.playlist.push(entry);
     if (this.originalPlaylist) {
@@ -1055,6 +1062,7 @@ export class MusicPlayer {
         body: JSON.stringify({
           trackId: song.id,
           position,
+          isAutoplay: options?.isAutoplay,
         }),
       });
 

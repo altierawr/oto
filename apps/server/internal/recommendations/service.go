@@ -18,7 +18,7 @@ import (
 const (
 	defaultQueueSize = 256
 	maxAttempts      = 3
-	workerCount      = 4
+	workerCount      = 10
 )
 
 var retryBackoffs = []time.Duration{
@@ -49,7 +49,7 @@ func New(db *database.DB, lastFm *api.Client, logger *slog.Logger) *Service {
 		db:      db,
 		lastFm:  lastFm,
 		logger:  logger,
-		limiter: rate.NewLimiter(rate.Every(200*time.Millisecond), 1),
+		limiter: rate.NewLimiter(rate.Every(100*time.Millisecond), 1),
 		queue:   make(chan queueItem, defaultQueueSize),
 		stop:    make(chan struct{}),
 		done:    make(chan struct{}),

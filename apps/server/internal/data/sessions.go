@@ -5,10 +5,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type SessionTrack struct {
+	types.TidalSong
+	IsAutoplay bool `json:"isAutoplay"`
+}
+
 type Session struct {
-	ID        uuid.UUID         `json:"id"`
-	CreatedAt UnixTime          `json:"createdAt"`
-	UpdatedAt UnixTime          `json:"updatedAt"`
-	Expiry    UnixTime          `json:"expiry"`
-	Tracks    []types.TidalSong `json:"tracks"`
+	ID        uuid.UUID      `json:"id"`
+	CreatedAt UnixTime       `json:"createdAt"`
+	UpdatedAt UnixTime       `json:"updatedAt"`
+	Expiry    UnixTime       `json:"expiry"`
+	Tracks    []SessionTrack `json:"tracks"`
 }

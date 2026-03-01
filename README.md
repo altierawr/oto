@@ -50,11 +50,12 @@ ACCESS_TOKEN_SECRET=A random string (HS256 base64 for example)
 REFRESH_TOKEN_SECRET=A different random string (HS256 base64 for example)
 
 LASTFM_API_KEY=Your last.fm API key
+PORT=Optional, defaults to 3003
 ```
 
 They can be either set by having a `.env` file in the same directory as the binary, or you can set them yourself in another way.
 
-Then, just run the binary. You can verify that the server is working by sending a GET request to `http://localhost:3003/v1/healthcheck`.
+Then, just run the binary. You can verify that the server is working by sending a GET request to `http://localhost:3003/v1/healthcheck` (or the port from `PORT` if set).
 
 ### Web app
 Requirements: `pnpm` installed on your system to build the web app

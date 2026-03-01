@@ -1,0 +1,2 @@
+ALTER TABLE session_tracks
+  ADD COLUMN is_autoplay INTEGER NOT NULL DEFAULT 0;

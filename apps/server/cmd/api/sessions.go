@@ -3,14 +3,25 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"sort"
 	"strings"
 
+	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/tidal"
 	"github.com/altierawr/oto/internal/types"
 	"github.com/hbollon/go-edlib"
+)
+
+const (
+	autoplaySeedAutoplayWeight      = 0.08
+	autoplaySeedRecencyDecay        = 10.0
+	autoplayDiversityWindowSize     = 20
+	autoplayArtistPenaltyFactor     = 0.4
+	autoplayAlbumPenaltyFactor      = 1.4
+	autoplayRecommendationFindLimit = 3
 )
 
 func (app *application) createSessionHandler(w http.ResponseWriter, r *http.Request) {
@@ -160,8 +171,9 @@ func (app *application) addSessionTrackHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	var input struct {
-		TrackId  *int64 `json:"trackId"`
-		Position *int64 `json:"position"`
+		TrackId    *int64 `json:"trackId"`
+		Position   *int64 `json:"position"`
+		IsAutoplay *bool  `json:"isAutoplay"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -197,7 +209,12 @@ func (app *application) addSessionTrackHandler(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	err = app.db.AddSessionTrack(*userId, *sessionId, *track, *input.Position)
+	isAutoplay := false
+	if input.IsAutoplay != nil && *input.IsAutoplay {
+		isAutoplay = true
+	}
+
+	err = app.db.AddSessionTrack(*userId, *sessionId, *track, *input.Position, isAutoplay)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrRecordNotFound):
@@ -297,8 +314,16 @@ func (app *application) getSessionAutoplayTrackHandler(w http.ResponseWriter, r 
 	}
 
 	recommendationScores := map[int]*autoplayRecommendationScore{}
-	missingRecommendationTrackIDs := []int64{}
-	for _, sessionTrack := range session.Tracks {
+	missingRecommendationTracks := []data.SessionTrack{}
+	albumOccurrences := make(map[int]int, len(session.Tracks))
+	sessionTrackIndices := make(map[int]int, len(session.Tracks))
+
+	for idx, sessionTrack := range session.Tracks {
+		albumOccurrences[sessionTrack.Album.ID]++
+		sessionTrackIndices[sessionTrack.ID] = idx
+	}
+
+	for idx, sessionTrack := range session.Tracks {
 		recommendations, err := app.db.GetLastfmRecommendationsForTidalTrack(int64(sessionTrack.ID))
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
@@ -306,44 +331,63 @@ func (app *application) getSessionAutoplayTrackHandler(w http.ResponseWriter, r 
 		}
 
 		if len(recommendations) == 0 {
-			missingRecommendationTrackIDs = append(missingRecommendationTrackIDs, int64(sessionTrack.ID))
+			missingRecommendationTracks = append(missingRecommendationTracks, sessionTrack)
 			continue
 		}
 
-		addAutoplayRecommendationScores(recommendationScores, recommendations)
+		addAutoplayRecommendationScores(
+			recommendationScores,
+			recommendations,
+			sessionTrack,
+			idx,
+			len(session.Tracks),
+			albumOccurrences[sessionTrack.Album.ID],
+		)
 	}
 
-	bestResult, err := app.getBestAutoplayTrack(recommendationScores, sessionTrackIds)
+	bestResult, err := app.getBestAutoplayTrack(recommendationScores, sessionTrackIds, session.Tracks)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
 	if bestResult == nil {
-		if len(missingRecommendationTrackIDs) > 0 {
+		if len(missingRecommendationTracks) > 0 {
 			app.logger.Info("fetching recommendations for autoplay because local recommendations don't exist",
 				"sessionId", sessionId,
 				"userId", userId)
 		}
 
-		for _, trackID := range missingRecommendationTrackIDs {
-			err := app.recs.SyncIfMissing(r.Context(), trackID)
+		for _, track := range missingRecommendationTracks {
+			err := app.recs.SyncIfMissing(r.Context(), int64(track.ID))
 			if err != nil {
 				app.logger.Error("couldn't fetch missing recommendations for autoplay",
 					"error", err.Error(),
-					"trackId", trackID)
+					"trackId", track)
 				continue
 			}
 
-			recommendations, err := app.db.GetLastfmRecommendationsForTidalTrack(trackID)
+			recommendations, err := app.db.GetLastfmRecommendationsForTidalTrack(int64(track.ID))
 			if err != nil {
 				app.serverErrorResponse(w, r, err)
 				return
 			}
 
-			addAutoplayRecommendationScores(recommendationScores, recommendations)
+			trackIndex, ok := sessionTrackIndices[track.ID]
+			if !ok {
+				continue
+			}
 
-			bestResult, err = app.getBestAutoplayTrack(recommendationScores, sessionTrackIds)
+			addAutoplayRecommendationScores(
+				recommendationScores,
+				recommendations,
+				track,
+				trackIndex,
+				len(session.Tracks),
+				albumOccurrences[track.Album.ID],
+			)
+
+			bestResult, err = app.getBestAutoplayTrack(recommendationScores, sessionTrackIds, session.Tracks)
 			if err != nil {
 				app.serverErrorResponse(w, r, err)
 				return
@@ -375,9 +419,18 @@ type autoplayRecommendationScore struct {
 	TotalMatch    float64
 }
 
+type autoplayQueueStats struct {
+	artistCounts map[string]int
+	albumCounts  map[int]int
+}
+
 func addAutoplayRecommendationScores(
 	recommendationScores map[int]*autoplayRecommendationScore,
 	recommendations []database.TidalLastfmRecommendation,
+	sessionTrack data.SessionTrack,
+	index int,
+	sessionLength int,
+	albumOccurrences int,
 ) {
 	for _, recommendation := range recommendations {
 		score, ok := recommendationScores[recommendation.LastfmTrack.ID]
@@ -391,13 +444,84 @@ func addAutoplayRecommendationScores(
 			recommendationScores[recommendation.LastfmTrack.ID] = score
 		}
 
-		score.TotalMatch += recommendation.Match
+		match := recommendation.Match * calculateAutoplaySeedWeight(sessionTrack, index, sessionLength, albumOccurrences)
+
+		score.TotalMatch += match
 	}
+}
+
+func calculateAutoplaySeedWeight(sessionTrack data.SessionTrack, index int, sessionLength int, albumOccurrences int) float64 {
+	if sessionLength <= 0 {
+		return 0
+	}
+
+	albumPenalty := 1.0
+	autoplayPenalty := 1.0
+	recencyPenalty := 1.0
+	if sessionTrack.IsAutoplay {
+		autoplayPenalty = autoplaySeedAutoplayWeight
+		distanceFromTail := float64(sessionLength - 1 - index)
+		if distanceFromTail < 0 {
+			distanceFromTail = 0
+		}
+		recencyPenalty = math.Exp(-distanceFromTail / autoplaySeedRecencyDecay)
+
+		if albumOccurrences > 0 {
+			albumPenalty = 1.0 / float64(albumOccurrences)
+		}
+	}
+
+	return albumPenalty * autoplayPenalty * recencyPenalty
+}
+
+func getTrackPrimaryArtistName(track types.TidalSong) string {
+	if len(track.Artists) == 0 {
+		return ""
+	}
+
+	return strings.ToLower(strings.TrimSpace(track.Artists[0].Name))
+}
+
+func buildAutoplayQueueStats(tracks []data.SessionTrack) autoplayQueueStats {
+	stats := autoplayQueueStats{
+		artistCounts: map[string]int{},
+		albumCounts:  map[int]int{},
+	}
+
+	start := 0
+	if len(tracks) > autoplayDiversityWindowSize {
+		start = len(tracks) - autoplayDiversityWindowSize
+	}
+
+	for _, track := range tracks[start:] {
+		artistName := getTrackPrimaryArtistName(track.TidalSong)
+		if artistName != "" {
+			stats.artistCounts[artistName]++
+		}
+		stats.albumCounts[track.Album.ID]++
+	}
+
+	return stats
+}
+
+func calculateAutoplayDiversityPenalty(track *types.TidalSong, queueStats autoplayQueueStats) float64 {
+	artistPenalty := 1.0
+	albumPenalty := 1.0
+
+	artistName := getTrackPrimaryArtistName(*track)
+	if artistName != "" {
+		artistPenalty = 1.0 / (1.0 + autoplayArtistPenaltyFactor*float64(queueStats.artistCounts[artistName]))
+	}
+
+	albumPenalty = 1.0 / (1.0 + autoplayAlbumPenaltyFactor*float64(queueStats.albumCounts[track.Album.ID]))
+
+	return artistPenalty * albumPenalty
 }
 
 func (app *application) getBestAutoplayTrack(
 	recommendationScores map[int]*autoplayRecommendationScore,
 	sessionTrackIDs map[int64]struct{},
+	sessionTracks []data.SessionTrack,
 ) (*types.TidalSong, error) {
 	if len(recommendationScores) == 0 {
 		return nil, nil
@@ -416,36 +540,58 @@ func (app *application) getBestAutoplayTrack(
 		return scores[i].TotalMatch > scores[j].TotalMatch
 	})
 
+	queueStats := buildAutoplayQueueStats(sessionTracks)
+	var bestTrack *types.TidalSong
+	bestAdjustedScore := 0.0
+	bestRawScore := 0.0
+	findAttempts := 0
+
 	for _, score := range scores {
 		if score.ArtistName == "" || score.Title == "" {
 			continue
 		}
 
+		var candidateTrack *types.TidalSong
 		dbTrack, err := app.db.GetTidalTrackByArtistAndTitle(score.ArtistName, score.Title)
 		if err == nil {
 			// if the track already exists in the session we don't want to recommend it
 			if _, exists := sessionTrackIDs[int64(dbTrack.ID)]; !exists {
-				return dbTrack, nil
+				candidateTrack = dbTrack
+			}
+		} else {
+			if !errors.Is(err, database.ErrRecordNotFound) {
+				return nil, err
 			}
 
+			if findAttempts >= autoplayRecommendationFindLimit {
+				continue
+			}
+
+			findAttempts++
+			track, err := app.findTidalTrackForRecommendation(score.ArtistName, score.Title, sessionTrackIDs)
+			if err != nil {
+				return nil, err
+			}
+
+			if track != nil {
+				candidateTrack = track
+			}
+		}
+
+		if candidateTrack == nil {
 			continue
 		}
 
-		if !errors.Is(err, database.ErrRecordNotFound) {
-			return nil, err
-		}
-
-		track, err := app.findTidalTrackForRecommendation(score.ArtistName, score.Title, sessionTrackIDs)
-		if err != nil {
-			return nil, err
-		}
-
-		if track != nil {
-			return track, nil
+		adjustedScore := score.TotalMatch * calculateAutoplayDiversityPenalty(candidateTrack, queueStats)
+		if bestTrack == nil || adjustedScore > bestAdjustedScore ||
+			(adjustedScore == bestAdjustedScore && score.TotalMatch > bestRawScore) {
+			bestTrack = candidateTrack
+			bestAdjustedScore = adjustedScore
+			bestRawScore = score.TotalMatch
 		}
 	}
 
-	return nil, nil
+	return bestTrack, nil
 }
 
 func (app *application) findTidalTrackForRecommendation(

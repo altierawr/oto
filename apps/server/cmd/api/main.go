@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"sync"
 
 	"github.com/altierawr/oto/internal/auth"
@@ -125,9 +127,13 @@ func main() {
 
 	cfg.limiter.enabled = true
 	cfg.limiter.rps = 6
-	cfg.limiter.burst = 12
+	cfg.limiter.burst = 24
 
-	cfg.port = 3003
+	cfg.port, err = getPort()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 
 	app := &application{
 		logger: logger,
@@ -161,7 +167,31 @@ func main() {
 		logger.Info("created admin user")
 	}
 
-	app.serve()
+	err = app.serve()
+	if err != nil {
+		logger.Error("server stopped with error", "error", err)
+		os.Exit(1)
+	}
+}
+
+func getPort() (int, error) {
+	const defaultPort = 3003
+
+	rawPort, found := os.LookupEnv("PORT")
+	if !found {
+		return defaultPort, nil
+	}
+
+	port, err := strconv.Atoi(rawPort)
+	if err != nil {
+		return 0, fmt.Errorf("invalid PORT value %q: expected integer", rawPort)
+	}
+
+	if port < 1 || port > 65535 {
+		return 0, fmt.Errorf("invalid PORT value %q: must be between 1 and 65535", rawPort)
+	}
+
+	return port, nil
 }
 
 func createAdminUser(app *application) (bool, error) {

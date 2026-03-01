@@ -38,7 +38,7 @@ func (db *DB) CreateSession(userId uuid.UUID) (*data.Session, error) {
 	return &session, nil
 }
 
-func (db *DB) AddSessionTrack(userId uuid.UUID, sessionId uuid.UUID, track types.TidalSong, position int64) error {
+func (db *DB) AddSessionTrack(userId uuid.UUID, sessionId uuid.UUID, track types.TidalSong, position int64, isAutoplay bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -109,10 +109,10 @@ func (db *DB) AddSessionTrack(userId uuid.UUID, sessionId uuid.UUID, track types
 	}
 
 	insertTrackQuery := `
-		INSERT INTO session_tracks (session_id, track_id, position)
-		VALUES ($1, $2, $3)`
+		INSERT INTO session_tracks (session_id, track_id, position, is_autoplay)
+		VALUES ($1, $2, $3, $4)`
 
-	_, err = tx.ExecContext(ctx, insertTrackQuery, sessionId, track.ID, position)
+	_, err = tx.ExecContext(ctx, insertTrackQuery, sessionId, track.ID, position, isAutoplay)
 	if err != nil {
 		return err
 	}
@@ -289,7 +289,7 @@ func (db *DB) GetSession(userId uuid.UUID, sessionId uuid.UUID) (*data.Session, 
 	args := []any{userId, sessionId, time.Now().Unix()}
 
 	session := data.Session{
-		Tracks: []types.TidalSong{},
+		Tracks: []data.SessionTrack{},
 	}
 
 	err := db.QueryRowContext(ctx, baseQuery, args...).
@@ -308,11 +308,11 @@ func (db *DB) GetSession(userId uuid.UUID, sessionId uuid.UUID) (*data.Session, 
 	}
 
 	tracksQuery := `
-		SELECT tidal_tracks.payload
+		SELECT tidal_tracks.payload, session_tracks.is_autoplay
 		FROM session_tracks
 		INNER JOIN tidal_tracks ON tidal_tracks.id = session_tracks.track_id
 		WHERE session_tracks.session_id = $1
-		ORDER BY session_tracks.created_at ASC`
+		ORDER BY session_tracks.position ASC`
 
 	rows, err := db.QueryContext(ctx, tracksQuery, sessionId)
 	if err != nil {
@@ -322,8 +322,9 @@ func (db *DB) GetSession(userId uuid.UUID, sessionId uuid.UUID) (*data.Session, 
 
 	for rows.Next() {
 		var payload string
+		var isAutoplay bool
 
-		if err := rows.Scan(&payload); err != nil {
+		if err := rows.Scan(&payload, &isAutoplay); err != nil {
 			return nil, err
 		}
 
@@ -332,7 +333,10 @@ func (db *DB) GetSession(userId uuid.UUID, sessionId uuid.UUID) (*data.Session, 
 			return nil, err
 		}
 
-		session.Tracks = append(session.Tracks, track)
+		session.Tracks = append(session.Tracks, data.SessionTrack{
+			TidalSong:  track,
+			IsAutoplay: isAutoplay,
+		})
 	}
 
 	if err := rows.Err(); err != nil {
