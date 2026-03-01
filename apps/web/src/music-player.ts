@@ -88,6 +88,29 @@ export class MusicPlayer {
       this.#initMediaSource();
     });
 
+    if ("mediaSession" in navigator) {
+      try {
+        navigator.mediaSession.setActionHandler("play", () => {
+          if (this.#audio.paused) {
+            this.togglePlayPause();
+          }
+        });
+        navigator.mediaSession.setActionHandler("pause", () => {
+          if (!this.#audio.paused) {
+            this.togglePlayPause();
+          }
+        });
+        navigator.mediaSession.setActionHandler("previoustrack", () => {
+          this.prevTrack();
+        });
+        navigator.mediaSession.setActionHandler("nexttrack", () => {
+          this.nextTrack();
+        });
+      } catch (err) {
+        console.warn("Media Session setup error", err);
+      }
+    }
+
     document.addEventListener("keydown", (e) => {
       const target = e.target as HTMLElement;
       if (
@@ -108,6 +131,10 @@ export class MusicPlayer {
       } else if (e.code === "ArrowLeft") {
         e.preventDefault();
         this.seekBackward();
+      } else if (e.code === "MediaTrackNext") {
+        this.nextTrack();
+      } else if (e.code === "MediaTrackPrevious") {
+        this.prevTrack();
       }
     });
   }
