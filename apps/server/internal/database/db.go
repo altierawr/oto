@@ -25,9 +25,14 @@ var (
 )
 
 type DB struct {
-	dsn    string
-	logger *slog.Logger
+	dsn                string
+	logger             *slog.Logger
+	onTidalTrackUpsert func(trackID int64)
 	*sqlx.DB
+}
+
+func (db *DB) SetOnTidalTrackUpsert(fn func(trackID int64)) {
+	db.onTidalTrackUpsert = fn
 }
 
 func ensureDBPath() (string, error) {
@@ -67,7 +72,11 @@ func New(logger *slog.Logger) (*DB, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	db, err := sqlx.ConnectContext(ctx, "sqlite3", fmt.Sprintf("%s?_fk=1", dbPath))
+	db, err := sqlx.ConnectContext(
+		ctx,
+		"sqlite3",
+		fmt.Sprintf("%s?_fk=1&_busy_timeout=10000&_journal_mode=WAL", dbPath),
+	)
 	if err != nil {
 		return nil, err
 	}

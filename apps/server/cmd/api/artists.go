@@ -44,6 +44,12 @@ func (app *application) viewArtistTopTracksHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
+	err = app.db.InsertTidalTracks(tracks.Items, nil)
+	if err != nil {
+		app.logger.Error("something went wrong inserting tidal tracks in view artist top tracks handler",
+			"error", err.Error())
+	}
+
 	err = app.writeJSON(w, 200, tracks, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

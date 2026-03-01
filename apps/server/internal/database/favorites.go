@@ -322,10 +322,6 @@ func (db *DB) RemoveFavoriteTrack(userId uuid.UUID, trackId int64) error {
 		return err
 	}
 
-	if err := tryDeleteTidalTrackIfUnreferenced(ctx, tx, trackId); err != nil {
-		return err
-	}
-
 	return tx.Commit()
 }
 

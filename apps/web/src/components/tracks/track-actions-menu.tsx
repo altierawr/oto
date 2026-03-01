@@ -55,7 +55,6 @@ const TrackActionsMenu = ({ track, triggerRender }: TProps) => {
           render={triggerRender}
           onMouseOver={() => {
             if (!isLoading && !isFetched) {
-              console.log("fetching");
               fetchIsFavoreite();
             }
           }}

@@ -25,6 +25,13 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/refresh", app.refreshTokensHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/invitecode", app.requireAdminUser(app.createInviteTokenHandler))
 
+	router.HandlerFunc(http.MethodPost, "/v1/sessions", app.requireAuthenticatedUser(app.createSessionHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/sessions/refresh", app.requireAuthenticatedUser(app.refreshSessionHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/sessions/tracks", app.requireAuthenticatedUser(app.setSessionTracksHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/sessions/tracks/add", app.requireAuthenticatedUser(app.addSessionTrackHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/sessions/tracks/remove", app.requireAuthenticatedUser(app.removeSessionTrackHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/sessions/autoplay", app.requireAuthenticatedUser(app.getSessionAutoplayTrackHandler))
+
 	router.HandlerFunc(http.MethodGet, "/v1/search", app.requireAuthenticatedUser(app.searchHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/artists/:id", app.requireAuthenticatedUser(app.viewArtistHandler))
@@ -65,5 +72,5 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 
-	return app.enableCORS(app.rateLimit(app.authenticate(router)))
+	return app.enableCORS(app.rateLimit(app.authenticate(app.parseSession(router))))
 }

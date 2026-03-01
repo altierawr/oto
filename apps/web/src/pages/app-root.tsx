@@ -1,6 +1,8 @@
-import { Toast } from "@awlt/design";
+import { Toast, toastManager } from "@awlt/design";
 import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router";
+
+import { request } from "@/utils/http";
 
 import AudioDebugger from "../components/debugger";
 import MusicControls from "../components/music-controls";
@@ -37,6 +39,50 @@ const AppRoot = () => {
         setLocation("home");
     }
   }, [hasSetInitialLocation, location.pathname, setLocation]);
+
+  useEffect(() => {
+    let lastRenewed = 0;
+
+    const maybeRenew = async () => {
+      if (Date.now() - lastRenewed >= 15 * 60 * 1000) {
+        lastRenewed = Date.now();
+
+        const resp = await request("/sessions/refresh", {
+          method: "POST",
+        });
+
+        if (resp.ok) {
+          console.info("Renewed session");
+        } else if (resp.status === 404) {
+          const createResp = await request("/sessions", {
+            method: "POST",
+          });
+
+          if (createResp.ok) {
+            console.info("Created new session");
+          } else {
+            toastManager.add({
+              title: "Failed to create session",
+              description:
+                "Something went wrong while creating a session for your app. Music playback will probably not work. You should try to log out and log back in",
+              type: "error",
+            });
+          }
+        }
+      }
+    };
+
+    maybeRenew();
+
+    const interval = setInterval(maybeRenew, 60 * 1000);
+
+    document.addEventListener("visibilitychange", maybeRenew);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", maybeRenew);
+    };
+  }, []);
 
   return (
     <>

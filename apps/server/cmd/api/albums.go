@@ -19,6 +19,12 @@ func (app *application) viewAlbumHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	err = app.db.InsertTidalTracks(album.Songs, nil)
+	if err != nil {
+		app.logger.Error("something went wrong inserting tidal tracks in view album handler",
+			"error", err.Error())
+	}
+
 	err = app.writeJSON(w, 200, album, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

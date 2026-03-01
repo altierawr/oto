@@ -13,7 +13,7 @@ import (
 
 func (app *application) serve() error {
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", app.config.port),
+		Addr:         fmt.Sprintf("0.0.0.0:%d", app.config.port),
 		Handler:      app.routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
@@ -42,6 +42,10 @@ func (app *application) serve() error {
 		app.logger.Info("completing background tasks",
 			"addr", srv.Addr,
 		)
+
+		if app.recs != nil {
+			app.recs.Stop()
+		}
 
 		app.wg.Wait()
 		shutdownError <- nil

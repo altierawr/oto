@@ -45,7 +45,9 @@ export class MusicPlayer {
   #lastPlayingSongIndex: number | null = null;
   #bufferOperationsQueue: Promise<void> = Promise.resolve();
   #segmentFetchQueue: Promise<void> = Promise.resolve();
+  #autoplayQueue: Promise<void> = Promise.resolve();
   #fetchQueueGeneration = 0;
+  #autoplayQueueGeneration = 0;
   #isBufferOperationsLocked = false;
   #isFetchOperationsLocked = false;
   #isResetting = false;
@@ -114,6 +116,23 @@ export class MusicPlayer {
     const promise = this.#bufferOperationsQueue.then(operation);
 
     this.#bufferOperationsQueue = promise.then(
+      () => {},
+      () => {},
+    );
+
+    return promise;
+  }
+
+  #enqueueSessionRequest<T>(operation: () => Promise<T>): Promise<T> {
+    const generation = this.#autoplayQueueGeneration;
+    const promise = this.#autoplayQueue.then(() => {
+      if (generation !== this.#autoplayQueueGeneration) {
+        return undefined as unknown as T;
+      }
+      return operation();
+    });
+
+    this.#autoplayQueue = promise.then(
       () => {},
       () => {},
     );
@@ -492,6 +511,27 @@ export class MusicPlayer {
     this.#notifyTrackChange(index);
 
     this.#updateTrackTimestampOffsets(index);
+
+    // Add autoplay
+    if (!this.#isRepeatEnabled && index === this.playlist.length - 1) {
+      this.#addAutoplayTrack();
+    }
+  }
+
+  async #addAutoplayTrack() {
+    return this.#enqueueSessionRequest(async () => {
+      const resp = await request("/sessions/autoplay", {
+        method: "POST",
+      });
+
+      if (resp.ok) {
+        const song = (await resp.json()) as Song;
+        this.addToQueue(song);
+      } else {
+        const error = (await resp.json()).error;
+        console.error("Something went wrong with autoplay request:", error);
+      }
+    });
   }
 
   #notifyTrackChange(index: number) {
@@ -604,6 +644,20 @@ export class MusicPlayer {
 
     this.playlist = songs.map((song) => this.#getInitialPlaylistSongFromSong(song));
 
+    this.#enqueueSessionRequest(async () => {
+      const setSessionTracksResp = await request("/sessions/tracks", {
+        method: "POST",
+        body: JSON.stringify({
+          trackIds: songs.map((song) => song.id),
+        }),
+      });
+
+      if (!setSessionTracksResp.ok) {
+        const json = await setSessionTracksResp.json();
+        console.error("Couldn't set session tracks:", json);
+      }
+    });
+
     if (this.#isShuffleEnabled && index === undefined) {
       this.originalPlaylist = [...this.playlist];
       this.playlist = shuffleArray([...this.playlist]);
@@ -678,6 +732,10 @@ export class MusicPlayer {
     this.#fetchQueueGeneration++;
     await this.#segmentFetchQueue.catch(() => {});
     this.#segmentFetchQueue = Promise.resolve();
+
+    this.#autoplayQueueGeneration++;
+    await this.#autoplayQueue.catch(() => {});
+    this.#autoplayQueue = Promise.resolve();
   }
 
   togglePlayPause() {
@@ -989,11 +1047,43 @@ export class MusicPlayer {
       this.originalPlaylist.push(entry);
     }
 
+    const position = this.playlist.length - 1;
+
+    this.#enqueueSessionRequest(async () => {
+      const addSessionTrackResp = await request("/sessions/tracks/add", {
+        method: "POST",
+        body: JSON.stringify({
+          trackId: song.id,
+          position,
+        }),
+      });
+
+      if (!addSessionTrackResp.ok) {
+        const json = await addSessionTrackResp.json();
+        console.error("Couldn't add session track", song.title, ":", json);
+      }
+    });
+
     this.#updatePlayerStatePlaylist();
   }
 
   async playNext(song: Song) {
     const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
+
+    this.#enqueueSessionRequest(async () => {
+      const addSessionTrackResp = await request("/sessions/tracks/add", {
+        method: "POST",
+        body: JSON.stringify({
+          trackId: song.id,
+          position: currentIndex !== null ? currentIndex + 1 : 0,
+        }),
+      });
+
+      if (!addSessionTrackResp.ok) {
+        const json = await addSessionTrackResp.json();
+        console.error("Couldn't add session track", song.title, ":", json);
+      }
+    });
 
     // If nothing is playing, just add to the beginning
     if (currentIndex === null) {

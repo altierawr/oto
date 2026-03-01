@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -34,16 +33,6 @@ type TrackPlaylist struct {
 	ID        int64    `json:"id"`
 	Name      string   `json:"name"`
 	CoverURLs []string `json:"coverUrls"`
-}
-
-func unmarshalTrackPayload(payload string) (types.TidalSong, error) {
-	var track types.TidalSong
-	err := json.Unmarshal([]byte(payload), &track)
-	if err != nil {
-		return types.TidalSong{}, err
-	}
-
-	return track, nil
 }
 
 func appendUniqueCoverURL(coverURLs []string, seen map[string]struct{}, cover string) []string {
@@ -267,38 +256,10 @@ func (db *DB) DeletePlaylist(userID uuid.UUID, playlistID int64) error {
 		return ErrRecordNotFound
 	}
 
-	trackIDs := map[int64]struct{}{}
-	getTracksQuery := `SELECT track_id FROM playlist_tracks WHERE playlist_id = $1`
-	rows, err := tx.QueryContext(ctx, getTracksQuery, playlistID)
-	if err != nil {
-		return err
-	}
-
-	for rows.Next() {
-		var trackID int64
-		if err := rows.Scan(&trackID); err != nil {
-			rows.Close()
-			return err
-		}
-		trackIDs[trackID] = struct{}{}
-	}
-
-	if err := rows.Err(); err != nil {
-		rows.Close()
-		return err
-	}
-	rows.Close()
-
 	deletePlaylistQuery := `DELETE FROM playlists WHERE user_id = $1 AND id = $2`
 	_, err = tx.ExecContext(ctx, deletePlaylistQuery, userID, playlistID)
 	if err != nil {
 		return err
-	}
-
-	for trackID := range trackIDs {
-		if err := tryDeleteTidalTrackIfUnreferenced(ctx, tx, trackID); err != nil {
-			return err
-		}
 	}
 
 	return tx.Commit()
@@ -307,11 +268,6 @@ func (db *DB) DeletePlaylist(userID uuid.UUID, playlistID int64) error {
 func (db *DB) AddTrackToPlaylist(userID uuid.UUID, playlistID int64, track *types.TidalSong) error {
 	if track == nil {
 		return errors.New("track is nil")
-	}
-
-	payload, err := marshalPayload(track)
-	if err != nil {
-		return err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -334,12 +290,7 @@ func (db *DB) AddTrackToPlaylist(userID uuid.UUID, playlistID int64, track *type
 		return ErrRecordNotFound
 	}
 
-	upsertTrackQuery := `
-		INSERT INTO tidal_tracks (id, payload, updated_at)
-		VALUES ($1, $2, unixepoch())
-		ON CONFLICT(id) DO UPDATE
-		SET payload = excluded.payload, updated_at = excluded.updated_at`
-	_, err = tx.ExecContext(ctx, upsertTrackQuery, track.ID, payload)
+	err = db.InsertTidalTrack(track, tx)
 	if err != nil {
 		return err
 	}
@@ -407,10 +358,6 @@ func (db *DB) RemoveTrackFromPlaylist(userID uuid.UUID, playlistID int64, trackI
 	updatePlaylistQuery := `UPDATE playlists SET updated_at = unixepoch() WHERE id = $1`
 	_, err = tx.ExecContext(ctx, updatePlaylistQuery, playlistID)
 	if err != nil {
-		return err
-	}
-
-	if err := tryDeleteTidalTrackIfUnreferenced(ctx, tx, trackID); err != nil {
 		return err
 	}
 

@@ -48,3 +48,19 @@ func (app *application) contextGetUserRole(r *http.Request) UserRole {
 
 	return role
 }
+
+const sessionIdContextKey = contextKey("sessionId")
+
+func (app *application) contextSetSessionId(r *http.Request, id *uuid.UUID) *http.Request {
+	ctx := context.WithValue(r.Context(), sessionIdContextKey, id)
+	return r.WithContext(ctx)
+}
+
+func (app *application) contextGetSessionId(r *http.Request) *uuid.UUID {
+	id, ok := r.Context().Value(sessionIdContextKey).(*uuid.UUID)
+	if !ok {
+		return nil
+	}
+
+	return id
+}

@@ -9,6 +9,7 @@ import (
 	"github.com/altierawr/oto/internal/auth"
 	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/validator"
+	"github.com/google/uuid"
 	"github.com/tomasen/realip"
 	"golang.org/x/time/rate"
 )
@@ -40,6 +41,33 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 				}
 			}
 		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) parseSession(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("session_id")
+		if err != nil {
+			switch {
+			case errors.Is(err, http.ErrNoCookie):
+				next.ServeHTTP(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
+			}
+
+			return
+		}
+
+		value := cookie.Value
+		uuid, err := uuid.Parse(value)
+		if err != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		r = app.contextSetSessionId(r, &uuid)
 
 		next.ServeHTTP(w, r)
 	})

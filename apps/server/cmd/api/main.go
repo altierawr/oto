@@ -9,9 +9,11 @@ import (
 	"github.com/altierawr/oto/internal/auth"
 	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/database"
+	"github.com/altierawr/oto/internal/recommendations"
 	"github.com/altierawr/oto/internal/tidal"
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
+	"github.com/twoscott/gobble-fm/api"
 )
 
 type config struct {
@@ -22,6 +24,9 @@ type config struct {
 		refreshToken string
 		clientId     string
 		secret       string
+	}
+	lastFm struct {
+		apiKey string
 	}
 	secrets struct {
 		accessToken  string
@@ -40,6 +45,8 @@ type application struct {
 	auth   auth.AuthService
 	wg     sync.WaitGroup
 	db     *database.DB
+	lastFm *api.Client
+	recs   *recommendations.Service
 }
 
 func main() {
@@ -135,6 +142,16 @@ func main() {
 		auth: auth.AuthService{
 			DB: db,
 		},
+	}
+
+	cfg.lastFm.apiKey, found = os.LookupEnv("LASTFM_API_KEY")
+	if !found {
+		logger.Warn("missing env variable LASTFM_API_KEY. features requiring last fm integration won't work.")
+	} else {
+		app.lastFm = api.NewClientKeyOnly(cfg.lastFm.apiKey)
+		app.recs = recommendations.New(app.db, app.lastFm, app.logger)
+		app.db.SetOnTidalTrackUpsert(app.recs.Enqueue)
+		app.background(app.recs.Run)
 	}
 
 	createdAdmin, err := createAdminUser(app)

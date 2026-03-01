@@ -2,8 +2,10 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
+	"github.com/altierawr/oto/internal/types"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -18,4 +20,14 @@ func tryDeleteTidalTrackIfUnreferenced(ctx context.Context, tx *sqlx.Tx, trackID
 	}
 
 	return err
+}
+
+func unmarshalTrackPayload(payload string) (types.TidalSong, error) {
+	var track types.TidalSong
+	err := json.Unmarshal([]byte(payload), &track)
+	if err != nil {
+		return types.TidalSong{}, err
+	}
+
+	return track, nil
 }

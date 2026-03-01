@@ -14,8 +14,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/tidal"
 	"github.com/fsnotify/fsnotify"
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -27,13 +29,37 @@ type Stream struct {
 	seekOffset float64
 }
 
-var streams map[string]Stream = make(map[string]Stream)
+var streams map[string]map[string]*Stream = make(map[string]map[string]*Stream)
+var streamsMu sync.RWMutex
+
+func getSessionPath(sessionId *uuid.UUID) string {
+	return filepath.Join(os.TempDir(), "oto", fmt.Sprintf("session-%s", sessionId.String()))
+}
+
+func getStreamPath(sessionId *uuid.UUID, streamId string) string {
+	return filepath.Join(getSessionPath(sessionId), fmt.Sprintf("stream-%s", streamId))
+}
 
 func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 
+	sessionId := app.contextGetSessionId(r)
+	if sessionId == nil {
+		app.invalidSessionResponse(w, r)
+		return
+	}
+
 	streamId := params.ByName("id")
-	stream, exists := streams[streamId]
+	sessionKey := sessionId.String()
+	streamsMu.RLock()
+	stream, exists := streams[sessionKey][streamId]
+	var trackId int64
+	var seekOffset float64
+	if exists {
+		trackId = stream.trackId
+		seekOffset = stream.seekOffset
+	}
+	streamsMu.RUnlock()
 	if streamId == "" || !exists {
 		app.notFoundResponse(w, r)
 		return
@@ -51,7 +77,7 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	streamPath := filepath.Join(os.TempDir(), "oto", fmt.Sprintf("stream-%s", streamId))
+	streamPath := getStreamPath(sessionId, streamId)
 	playlistPath := filepath.Join(streamPath, "index.m3u8")
 
 	playlistFile, err := os.Open(playlistPath)
@@ -64,7 +90,7 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 	segment := 0
 	duration := 0.0
 
-	offsetPosition := position - stream.seekOffset
+	offsetPosition := position - seekOffset
 
 	if offsetPosition >= 0 {
 		scanner := bufio.NewScanner(playlistFile)
@@ -77,7 +103,10 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 
 				segmentDuration, err := strconv.ParseFloat(durationStr, 64)
 				if err != nil {
-					app.logger.Error(err.Error(), "durationStr", durationStr)
+					app.logger.Error(err.Error(),
+						"sessionId", sessionId,
+						"streamId", streamId,
+						"durationStr", durationStr)
 					continue
 				}
 
@@ -99,7 +128,7 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 
 	// We should have the segment
 	if duration > 0 && duration >= offsetPosition {
-		segmentPath := filepath.Join(streamPath, "oto", fmt.Sprintf("segment-%d.mp4", segment))
+		segmentPath := filepath.Join(streamPath, fmt.Sprintf("segment-%d.mp4", segment))
 		_, err = os.Stat(segmentPath)
 
 		if err != nil {
@@ -113,35 +142,58 @@ func (app *application) seekHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = app.endStream(streamId)
+	err = app.endStream(r, streamId)
 	if err != nil {
-		app.logger.Error(err.Error(), "streamId", streamId)
+		app.logger.Error(err.Error(),
+			"sessionId", sessionId,
+			"streamId", streamId)
 	}
 
-	app.startStream(w, r, stream.trackId, strconv.FormatFloat(position, 'f', -1, 64))
+	app.startStream(w, r, trackId, strconv.FormatFloat(position, 'f', -1, 64))
 }
 
-func (app *application) endStream(streamId string) error {
-	stream, exists := streams[streamId]
+func (app *application) endStream(r *http.Request, streamId string) error {
+	sessionId := app.contextGetSessionId(r)
+	if sessionId == nil {
+		return errors.New("session not found")
+	}
+
+	sessionKey := sessionId.String()
+	streamsMu.RLock()
+	stream, exists := streams[sessionKey][streamId]
+	streamsMu.RUnlock()
 	if streamId == "" || !exists {
 		return errors.New("not found")
 	}
 
 	err := stream.ffmpeg.Process.Kill()
 	if err != nil && !errors.Is(err, os.ErrProcessDone) {
-		app.logger.Error(err.Error())
+		app.logger.Error(err.Error(),
+			"sessionId", sessionId,
+			"streamId", streamId)
 	}
 
-	streamPath := filepath.Join(os.TempDir(), "oto", fmt.Sprintf("stream-%s", streamId))
+	streamPath := getStreamPath(sessionId, streamId)
 
 	err = os.RemoveAll(streamPath)
 	if err != nil {
-		app.logger.Error(err.Error())
+		app.logger.Error(err.Error(),
+			"sessionId", sessionId,
+			"streamId", streamId)
 	}
 
-	delete(streams, streamId)
+	streamsMu.Lock()
+	if sessionStreams, found := streams[sessionKey]; found {
+		delete(sessionStreams, streamId)
+		if len(sessionStreams) == 0 {
+			delete(streams, sessionKey)
+		}
+	}
+	streamsMu.Unlock()
 
-	app.logger.Info("ended stream", "streamId", streamId)
+	app.logger.Info("ended stream",
+		"sessionId", sessionId,
+		"streamId", streamId)
 
 	return nil
 }
@@ -150,7 +202,7 @@ func (app *application) endStreamHandler(w http.ResponseWriter, r *http.Request)
 	params := httprouter.ParamsFromContext(r.Context())
 	streamId := params.ByName("id")
 
-	err := app.endStream(streamId)
+	err := app.endStream(r, streamId)
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
@@ -177,12 +229,27 @@ func (app *application) serveHLSHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	segmentPath := filepath.Join(os.TempDir(), "oto", fmt.Sprintf("stream-%s", streamId), segment)
+	sessionId := app.contextGetSessionId(r)
+	if sessionId == nil {
+		app.invalidSessionResponse(w, r)
+		return
+	}
+
+	segmentPath := filepath.Join(getStreamPath(sessionId, streamId), segment)
 
 	info, err := os.Stat(segmentPath)
-	stream, streamExists := streams[streamId]
+	sessionKey := sessionId.String()
+	streamsMu.RLock()
+	stream, streamExists := streams[sessionKey][streamId]
+	streamIsLoading := false
+	streamNrSegments := -1
+	if streamExists {
+		streamIsLoading = stream.isLoading
+		streamNrSegments = stream.nrSegments
+	}
+	streamsMu.RUnlock()
 	if err != nil || info.IsDir() {
-		if streamExists && stream.isLoading {
+		if streamExists && streamIsLoading {
 			app.acceptedResponse(w, r)
 			return
 		}
@@ -193,20 +260,26 @@ func (app *application) serveHLSHandler(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "audio/mp4")
 
-	if segment != "init.mp4" && streamExists && stream.nrSegments != -1 {
+	if segment != "init.mp4" && streamExists && streamNrSegments != -1 {
 		re := regexp.MustCompile(`\d+`)
 		matches := re.FindString(segment)
 
 		if matches != "" {
 			segmentNr, err := strconv.Atoi(matches)
 			if err != nil {
-				app.logger.Error(err.Error(), "segment", segment)
-			} else if stream.nrSegments == segmentNr+1 {
+				app.logger.Error(err.Error(),
+					"sessionId", sessionId,
+					"streamId", streamId,
+					"segment", segment)
+			} else if streamNrSegments == segmentNr+1 {
 				w.Header().Set("Access-Control-Expose-Headers", "X-Last-Segment")
 				w.Header().Set("X-Last-Segment", "true")
 			}
 		} else {
-			app.logger.Error("error parsing number from segment", "segment", segment)
+			app.logger.Error("error parsing number from segment",
+				"sessionId", sessionId,
+				"streamId", streamId,
+				"segment", segment)
 		}
 	}
 
@@ -214,24 +287,50 @@ func (app *application) serveHLSHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *application) startStream(w http.ResponseWriter, r *http.Request, trackId int64, ss string) {
+	sessionId := app.contextGetSessionId(r)
+	if sessionId == nil {
+		app.invalidSessionResponse(w, r)
+		return
+	}
+
+	userId := app.contextGetUserId(r)
+	if userId == nil {
+		app.invalidAuthenticationTokenResponse(w, r)
+		return
+	}
+
+	// check that the session is valid
+	_, err := app.db.GetSession(*userId, *sessionId)
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrRecordNotFound):
+			app.invalidSessionResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+
+		return
+	}
+
 	stream, err := tidal.GetSongStreamUrl(trackId)
 	if err != nil {
 		if errors.Is(err, tidal.ErrInvalidTidalResponseType) {
-			app.logger.Error("tidal returned data in an invalid format from stream endpoint", "trackId", trackId)
+			app.logger.Error("tidal returned data in an invalid format from stream endpoint",
+				"trackId", trackId)
 		}
 
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	otoDir := filepath.Join(os.TempDir(), "oto")
-	err = os.MkdirAll(otoDir, os.ModePerm)
+	sessionDir := getSessionPath(sessionId)
+	err = os.MkdirAll(sessionDir, os.ModePerm)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	tempDir, err := os.MkdirTemp(otoDir, "stream-*")
+	tempDir, err := os.MkdirTemp(sessionDir, "stream-*")
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -256,7 +355,10 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 
 	args = append(args, filepath.Join(tempDir, "index.m3u8"))
 
-	app.logger.Info("ffmpeg process started", "args", fmt.Sprintf("%v", args))
+	app.logger.Info("ffmpeg process started",
+		"sessionId", sessionId,
+		"streamId", streamId,
+		"args", fmt.Sprintf("%v", args))
 
 	cmd := exec.Command("ffmpeg", args...)
 
@@ -277,7 +379,13 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 		s.seekOffset = ssFloat
 	}
 
-	streams[streamId] = s
+	sessionKey := sessionId.String()
+	streamsMu.Lock()
+	if _, exists := streams[sessionKey]; !exists {
+		streams[sessionKey] = make(map[string]*Stream)
+	}
+	streams[sessionKey][streamId] = &s
+	streamsMu.Unlock()
 
 	if err := cmd.Start(); err != nil {
 		http.Error(w, "Failed to start ffmpeg", http.StatusInternalServerError)
@@ -290,7 +398,7 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 		return
 	}
 
-	streamPath := filepath.Join(os.TempDir(), "oto", fmt.Sprintf("stream-%s", streamId))
+	streamPath := getStreamPath(sessionId, streamId)
 	err = watcher.Add(streamPath)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -311,7 +419,9 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 				}
 
 				if event.Op == fsnotify.Create && strings.HasSuffix(event.Name, "segment1.mp4") {
-					app.logger.Info("segment 1 was created, notifying client", "streamId", streamId)
+					app.logger.Info("segment 1 was created, notifying client",
+						"sessionId", sessionId,
+						"streamId", streamId)
 					responseOnce.Do(func() {
 						responseChan <- nil
 					})
@@ -321,7 +431,9 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 				if !ok {
 					return
 				}
-				app.logger.Error(err.Error())
+				app.logger.Error(err.Error(),
+					"sessionId", sessionId,
+					"streamId", streamId)
 			}
 		}
 	}()
@@ -331,32 +443,41 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 		cmd.Wait()
 
 		app.logger.Info("finished downloading track",
-			"trackId", fmt.Sprintf("%d", trackId),
+			"sessionId", sessionId,
 			"streamId", streamId,
+			"trackId", fmt.Sprintf("%d", trackId),
 		)
 
-		s, exists := streams[streamId]
-		if exists {
-			s.isLoading = false
+		segmentFiles, err := os.ReadDir(streamPath)
+		segmentCount := -1
 
-			segmentFiles, err := os.ReadDir(streamPath)
-
-			// For a playlist, there are the segment files + index.m3u8 + init.mp4
-			if err == nil && len(segmentFiles) > 2 {
-				s.nrSegments = len(segmentFiles) - 2
-			} else if err != nil {
-				app.logger.Error("error reading stream dir",
-					"error", err.Error(),
-				)
-			}
-
-			streams[streamId] = s
+		// For a playlist, there are the segment files + index.m3u8 + init.mp4
+		if err == nil && len(segmentFiles) > 2 {
+			segmentCount = len(segmentFiles) - 2
+		} else if err != nil {
+			app.logger.Error("error reading stream dir",
+				"sessionId", sessionId,
+				"streamId", streamId,
+				"error", err.Error(),
+			)
 		}
 
-		_, err := os.Stat(filepath.Join(streamPath, "segment0.mp4"))
+		streamsMu.Lock()
+		if sessionStreams, found := streams[sessionKey]; found {
+			if s, exists := sessionStreams[streamId]; exists {
+				s.isLoading = false
+				if segmentCount > 0 {
+					s.nrSegments = segmentCount
+				}
+			}
+		}
+		streamsMu.Unlock()
+
+		_, err = os.Stat(filepath.Join(streamPath, "segment0.mp4"))
 		if err == nil {
 			responseOnce.Do(func() {
 				app.logger.Info("ffmpeg finished, sending nil",
+					"sessionId", sessionId,
 					"streamId", streamId,
 				)
 				responseChan <- nil
@@ -364,6 +485,7 @@ func (app *application) startStream(w http.ResponseWriter, r *http.Request, trac
 		} else {
 			responseOnce.Do(func() {
 				app.logger.Info("ffmpeg finished without any segments, sending error",
+					"sessionId", sessionId,
 					"streamId", streamId,
 				)
 				responseChan <- errors.New("ffmpeg didn't create any segments")
