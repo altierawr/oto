@@ -5,6 +5,7 @@ import type { Song, StreamResponse, SeekResponse } from "./types";
 
 import { usePlayerState, type TPlayerState } from "./store";
 import { request } from "./utils/http";
+import { getTidalCoverUrl } from "./utils/image";
 import { shuffleArray } from "./utils/utils";
 
 type PlaylistSong = {
@@ -543,6 +544,22 @@ export class MusicPlayer {
     // Add autoplay
     if (!this.#isRepeatEnabled && index === this.playlist.length - 1) {
       this.#addAutoplayTrack();
+    }
+
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.metadata = new window.MediaMetadata({
+        title: this.playlist[index].song.title,
+        artist: this.playlist[index].song.artists[0].name,
+        artwork: this.playlist[index].song.album?.cover
+          ? [
+              {
+                src: getTidalCoverUrl(this.playlist[index].song.album.cover, 1280),
+                sizes: "1280x1280",
+                type: "image/jpeg",
+              },
+            ]
+          : [],
+      });
     }
   }
 
