@@ -1,5 +1,11 @@
 # server
 
+## 0.4.0
+
+### Minor Changes
+
+- af1dcf3: Added autoplay
+
 ## 0.3.0
 
 ### Minor Changes

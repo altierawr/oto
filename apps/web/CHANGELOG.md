@@ -1,5 +1,11 @@
 # web
 
+## 0.6.0
+
+### Minor Changes
+
+- af1dcf3: Added autoplay
+
 ## 0.5.0
 
 ### Minor Changes
