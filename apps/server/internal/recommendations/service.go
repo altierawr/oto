@@ -3,6 +3,7 @@ package recommendations
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
@@ -13,6 +14,10 @@ import (
 	"github.com/twoscott/gobble-fm/api"
 	"github.com/twoscott/gobble-fm/lastfm"
 	"golang.org/x/time/rate"
+)
+
+const (
+	lastfmErrorNotFoundStr = "Last.fm Error: 6 - Track not found"
 )
 
 const (
@@ -154,15 +159,168 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 		return err
 	}
 
-	result, err := s.lastFm.Track.Similar(lastfm.TrackSimilarParams{
+	similarTracks, err := s.lastFm.Track.Similar(lastfm.TrackSimilarParams{
 		Artist: artistName,
 		Track:  title,
 	})
 	if err != nil {
+		switch {
+		case err.Error() == lastfmErrorNotFoundStr:
+			s.logger.Warn("couldn't find track when doing similar track search",
+				"artist", artistName,
+				"track", title)
+		default:
+			return err
+		}
+	}
+
+	s.handleSimilarTracksResponse(trackId, similarTracks)
+
+	if len(similarTracks.Tracks) > 0 {
+		return nil
+	}
+
+	// if couldn't get any similar tracks, fall back to selecting another track from the artist
+	trackInfo, err := s.lastFm.Track.Info(lastfm.TrackInfoParams{
+		Artist: artistName,
+		Track:  title,
+	})
+	if err != nil {
+		switch {
+		case err.Error() == lastfmErrorNotFoundStr:
+			s.logger.Warn("couldn't find track when doing similar track search",
+				"artist", artistName,
+				"track", title)
+		default:
+			return err
+		}
+	}
+
+	success, err := s.handleArtistTopTracks(ctx, trackInfo.Artist.MBID, artistName, trackId)
+	if err != nil {
 		return err
 	}
 
-	for _, recommendedTrack := range result.Tracks {
+	if success {
+		return nil
+	}
+
+	similarArtists := &lastfm.SimilarArtists{}
+
+	if trackInfo != nil && trackInfo.Artist.MBID != "" {
+		similarArtists, err = s.lastFm.Artist.SimilarByMBID(lastfm.ArtistSimilarMBIDParams{
+			MBID: trackInfo.Artist.MBID,
+		})
+	} else {
+		similarArtists, err = s.lastFm.Artist.Similar(lastfm.ArtistSimilarParams{
+			Artist: artistName,
+		})
+	}
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(len(similarArtists.Artists), "artists")
+	if len(similarArtists.Artist) > 0 {
+		limit := 50
+		for idx, artist := range similarArtists.Artists {
+			fmt.Println("Similar artist:", artist.Name)
+			if idx+1 > limit {
+				break
+			}
+
+			success, err = s.handleArtistTopTracks(ctx, artist.MBID, artist.Name, trackId)
+			if err != nil {
+				return err
+			}
+
+			if success {
+				break
+			}
+		}
+	}
+
+	if !success {
+		s.logger.Warn("couldn't find any lastfm tracks to recommend for a track",
+			"artistName", artistName,
+			"title", title)
+	}
+
+	return nil
+}
+
+func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, artistName string, trackId int64) (bool, error) {
+	artistTopTracks := &lastfm.ArtistTopTracks{}
+
+	var err error
+	if artistMBId != "" {
+		artistTopTracks, err = s.lastFm.Artist.TopTracksByMBID(lastfm.ArtistTopTracksMBIDParams{
+			MBID: artistMBId,
+		})
+	} else {
+		artistTopTracks, err = s.lastFm.Artist.TopTracks(lastfm.ArtistTopTracksParams{
+			Artist: artistName,
+		})
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	if artistTopTracks == nil || len(artistTopTracks.Tracks) == 0 {
+		return false, nil
+	}
+
+	wasSuccesful := false
+	limit := 1
+	for idx, track := range artistTopTracks.Tracks {
+		if idx+1 > limit {
+			break
+		}
+
+		if track.Artist.Name == "" || track.Title == "" {
+			continue
+		}
+
+		if err := s.limiter.Wait(ctx); err != nil {
+			return false, err
+		}
+
+		similarTracks := &lastfm.SimilarTracks{}
+
+		if track.MBID != "" {
+			similarTracks, err = s.lastFm.Track.SimilarByMBID(lastfm.TrackSimilarMBIDParams{
+				MBID: track.MBID,
+			})
+		} else {
+			similarTracks, err = s.lastFm.Track.Similar(lastfm.TrackSimilarParams{
+				Artist: track.Artist.Name,
+				Track:  track.Title,
+			})
+		}
+
+		if err != nil {
+			return false, err
+		}
+
+		if len(similarTracks.Tracks) == 0 {
+			fmt.Println("no similar tracks for", track.Title)
+			continue
+		}
+
+		fmt.Println("HAS similar tracks for", track.Title)
+
+		s.handleSimilarTracksResponse(trackId, similarTracks)
+		wasSuccesful = true
+		break
+	}
+
+	return wasSuccesful, nil
+}
+
+func (s *Service) handleSimilarTracksResponse(trackId int64, similarTracks *lastfm.SimilarTracks) {
+	for _, recommendedTrack := range similarTracks.Tracks {
 		s.writeMu.Lock()
 
 		lastfmTitle := strings.TrimSpace(recommendedTrack.Title)
@@ -209,8 +367,6 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 			continue
 		}
 	}
-
-	return nil
 }
 
 func (s *Service) enqueueItem(item queueItem) bool {
