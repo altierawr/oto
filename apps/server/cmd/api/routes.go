@@ -32,6 +32,8 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/sessions/tracks/remove", app.requireAuthenticatedUser(app.removeSessionTrackHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/sessions/autoplay", app.requireAuthenticatedUser(app.getSessionAutoplayTrackHandler))
 
+	router.HandlerFunc(http.MethodPost, "/v1/scrobble", app.requireAuthenticatedUser(app.scrobbleHandler))
+
 	router.HandlerFunc(http.MethodGet, "/v1/search", app.requireAuthenticatedUser(app.searchHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/artists/:id", app.requireAuthenticatedUser(app.viewArtistHandler))

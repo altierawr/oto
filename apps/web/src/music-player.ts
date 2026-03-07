@@ -31,6 +31,7 @@ type PlaylistSong = {
   accurateDuration: number | null;
   timestampOffset: number | null;
   seekOffset: number;
+  isAutoplay: boolean;
 };
 
 const initialVolume = 0.2;
@@ -60,6 +61,9 @@ export class MusicPlayer {
   #isSeeking = false;
   #isJumping = false;
   #trackEndCommitBoundary = 0.7;
+  #trackLastPos = 0;
+  #trackListenedTime = 0;
+  #trackSwitchTimestamp: number | null = null;
   originalPlaylist: PlaylistSong[] | null = null;
 
   static getInitialPlayerState(): TPlayerState["playerState"] {
@@ -233,9 +237,20 @@ export class MusicPlayer {
         return;
       }
 
-      const track = this.#getCurrentlyPlayingSongIndex();
-      if (track !== null) {
-        this.#handleTrackChange(track);
+      const trackIndex = this.#getCurrentlyPlayingSongIndex();
+      if (trackIndex !== null) {
+        this.#handleTrackChange(trackIndex);
+
+        const track = this.playlist[trackIndex];
+
+        const trackPos = this.#audio.currentTime - (track.timestampOffset || 0) - track.seekOffset;
+        const delta = trackPos - this.#trackLastPos;
+
+        if (delta > 0) {
+          this.#trackListenedTime += delta;
+        }
+
+        this.#trackLastPos = trackPos;
       }
 
       this.#updatePlayerState({
@@ -506,10 +521,47 @@ export class MusicPlayer {
     return null;
   }
 
+  async #handleScrobble() {
+    if (this.#lastNotifiedTrackIndex !== null) {
+      const track = this.playlist[this.#lastNotifiedTrackIndex];
+
+      // Only scrobble if listened time was at least half of the song's duration or 4 minutes
+      // Also only scrobble tracks over 30 seconds in length
+      if (
+        this.#trackSwitchTimestamp !== null &&
+        track.song.duration > 30 &&
+        this.#trackListenedTime > Math.min(track.song.duration / 2, 240)
+      ) {
+        const resp = await request("/scrobble", {
+          method: "POST",
+          body: JSON.stringify({
+            trackId: track.song.id,
+            playStartTimestamp: Math.floor(this.#trackSwitchTimestamp),
+            playEndTimestamp: Math.floor(Date.now() / 1000),
+            isAutoplay: track.isAutoplay,
+          }),
+        });
+
+        if (resp.ok) {
+          console.info("Scrobbled track", track.song.title);
+          return;
+        }
+
+        const data = await resp.json();
+
+        console.error("Error scrobbling track:", data);
+      }
+    }
+  }
+
   #handleTrackChange(index: number) {
     if (index === this.#lastNotifiedTrackIndex) {
       return;
     }
+
+    this.#handleScrobble();
+
+    this.#trackSwitchTimestamp = Date.now() / 1000;
 
     // Free memory of tracks that are far away
     let nrSegments = 0;
@@ -540,6 +592,9 @@ export class MusicPlayer {
     this.#notifyTrackChange(index);
 
     this.#updateTrackTimestampOffsets(index);
+
+    this.#trackLastPos = 0;
+    this.#trackListenedTime = 0;
 
     // Add autoplay
     if (!this.#isRepeatEnabled && index === this.playlist.length - 1) {
@@ -652,7 +707,12 @@ export class MusicPlayer {
     this.#isTogglingShuffle = false;
   }
 
-  #getInitialPlaylistSongFromSong(song: Song): PlaylistSong {
+  #getInitialPlaylistSongFromSong(
+    song: Song,
+    options?: {
+      isAutoplay?: boolean;
+    },
+  ): PlaylistSong {
     return {
       id: uuidv4(),
       song,
@@ -662,6 +722,7 @@ export class MusicPlayer {
       streamId: null,
       seekOffset: 0,
       accurateDuration: null,
+      isAutoplay: options?.isAutoplay || false,
     };
   }
 
@@ -681,6 +742,8 @@ export class MusicPlayer {
       );
       return;
     }
+
+    this.#handleScrobble();
 
     this.#audio.pause();
     await this.#reset();
@@ -1093,7 +1156,7 @@ export class MusicPlayer {
       isAutoplay?: boolean;
     },
   ) {
-    const entry = this.#getInitialPlaylistSongFromSong(song);
+    const entry = this.#getInitialPlaylistSongFromSong(song, options);
     this.playlist.push(entry);
     if (this.originalPlaylist) {
       this.originalPlaylist.push(entry);
@@ -1297,6 +1360,7 @@ export class MusicPlayer {
     if (targetSegmentIndex !== null && pe.segments[targetSegmentIndex]?.bufferInfo) {
       const seekPos = position + (pe.timestampOffset || 0);
       console.log("Segment is in buffer, seeking to", seekPos);
+      this.#trackLastPos = seekPos;
       this.#audio.currentTime = seekPos;
       this.#updatePlayerState({
         currentTime: seekPos,
@@ -1317,6 +1381,7 @@ export class MusicPlayer {
       });
 
       const newPos = position + (pe.timestampOffset || 0);
+      this.#trackLastPos = newPos;
       this.#audio.currentTime = newPos;
       this.#updatePlayerState({
         currentTime: newPos,
@@ -1372,6 +1437,7 @@ export class MusicPlayer {
       });
 
       const newPos = position + (pe.timestampOffset || 0);
+      this.#trackLastPos = newPos;
       this.#audio.currentTime = newPos;
       this.#updatePlayerState({
         currentTime: newPos,
@@ -1414,6 +1480,7 @@ export class MusicPlayer {
       });
 
       const newPos = position + (pe.timestampOffset || 0);
+      this.#trackLastPos = newPos;
       this.#audio.currentTime = newPos;
       this.#updatePlayerState({
         currentTime: newPos,
