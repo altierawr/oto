@@ -1,5 +1,11 @@
 # server
 
+## 0.7.0
+
+### Minor Changes
+
+- e262b84: Add track scrobbling (saving track plays to the database).
+
 ## 0.6.1
 
 ### Patch Changes
