@@ -1,5 +1,11 @@
 # web
 
+## 0.9.0
+
+### Minor Changes
+
+- e262b84: Add track scrobbling (saving track plays to the database).
+
 ## 0.8.0
 
 ### Minor Changes
