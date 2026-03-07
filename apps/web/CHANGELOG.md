@@ -1,5 +1,12 @@
 # web
 
+## 0.8.0
+
+### Minor Changes
+
+- 78b5bbe: Added currently playing track data (title, artist, cover picture) to mediaSession. The track info will now show for example on phones when the phone is locked or the browser is unfocused.
+- 0c66c5a: Added support for controlling music playback via hardware like headsets, using the Media Session API.
+
 ## 0.7.0
 
 ### Minor Changes
