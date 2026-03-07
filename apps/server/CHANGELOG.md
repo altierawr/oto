@@ -1,5 +1,11 @@
 # server
 
+## 0.6.1
+
+### Patch Changes
+
+- 7bed717: Improved autoplay handling; more tracks that previously didn't get any autoplay tracks added should now get some.
+
 ## 0.6.0
 
 ### Minor Changes
