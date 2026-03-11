@@ -1,5 +1,12 @@
 # web
 
+## 0.10.0
+
+### Minor Changes
+
+- 35748d8: Added user top played tracks to the home page.
+- 35748d8: Added recommended new tracks generation for users. They are visible on the home page once generated.
+
 ## 0.9.0
 
 ### Minor Changes
