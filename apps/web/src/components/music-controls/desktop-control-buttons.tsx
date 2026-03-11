@@ -1,4 +1,4 @@
-import { IconArrowsShuffle, IconRepeat } from "@tabler/icons-react";
+import { IconArrowsShuffle, IconRepeat, IconRepeatOnce } from "@tabler/icons-react";
 import clsx from "clsx";
 
 import { usePlayerState } from "../../store";
@@ -12,7 +12,7 @@ const MusicControlsDesktopControlButtons = () => {
   };
 
   const handleRepeatClick = () => {
-    player.toggleRepeat();
+    player.toggleRepeatNextMode();
   };
 
   return (
@@ -28,16 +28,26 @@ const MusicControlsDesktopControlButtons = () => {
         )}
       />
       <MusicControlsCoreControlButtons />
-      <IconRepeat
-        size={20}
-        stroke={1.5}
-        onClick={handleRepeatClick}
-        className={clsx(
-          "cursor-pointer",
-          !playerState?.isRepeatEnabled && "text-(--gray-11)",
-          playerState?.isRepeatEnabled && "text-(--blue-11)",
-        )}
-      />
+      {playerState.repeatMode === "single" && (
+        <IconRepeatOnce
+          size={20}
+          stroke={1.5}
+          onClick={handleRepeatClick}
+          className={"cursor-pointer text-(--blue-11)"}
+        />
+      )}
+      {playerState.repeatMode !== "single" && (
+        <IconRepeat
+          size={20}
+          stroke={1.5}
+          onClick={handleRepeatClick}
+          className={clsx(
+            "cursor-pointer",
+            playerState.repeatMode === "off" && "text-(--gray-11)",
+            playerState.repeatMode !== "off" && "text-(--blue-11)",
+          )}
+        />
+      )}
     </div>
   );
 };

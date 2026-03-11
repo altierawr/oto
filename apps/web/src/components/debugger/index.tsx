@@ -7,7 +7,8 @@ import { formatDuration } from "../../utils/utils";
 
 const AudioDebugger = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const { player } = usePlayerState();
+  const [, setTick] = useState(0);
+  const { player, playerState } = usePlayerState();
 
   useEffect(() => {
     document.addEventListener("keydown", (e) => {
@@ -19,14 +20,25 @@ const AudioDebugger = () => {
     });
   }, []);
 
+  useEffect(() => {
+    if (!isVisible) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setTick((prev) => (prev + 1) % 1_000_000);
+    }, 100);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isVisible]);
+
   if (!player.playlist) {
     return;
   }
 
-  const audio: HTMLAudioElement = document.getElementsByTagName("audio")[0] as HTMLAudioElement;
-  if (!audio) {
-    return;
-  }
+  const currentTime = playerState.currentTime;
 
   return (
     <div
@@ -39,44 +51,52 @@ const AudioDebugger = () => {
     >
       <p>Audio debugger</p>
 
-      <p>Current time: {formatDuration(audio.currentTime, "digital")}</p>
+      <p>Current time: {currentTime !== null ? formatDuration(currentTime, "digital") : "--"}</p>
 
       <div className="flex flex-col gap-2">
-        {player.playlist.map((pe, index) => (
-          <Fragment key={index}>
-            <div>
-              <p>Index {index}</p>
-              {pe.timestampOffset !== null
-                ? `tOFF: ${pe.timestampOffset?.toFixed(1)}, sOFF: ${pe.seekOffset.toFixed(1)}, total: ${(pe.timestampOffset + pe.seekOffset).toFixed(1)}, offsetPos: ${(audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0)).toFixed(1)} (${formatDuration(audio.currentTime - pe.seekOffset - (pe.timestampOffset || 0), "digital")})}`
-                : "Not set"}
-            </div>
+        {player.playlist.map((pe, index) => {
+          const offsetPosition = currentTime !== null ? currentTime - pe.seekOffset - (pe.timestampOffset || 0) : null;
+          const offsetPositionLabel =
+            offsetPosition !== null
+              ? `${offsetPosition.toFixed(1)} (${formatDuration(offsetPosition, "digital")})`
+              : "--";
 
-            <div className="relative flex h-[8px] w-full">
-              {pe.segments.map((seg, index) => {
-                if (!seg) {
-                  return null;
-                }
+          return (
+            <Fragment key={index}>
+              <div>
+                <p>Index {index}</p>
+                {pe.timestampOffset !== null
+                  ? `tOFF: ${pe.timestampOffset.toFixed(1)}, sOFF: ${pe.seekOffset.toFixed(1)}, total: ${(pe.timestampOffset + pe.seekOffset).toFixed(1)}, offsetPos: ${offsetPositionLabel}`
+                  : "Not set"}
+              </div>
 
-                const duration = pe.song.duration;
-                const start = seg.start + pe.seekOffset;
-                const end = seg.end + pe.seekOffset;
+              <div className="relative flex h-[8px] w-full">
+                {pe.segments.map((seg, index) => {
+                  if (!seg) {
+                    return null;
+                  }
 
-                return (
-                  <div
-                    key={index}
-                    className={clsx(seg.bufferInfo && "bg-(--green-9)", !seg.bufferInfo && "bg-(--red-9)")}
-                    style={{
-                      position: "absolute",
-                      left: `calc(${(start / duration) * 100}% + 1px)`,
-                      width: `calc(${((end - start) / duration) * 100}% - 1px)`,
-                      height: "8px",
-                    }}
-                  ></div>
-                );
-              })}
-            </div>
-          </Fragment>
-        ))}
+                  const duration = pe.song.duration;
+                  const start = seg.start + pe.seekOffset;
+                  const end = seg.end + pe.seekOffset;
+
+                  return (
+                    <div
+                      key={index}
+                      className={clsx(seg.bufferInfo && "bg-(--green-9)", !seg.bufferInfo && "bg-(--red-9)")}
+                      style={{
+                        position: "absolute",
+                        left: `calc(${(start / duration) * 100}% + 1px)`,
+                        width: `calc(max(0.5px, ${((end - start) / duration) * 100}% - 1px))`,
+                        height: "8px",
+                      }}
+                    ></div>
+                  );
+                })}
+              </div>
+            </Fragment>
+          );
+        })}
       </div>
     </div>
   );

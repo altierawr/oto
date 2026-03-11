@@ -30,7 +30,7 @@ export type TPlayerState = {
     seekOffset: number;
     playlist: MusicPlayerSong[];
     isShuffleEnabled: boolean;
-    isRepeatEnabled: boolean;
+    repeatMode: "full" | "single" | "off";
     playlistIndex: number | null;
     timestampOffset: number | null;
     currentTime: number | null;

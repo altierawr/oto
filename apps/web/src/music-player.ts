@@ -57,7 +57,7 @@ export class MusicPlayer {
   #volume = initialVolume;
   #isShuffleEnabled = false;
   #isTogglingShuffle = false;
-  #isRepeatEnabled = false;
+  #repeatMode: "full" | "single" | "off" = "off";
   #isSeeking = false;
   #isJumping = false;
   #trackEndCommitBoundary = 0.7;
@@ -76,7 +76,7 @@ export class MusicPlayer {
       seekOffset: 0,
       playlist: [],
       isShuffleEnabled: false,
-      isRepeatEnabled: false,
+      repeatMode: "off",
       playlistIndex: null,
       timestampOffset: null,
       currentTime: null,
@@ -218,6 +218,67 @@ export class MusicPlayer {
     }
   }
 
+  async #checkForSingleRepeat(options?: { forceReset?: boolean }) {
+    if (this.#repeatMode !== "single") {
+      return;
+    }
+
+    const currentIndex = this.#getCurrentlyPlayingSongIndex();
+    if (currentIndex === null) {
+      return;
+    }
+
+    const pe = this.playlist[currentIndex];
+    if (!pe || pe.timestampOffset === null) {
+      return;
+    }
+
+    let shouldLoop = false;
+    if (options?.forceReset) {
+      shouldLoop = true;
+    } else if (pe.accurateDuration !== null) {
+      const trackEnd = pe.timestampOffset + pe.seekOffset + pe.accurateDuration;
+      shouldLoop = this.#audio.currentTime >= trackEnd - 0.001;
+    }
+
+    // todo: maybe there's a better way to check for this?
+    if (shouldLoop) {
+      const timestampOffset = pe.timestampOffset;
+      if (pe.seekOffset > 0) {
+        // we seeked so the first segment is offset; we need to reset the track and buffer and re-fetch from the beginning
+        this.#lockAutomaticBufferOperations();
+        this.#lockFetchOperations();
+        await this.#clearFetchQueues();
+        await this.#clearSourceBuffer();
+        this.#resetPlaylistEntry(currentIndex);
+        for (let i = currentIndex + 1; i < this.playlist.length; i++) {
+          this.#resetPlaylistEntryOffsets(i);
+        }
+
+        this.playlist[currentIndex].timestampOffset = timestampOffset;
+
+        await this.#maybeFetchNextSegment({
+          playlistIndex: currentIndex,
+          segmentIndex: 0,
+          force: true,
+        });
+        await this.#maybeLoadNextSegment({
+          playlistIndex: currentIndex,
+          segmentIndex: 0,
+          force: true,
+        });
+
+        this.#unlockAutomaticBufferOperations();
+        this.#unlockFetchOperations();
+      }
+
+      this.#trackLastPos = 0;
+      this.playlist[currentIndex].seekOffset = 0;
+      this.#audio.currentTime = pe.timestampOffset;
+      this.#audio.play();
+    }
+  }
+
   async #initMediaSource() {
     this.#mediaSource = new MediaSource();
 
@@ -237,6 +298,9 @@ export class MusicPlayer {
         return;
       }
 
+      this.#checkForSingleRepeat();
+
+      // update track listened time
       const trackIndex = this.#getCurrentlyPlayingSongIndex();
       if (trackIndex !== null) {
         this.#handleTrackChange(trackIndex);
@@ -392,16 +456,29 @@ export class MusicPlayer {
     this.#isTogglingShuffle = false;
   }
 
-  toggleRepeat() {
-    this.#isRepeatEnabled = !this.#isRepeatEnabled;
+  toggleRepeatNextMode() {
+    switch (this.#repeatMode) {
+      case "full":
+        this.#repeatMode = "single";
+        break;
+      case "single":
+        this.#repeatMode = "off";
+        break;
+      case "off":
+        this.#repeatMode = "full";
+        break;
+      default:
+        console.error("Unknown repeat mode:", this.#repeatMode);
+    }
+
     this.#notifyShuffleRepeatStateChange();
 
-    if (this.#isRepeatEnabled) {
-      this.#enableRepeat();
+    if (this.#repeatMode == "full") {
+      this.#handleFullRepeatEnable();
     }
   }
 
-  #enableRepeat() {
+  #handleFullRepeatEnable() {
     const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
 
     if (currentIndex !== null && currentIndex > 0) {
@@ -416,7 +493,7 @@ export class MusicPlayer {
   #notifyShuffleRepeatStateChange() {
     this.#updatePlayerState({
       isShuffleEnabled: this.#isShuffleEnabled,
-      isRepeatEnabled: this.#isRepeatEnabled,
+      repeatMode: this.#repeatMode,
       playlist: this.playlist.map((pe) => pe.song),
       playlistIndex: this.#getCurrentlyPlayingSongIndex(),
     });
@@ -514,7 +591,7 @@ export class MusicPlayer {
       return currentIndex + 1;
     }
 
-    if (this.#isRepeatEnabled && this.playlist.length > 0) {
+    if (this.#repeatMode === "full" && this.playlist.length > 0) {
       return 0;
     }
 
@@ -597,7 +674,7 @@ export class MusicPlayer {
     this.#trackListenedTime = 0;
 
     // Add autoplay
-    if (!this.#isRepeatEnabled && index === this.playlist.length - 1) {
+    if (this.#repeatMode !== "full" && index === this.playlist.length - 1) {
       this.#addAutoplayTrack();
     }
 
@@ -866,7 +943,7 @@ export class MusicPlayer {
     this.playlist[index].seekOffset = 0;
   }
 
-  async #resetPlaylistEntry(index: number) {
+  #resetPlaylistEntry(index: number) {
     const pe = { ...this.playlist[index] };
     if (pe && pe.streamId) {
       request(`/streams/${pe.streamId}/end`)
@@ -947,7 +1024,7 @@ export class MusicPlayer {
 
     let targetIndex = playlistIndex + direction;
 
-    if (this.#isRepeatEnabled) {
+    if (this.#repeatMode === "full") {
       if (targetIndex < 0) {
         targetIndex = this.playlist.length - 1;
       } else if (targetIndex >= this.playlist.length) {
@@ -1312,7 +1389,13 @@ export class MusicPlayer {
 
     this.#isSeeking = true;
     if (positionPerc >= 1) {
-      await this.nextTrack();
+      if (this.#repeatMode === "single") {
+        this.#checkForSingleRepeat({
+          forceReset: true,
+        });
+      } else {
+        await this.nextTrack();
+      }
     } else {
       await this.#seek(positionPerc);
     }
@@ -1590,7 +1673,7 @@ export class MusicPlayer {
     }
 
     let nrRemovedSegments = 0;
-    const startIndex = this.#isRepeatEnabled && currentIndex === 0 ? this.playlist.length - 1 : currentIndex - 1;
+    const startIndex = this.#repeatMode === "full" && currentIndex === 0 ? this.playlist.length - 1 : currentIndex - 1;
     for (
       let i = startIndex, count = 0;
       count < 3 && i < this.playlist.length;
@@ -1679,6 +1762,9 @@ export class MusicPlayer {
       startingPe.seekOffset +
       (startingPe.accurateDuration || startingPe.song.duration);
 
+    const startPlaylistIndex = playlistIndex;
+    const startSegmentIndex = segmentIndex;
+
     // Let's not append segments that are already in the buffer (might happen due to seeking)
     while (
       playlistIndex < this.playlist.length &&
@@ -1686,6 +1772,11 @@ export class MusicPlayer {
       pe.segments[segmentIndex]?.bufferInfo
     ) {
       segmentIndex++;
+
+      // nothing to add; we wrapped around to the start (happens when #repeatMode === "single")
+      if (playlistIndex === startPlaylistIndex && segmentIndex === startSegmentIndex) {
+        return;
+      }
 
       if (segmentIndex >= pe.segments.length && pe.lastSegmentIndex !== null && segmentIndex > pe.lastSegmentIndex) {
         // Only advance to the next track if we're within 0.7s of the current track's end
@@ -1696,14 +1787,18 @@ export class MusicPlayer {
           return;
         }
 
-        const nextIndex = this.#getNextPlaylistIndex(playlistIndex);
-        if (nextIndex === null) {
-          return;
-        }
+        if (this.#repeatMode !== "single") {
+          const nextIndex = this.#getNextPlaylistIndex(playlistIndex);
+          if (nextIndex === null) {
+            return;
+          }
 
-        playlistIndex = nextIndex;
-        pe = this.playlist[playlistIndex];
-        segmentIndex = 0;
+          playlistIndex = nextIndex;
+          pe = this.playlist[playlistIndex];
+          segmentIndex = 0;
+        } else {
+          segmentIndex = 0;
+        }
       }
     }
 
