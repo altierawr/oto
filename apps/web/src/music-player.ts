@@ -1506,7 +1506,7 @@ export class MusicPlayer {
     const pe = this.playlist[playlistIndex];
     if (!pe) return;
 
-    const duration = pe.accurateDuration || pe.song.duration;
+    const duration = pe.song.duration;
     if (!duration) return;
 
     // Current time relative to the start of the track
@@ -1524,7 +1524,7 @@ export class MusicPlayer {
     const pe = this.playlist[playlistIndex];
     if (!pe) return;
 
-    const duration = pe.accurateDuration || pe.song.duration;
+    const duration = pe.song.duration;
     if (!duration) return;
 
     // Current time relative to the start of the track
