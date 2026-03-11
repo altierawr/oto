@@ -195,7 +195,7 @@ export class MusicPlayer {
     for (let i = 0; i < this.playlist.length; i++) {
       const pe = this.playlist[i];
 
-      if (pe.timestampOffset === null || (pe.seekOffset > 0 && !pe.accurateDuration)) {
+      if (pe.timestampOffset === null) {
         continue;
       }
 
@@ -203,7 +203,7 @@ export class MusicPlayer {
       const trackEnd =
         // Substract 0.5 from the end because it's not fully accurate anyways.
         // This prevents some jump seeks from showing the incorrect track at the start of the track
-        trackStart + (pe.accurateDuration || pe.song.duration - 0.5);
+        trackStart + (pe.accurateDuration || pe.song.duration - pe.seekOffset - 0.5);
 
       if (currentTime >= trackStart && currentTime < trackEnd) {
         this.#lastPlayingSongIndex = i;
