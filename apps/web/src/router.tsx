@@ -17,6 +17,7 @@ import LibraryTracksPage from "./pages/library/tracks";
 import LoginRegisterPage from "./pages/login-register";
 import PlaylistsPage from "./pages/playlists";
 import PlaylistPage from "./pages/playlists/playlist";
+import RecommendedTracksPage from "./pages/recommended-tracks";
 import Root from "./pages/root";
 
 const router = createBrowserRouter([
@@ -51,6 +52,10 @@ const router = createBrowserRouter([
           {
             path: "/",
             element: <HomePage />,
+          },
+          {
+            path: "recommended-tracks",
+            element: <RecommendedTracksPage />,
           },
           {
             path: "library",

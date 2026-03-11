@@ -39,6 +39,49 @@ func (db *DB) InsertUser(user *data.User) error {
 	return nil
 }
 
+func (db *DB) GetUsers() ([]data.User, error) {
+	query := `
+			SELECT id, created_at, username, is_admin, version
+			FROM users
+		`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	users := []data.User{}
+
+	for rows.Next() {
+		var user data.User
+
+		err := rows.Scan(
+			&user.ID,
+			&user.CreatedAt,
+			&user.Username,
+			&user.IsAdmin,
+			&user.Version,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
 func (db *DB) GetAdminUsers() ([]data.User, error) {
 	query := `
 		SELECT id, created_at, username, is_admin, version

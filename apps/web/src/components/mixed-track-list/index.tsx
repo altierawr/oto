@@ -9,9 +9,11 @@ import styles from "./mixed-track-list.module.css";
 
 type TProps = {
   tracks: Song[];
+  limit?: number;
+  onSeeAllClick?: () => void;
 };
 
-const MixedTrackList = ({ tracks }: TProps) => {
+const MixedTrackList = ({ tracks, limit, onSeeAllClick }: TProps) => {
   return (
     <div className={clsx("grid", styles.mixedTrackList)}>
       <div className="rounded-md bg-(--gray-2) py-4 font-semibold max-sm:hidden!">
@@ -25,12 +27,32 @@ const MixedTrackList = ({ tracks }: TProps) => {
 
       <Spacer size="1" />
 
-      {tracks.map((track, idx) => (
-        <Fragment key={track.id}>
-          <MixedTrackListItem song={track} songs={tracks} trackIndex={idx} />
-          {idx < tracks.length - 1 && <div className="my-1 h-px w-full bg-(--gray-2)" />}
-        </Fragment>
-      ))}
+      {tracks.map((track, idx) => {
+        if (limit && idx >= limit) {
+          return null;
+        }
+
+        return (
+          <Fragment key={track.id}>
+            <MixedTrackListItem
+              song={track}
+              songs={tracks}
+              trackIndex={idx}
+              overlay={
+                limit && idx === limit - 1
+                  ? {
+                      text: "See all",
+                      onClick: () => {
+                        onSeeAllClick?.();
+                      },
+                    }
+                  : undefined
+              }
+            />
+            {idx < (limit || tracks.length) - 1 && <div className="my-1 h-px w-full bg-(--gray-2)" />}
+          </Fragment>
+        );
+      })}
     </div>
   );
 };

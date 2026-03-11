@@ -1,3 +1,4 @@
+import { Button } from "@awlt/design";
 import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
 import clsx from "clsx";
 import { MoreHorizontalIcon } from "lucide-react";
@@ -18,9 +19,13 @@ type TProps = {
   song: Song;
   songs: Song[];
   trackIndex: number;
+  overlay?: {
+    text: string;
+    onClick: () => void;
+  };
 };
 
-const MixedTrackListItem = ({ song, songs, trackIndex }: TProps) => {
+const MixedTrackListItem = ({ song, songs, trackIndex, overlay }: TProps) => {
   const [searchParams] = useSearchParams();
   const [isActive, setIsActive] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
@@ -33,6 +38,10 @@ const MixedTrackListItem = ({ song, songs, trackIndex }: TProps) => {
   const { player, playerState, song: playerSong } = usePlayerState();
 
   const handleClick = async () => {
+    if (overlay !== undefined) {
+      return;
+    }
+
     if (isPlaying) {
       player.togglePlayPause();
     } else {
@@ -53,27 +62,46 @@ const MixedTrackListItem = ({ song, songs, trackIndex }: TProps) => {
     }
   }, [song, highlightedTrackId, ref, hasScrolled]);
 
-  const isHighlighted = !hasScrolled && song.id === highlightedTrackId;
+  const isHighlighted = overlay === undefined && !hasScrolled && song.id === highlightedTrackId;
   const isPlaying = playerSong?.id === song.id;
 
   return (
     <div
       ref={ref}
       className={clsx(
-        "group rounded-md py-2 text-sm outline-2 outline-transparent",
+        "relative rounded-md py-2 text-sm outline-2 outline-transparent",
         styles.mixedTrackListItem,
         isHighlighted && "bg-(--gray-4)! outline-(--gray-7)!",
+        overlay !== undefined && "pointer-events-none *:pointer-events-none",
+        overlay === undefined && "group",
       )}
       onMouseDown={() => setIsActive(true)}
       onMouseLeave={() => setIsActive(false)}
       onMouseUp={() => setIsActive(false)}
-      onClick={hasTouch ? handleClick : undefined}
+      onClick={!overlay && hasTouch ? handleClick : undefined}
       onDoubleClick={handleClick}
       data-is-highlighted={isHighlighted}
       data-is-active={isActive}
+      data-is-interactable={overlay === undefined}
     >
+      {overlay && (
+        <div
+          className="pointer-events-auto absolute inset-0 grid h-full w-full place-items-center *:pointer-events-auto"
+          style={{
+            background:
+              "linear-gradient(to bottom, color-mix(in srgb, var(--gray-1) 80%, transparent), var(--gray-1) 100%)",
+          }}
+        >
+          <Button size="sm" onClick={overlay.onClick}>
+            {overlay.text}
+          </Button>
+        </div>
+      )}
+
       <div className="shrink-0 basis-[24px] cursor-pointer text-center" onClick={handleClick}>
-        <span className={clsx(!isPlaying && "group-hover:hidden", isPlaying && "hidden")}>{trackIndex + 1}</span>
+        <span className={clsx("select-none", !isPlaying && "group-hover:hidden", isPlaying && "hidden")}>
+          {trackIndex + 1}
+        </span>
         <div className={clsx(isPlaying && "text-(--blue-11)")}>
           {(!song || !isPlaying || (isPlaying && playerState.isPaused)) && (
             <IconPlayerPlay className={clsx(!isPlaying && "hidden group-hover:block")} size={20} fill="currentColor" />
@@ -101,7 +129,16 @@ const MixedTrackListItem = ({ song, songs, trackIndex }: TProps) => {
       {!song.album?.id && <div className="size-8 shrink-0 rounded-sm bg-(--gray-3)" />}
 
       <div className="cursor-default overflow-hidden tracking-tight text-nowrap text-ellipsis select-none">
-        <p className={clsx("truncate", isPlaying && "text-(--blue-11)")}>{song.title}</p>
+        {song.album?.id ? (
+          <>
+            <Link to={`/albums/${song.album.id}?track=${song.id}`} className={clsx(isPlaying && "text-(--blue-11)")}>
+              {song.title}
+            </Link>
+            <br />
+          </>
+        ) : (
+          <p className={clsx("truncate", isPlaying && "text-(--blue-11)")}>{song.title}</p>
+        )}
         {song.artists.map((artist, index) => (
           <span key={artist.id} className={clsx("text-(--gray-11)", isPlaying && "text-(--blue-11)!")}>
             <Link to={`/artists/${artist.id}`} className={clsx("text-(--gray-11)", isPlaying && "text-(--blue-11)!")}>

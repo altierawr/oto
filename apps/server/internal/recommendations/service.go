@@ -73,11 +73,23 @@ func (s *Service) Run() {
 
 	var wg sync.WaitGroup
 	for range workerCount {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			s.runWorker()
-		}()
+		})
+	}
+
+	ticker := time.NewTicker(30 * time.Minute)
+	defer ticker.Stop()
+
+	s.updateUserRecommendations()
+
+	for loop := true; loop; {
+		select {
+		case <-s.stop:
+			loop = false
+		case <-ticker.C:
+			s.updateUserRecommendations()
+		}
 	}
 
 	<-s.stop
@@ -308,8 +320,6 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 			fmt.Println("no similar tracks for", track.Title)
 			continue
 		}
-
-		fmt.Println("HAS similar tracks for", track.Title)
 
 		s.handleSimilarTracksResponse(trackId, similarTracks)
 		wasSuccesful = true

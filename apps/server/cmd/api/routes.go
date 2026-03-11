@@ -35,6 +35,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/scrobble", app.requireAuthenticatedUser(app.scrobbleHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/toptracks", app.requireAuthenticatedUser(app.getUserTopTracksHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/recommendedtracks", app.requireAuthenticatedUser(app.getUserRecommendedTracksHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/search", app.requireAuthenticatedUser(app.searchHandler))
 
