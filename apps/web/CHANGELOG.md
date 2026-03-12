@@ -1,5 +1,12 @@
 # web
 
+## 0.11.3
+
+### Patch Changes
+
+- c38eab2: Fixed issues with single repeat mode not working as intended.
+- e32e3bf: Fixed a visual issue where the song duration would briefly display a negative number when changing tracks.
+
 ## 0.11.2
 
 ### Patch Changes
