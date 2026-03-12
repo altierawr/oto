@@ -40,7 +40,7 @@ const MusicControlsDesktop = ({ className }: TProps) => {
           <p className="w-[30px]">
             {playerState.currentTime !== null
               ? formatDuration(
-                  playerState.currentTime - playerState.seekOffset - (playerState.timestampOffset || 0),
+                  Math.max(0, playerState.currentTime - playerState.seekOffset - (playerState.timestampOffset || 0)),
                   "digital",
                 )
               : undefined}
