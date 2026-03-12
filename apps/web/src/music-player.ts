@@ -246,10 +246,12 @@ export class MusicPlayer {
       const timestampOffset = pe.timestampOffset;
       if (pe.seekOffset > 0) {
         // we seeked so the first segment is offset; we need to reset the track and buffer and re-fetch from the beginning
+
+        this.#isResetting = true;
         this.#lockAutomaticBufferOperations();
         this.#lockFetchOperations();
-        await this.#clearFetchQueues();
         await this.#clearSourceBuffer();
+        await this.#clearFetchQueues();
         this.#resetPlaylistEntry(currentIndex);
         for (let i = currentIndex + 1; i < this.playlist.length; i++) {
           this.#resetPlaylistEntryOffsets(i);
@@ -270,6 +272,7 @@ export class MusicPlayer {
 
         this.#unlockAutomaticBufferOperations();
         this.#unlockFetchOperations();
+        this.#isResetting = false;
       }
 
       this.#trackLastPos = 0;
@@ -298,7 +301,7 @@ export class MusicPlayer {
         return;
       }
 
-      this.#checkForSingleRepeat();
+      await this.#checkForSingleRepeat();
 
       // update track listened time
       const trackIndex = this.#getCurrentlyPlayingSongIndex();
