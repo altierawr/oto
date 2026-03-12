@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/types"
 )
 
@@ -117,6 +118,10 @@ func GetSong(id int64) (*types.TidalSong, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, database.ErrRecordNotFound
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

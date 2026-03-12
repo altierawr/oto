@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/tidal"
 )
 
@@ -134,11 +135,26 @@ func (app *application) toggleFavoriteTrackHandler(w http.ResponseWriter, r *htt
 	if isFavorited {
 		err = app.db.RemoveFavoriteTrack(*userId, input.ID)
 	} else {
-		track, err := tidal.GetSong(input.ID)
+		track, err := app.db.GetTidalTrack(input.ID)
 		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
+			switch {
+			case errors.Is(err, database.ErrRecordNotFound):
+				app.logger.Warn("tidal track doesn't exist in database even though it should",
+					"id", input.ID)
+			default:
+				app.serverErrorResponse(w, r, err)
+				return
+			}
 		}
+
+		if err != nil || track == nil {
+			track, err = tidal.GetSong(input.ID)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+		}
+
 		if track == nil || int64(track.ID) != input.ID {
 			app.badRequestResponse(w, r, errors.New("invalid track id"))
 			return

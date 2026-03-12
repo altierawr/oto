@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/types"
 )
 
@@ -126,7 +127,7 @@ func Search(query string) (*types.TidalSearch, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, err
+		return nil, database.ErrRecordNotFound
 	}
 
 	body, err := io.ReadAll(resp.Body)
