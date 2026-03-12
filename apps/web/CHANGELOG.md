@@ -1,5 +1,11 @@
 # web
 
+## 0.11.1
+
+### Patch Changes
+
+- e79f0a8: Fixed an issue with single repeat mode not properly repeating the current song.
+
 ## 0.11.0
 
 ### Minor Changes
