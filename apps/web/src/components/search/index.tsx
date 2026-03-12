@@ -18,6 +18,7 @@ const SearchInput = () => {
   const [searchValue, setSearchValue] = useState("");
   const [searchTab, setSearchTab] = useState<SearchTab>("topHits");
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,10 +50,12 @@ const SearchInput = () => {
     }
 
     searchTimeoutRef.current = setTimeout(async () => {
+      setSearchError(null);
       const resp = await request(`/search?query=${searchValue}`);
 
       if (resp.status !== 200) {
         console.error("Resp failed with status", resp.status, ":", resp);
+        setSearchError("Something went wrong with search.");
         setSearchResults(null);
         setIsFetching(false);
         return;
@@ -64,6 +67,7 @@ const SearchInput = () => {
       setSearchResults(result);
     }, 500);
 
+    setSearchError(null);
     setIsFetching(true);
   }, [searchValue]);
 
@@ -168,6 +172,7 @@ const SearchInput = () => {
 
           <Tabs.Panel value="topHits" className="h-full flex-1 overflow-y-hidden">
             <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchError && <p className="mx-3 text-sm text-(--red-11)">{searchError}</p>}
               {searchResults?.topHits?.map((topHit) => (
                 <TopHitSearchResult
                   // @ts-ignore
@@ -181,6 +186,7 @@ const SearchInput = () => {
 
           <Tabs.Panel value="artists" className="h-full flex-1 overflow-y-hidden">
             <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchError && <p className="mx-3 text-sm text-(--red-11)">{searchError}</p>}
               {searchResults?.artists?.map((artist) => (
                 <ArtistSearchResult key={artist.id} artist={artist} onClose={handleClose} />
               ))}
@@ -189,6 +195,7 @@ const SearchInput = () => {
 
           <Tabs.Panel value="albums" className="h-full flex-1 overflow-y-hidden">
             <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchError && <p className="mx-3 text-sm text-(--red-11)">{searchError}</p>}
               {searchResults?.albums?.map((album) => (
                 <AlbumSearchResult key={album.id} album={album} onClose={handleClose} />
               ))}
@@ -197,6 +204,7 @@ const SearchInput = () => {
 
           <Tabs.Panel value="songs" className="h-full flex-1 overflow-y-hidden">
             <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchError && <p className="mx-3 text-sm text-(--red-11)">{searchError}</p>}
               {searchResults?.songs?.map((song) => (
                 <SongSearchResult key={song.id} song={song} onClose={handleClose} />
               ))}
@@ -205,6 +213,7 @@ const SearchInput = () => {
 
           <Tabs.Panel value="playlists" className="h-full flex-1 overflow-y-hidden">
             <ScrollArea className="grid" removeScrollbarVerticalMargins includeScrollbarLeftMargin>
+              {searchError && <p className="mx-3 text-sm text-(--red-11)">{searchError}</p>}
               {searchResults?.playlists?.map((playlist) => (
                 <PlaylistSearchResult key={playlist.uuid} playlist={playlist} onClose={handleClose} />
               ))}
