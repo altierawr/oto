@@ -1,5 +1,11 @@
 # server
 
+## 0.8.1
+
+### Patch Changes
+
+- b5501c6: Fixed an issue where favoriting some tracks didn't work.
+
 ## 0.8.0
 
 ### Minor Changes

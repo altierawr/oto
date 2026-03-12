@@ -1,5 +1,11 @@
 # web
 
+## 0.11.2
+
+### Patch Changes
+
+- 76d92e8: Added an error message when search request fails.
+
 ## 0.11.1
 
 ### Patch Changes
