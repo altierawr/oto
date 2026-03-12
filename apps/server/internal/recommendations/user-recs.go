@@ -130,12 +130,7 @@ func (s *Service) updateSingleUserRecommendedTracks(ctx context.Context, user da
 
 				results, err := tidal.Search(fmt.Sprintf("%s - %s", artistName, title))
 				if err != nil {
-					s.logger.Error("error searching tidal for lastfm hit",
-						"error", err.Error(),
-						"artist", artistName,
-						"title", title,
-					)
-					continue
+					return err
 				}
 
 				if results == nil {
