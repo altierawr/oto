@@ -191,6 +191,10 @@ export class MusicPlayer {
   }
 
   #getCurrentlyPlayingSongIndex(includePausedAndStopped = false) {
+    if (this.#repeatMode === "single" && this.#lastPlayingSongIndex !== null) {
+      return this.#lastPlayingSongIndex;
+    }
+
     const currentTime = this.#audio.currentTime;
     for (let i = 0; i < this.playlist.length; i++) {
       const pe = this.playlist[i];
@@ -223,7 +227,7 @@ export class MusicPlayer {
       return;
     }
 
-    const currentIndex = this.#getCurrentlyPlayingSongIndex();
+    const currentIndex = this.#getCurrentlyPlayingSongIndex(true);
     if (currentIndex === null) {
       return;
     }
@@ -238,15 +242,16 @@ export class MusicPlayer {
       shouldLoop = true;
     } else if (pe.accurateDuration !== null) {
       const trackEnd = pe.timestampOffset + pe.seekOffset + pe.accurateDuration;
-      shouldLoop = this.#audio.currentTime >= trackEnd - 0.001;
+      shouldLoop = this.#audio.currentTime >= trackEnd - 0.0001;
     }
 
     // todo: maybe there's a better way to check for this?
     if (shouldLoop) {
+      console.info("Looping back to start of track due to single repeat mode");
+
       const timestampOffset = pe.timestampOffset;
       if (pe.seekOffset > 0) {
         // we seeked so the first segment is offset; we need to reset the track and buffer and re-fetch from the beginning
-
         this.#isResetting = true;
         this.#lockAutomaticBufferOperations();
         this.#lockFetchOperations();
@@ -300,8 +305,6 @@ export class MusicPlayer {
       if (this.#isResetting || (this.#isBufferOperationsLocked && this.#isFetchOperationsLocked)) {
         return;
       }
-
-      await this.#checkForSingleRepeat();
 
       // update track listened time
       const trackIndex = this.#getCurrentlyPlayingSongIndex();
@@ -384,7 +387,11 @@ export class MusicPlayer {
       console.log("stalled");
     });
 
-    this.#audio.addEventListener("waiting", () => {
+    this.#audio.addEventListener("waiting", async () => {
+      if (!this.#isResetting) {
+        await this.#checkForSingleRepeat();
+      }
+
       this.#updatePlayerState({
         isBuffering: true,
       });
@@ -1118,6 +1125,9 @@ export class MusicPlayer {
       await this.#waitForAudioCanPlay();
       this.#audio.play();
 
+      if (this.#repeatMode === "single") {
+        this.#lastPlayingSongIndex = targetIndex;
+      }
       this.#notifyTrackChange(targetIndex);
 
       return;
@@ -1165,6 +1175,9 @@ export class MusicPlayer {
       this.#audio.currentTime = 0;
       this.#audio.play();
 
+      if (this.#repeatMode === "single") {
+        this.#lastPlayingSongIndex = targetIndex;
+      }
       this.#notifyTrackChange(targetIndex);
 
       return;
@@ -1217,6 +1230,9 @@ export class MusicPlayer {
     this.#unlockAutomaticBufferOperations();
     this.#unlockFetchOperations();
 
+    if (this.#repeatMode === "single") {
+      this.#lastPlayingSongIndex = targetIndex;
+    }
     this.#notifyTrackChange(targetIndex);
 
     this.#audio.play();
