@@ -1,5 +1,16 @@
 # web
 
+## 0.11.0
+
+### Minor Changes
+
+- b3c932e: Added a single repeat mode, which repeats the current track until it's turned off.
+
+### Patch Changes
+
+- b89ec69: Fixed an issue with the music player sometimes not clearing data from the buffer properly, which would result in stalled and broken playback.
+- 0afd92d: Fixed an issue where seeking forward in a track with the right arrow key would instead incorrectly jump to the next track.
+
 ## 0.10.0
 
 ### Minor Changes
