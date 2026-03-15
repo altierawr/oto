@@ -1,5 +1,14 @@
 # server
 
+## 0.9.1
+
+### Patch Changes
+
+- 0dd5496: Added a background task for fetching missing tidal artists and albums.
+- 79ad1b9: Slowed down tidal rate limiter to 1 request / sec.
+- 2a6981a: Slowed down tidal service rate limiter.
+- 87a5c4d: Fixed an issue where tidal background task would block the app from exiting.
+
 ## 0.9.0
 
 ### Minor Changes
