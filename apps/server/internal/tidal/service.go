@@ -72,6 +72,12 @@ func (s *Service) fetchMissingTidalArtists(ctx context.Context) {
 	}
 
 	for _, id := range missingArtistIds {
+		select {
+		case <-s.stop:
+			return
+		default:
+		}
+
 		if err := s.limiter.Wait(ctx); err != nil {
 			s.logger.Error("limiter fail",
 				"error", err.Error())
@@ -109,6 +115,12 @@ func (s *Service) fetchMissingTidalAlbums(ctx context.Context) {
 	}
 
 	for _, id := range missingAlbumIds {
+		select {
+		case <-s.stop:
+			return
+		default:
+		}
+
 		if err := s.limiter.Wait(ctx); err != nil {
 			s.logger.Error("limiter fail",
 				"error", err.Error())
