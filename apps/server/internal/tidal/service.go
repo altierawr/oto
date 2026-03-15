@@ -22,7 +22,7 @@ func New(db *database.DB, logger *slog.Logger) *Service {
 	return &Service{
 		db:      db,
 		logger:  logger,
-		limiter: rate.NewLimiter(rate.Every(500*time.Millisecond), 1),
+		limiter: rate.NewLimiter(rate.Every(1000*time.Millisecond), 1),
 		stop:    make(chan bool),
 		done:    make(chan bool),
 	}
