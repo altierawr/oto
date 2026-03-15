@@ -8,6 +8,7 @@ import (
 
 	"github.com/altierawr/oto/internal/types"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 )
 
 var ErrDuplicatePlaylistTrack = errors.New("duplicate playlist track")
@@ -21,8 +22,8 @@ type UserPlaylistSummary struct {
 }
 
 type UserPlaylist struct {
-	ID             int64             `json:"id"`
-	Name           string            `json:"name"`
+	ID             int64             `db:"id" json:"id"`
+	Name           string            `db:"name" json:"name"`
 	NumberOfTracks int               `json:"numberOfTracks"`
 	Duration       int               `json:"duration"`
 	CoverURLs      []string          `json:"coverUrls"`
@@ -35,18 +36,18 @@ type TrackPlaylist struct {
 	CoverURLs []string `json:"coverUrls"`
 }
 
-func appendUniqueCoverURL(coverURLs []string, seen map[string]struct{}, cover string) []string {
-	if len(coverURLs) >= 4 || cover == "" {
+func appendUniqueCoverURL(coverURLs []string, seen map[string]struct{}, cover *string) []string {
+	if len(coverURLs) >= 4 || cover == nil {
 		return coverURLs
 	}
 
-	if _, exists := seen[cover]; exists {
+	if _, exists := seen[*cover]; exists {
 		return coverURLs
 	}
 
-	seen[cover] = struct{}{}
+	seen[*cover] = struct{}{}
 
-	return append(coverURLs, cover)
+	return append(coverURLs, *cover)
 }
 
 func (db *DB) CreatePlaylist(userID uuid.UUID, name string) (*UserPlaylistSummary, error) {
@@ -111,68 +112,114 @@ func (db *DB) RenamePlaylist(userID uuid.UUID, playlistID int64, name string) (*
 	}, nil
 }
 
-func (db *DB) GetUserPlaylists(userID uuid.UUID) ([]UserPlaylistSummary, error) {
-	query := `
-		SELECT playlists.id, playlists.name, tidal_tracks.payload
-		FROM playlists
-		LEFT JOIN playlist_tracks ON playlist_tracks.playlist_id = playlists.id
-		LEFT JOIN tidal_tracks ON tidal_tracks.id = playlist_tracks.track_id
-		WHERE playlists.user_id = $1
-		ORDER BY playlists.created_at DESC, playlist_tracks.created_at ASC`
-
+func (db *DB) GetUserPlaylists(userId uuid.UUID) ([]UserPlaylistSummary, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := db.QueryContext(ctx, query, userID)
+	type PlaylistResult struct {
+		PlaylistId   int64  `db:"playlist_id"`
+		PlaylistName string `db:"playlist_name"`
+	}
+
+	playlistsQuery := `
+		SELECT playlists.id as playlist_id, playlists.name as playlist_name
+		FROM playlists
+		WHERE user_id = $1
+		ORDER BY created_at DESC`
+
+	playlistResults := []PlaylistResult{}
+	err := db.SelectContext(ctx, &playlistResults, playlistsQuery, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(playlistResults) == 0 {
+		return []UserPlaylistSummary{}, nil
+	}
+
+	playlistIds := []int64{}
+	for _, result := range playlistResults {
+		playlistIds = append(playlistIds, result.PlaylistId)
+	}
+
+	playlistsMap := make(map[int64]UserPlaylistSummary)
+	seenCoverURLsByPlaylistId := map[int64]map[string]struct{}{}
+
+	for _, result := range playlistResults {
+		_, exists := playlistsMap[result.PlaylistId]
+		if !exists {
+			playlistsMap[result.PlaylistId] = UserPlaylistSummary{
+				ID:             result.PlaylistId,
+				Name:           result.PlaylistName,
+				NumberOfTracks: 0,
+				Duration:       0,
+				CoverURLs:      []string{},
+			}
+
+			seenCoverURLsByPlaylistId[result.PlaylistId] = map[string]struct{}{}
+		}
+	}
+
+	tracksQuery, args, err := sqlx.In(`
+		SELECT
+			pt.playlist_id,
+			tt.duration,
+			tal.cover
+		FROM playlist_tracks pt
+		JOIN tidal_tracks tt ON tt.id = pt.track_id
+		JOIN tidal_artists ta ON tt.artist_id = ta.id
+		JOIN tidal_albums tal ON tt.album_id = tal.id
+		WHERE pt.playlist_id IN (?)
+		ORDER BY pt.created_at ASC
+	`, playlistIds)
+	if err != nil {
+		return nil, err
+	}
+
+	tracksQuery = db.Rebind(tracksQuery)
+
+	rows, err := db.QueryContext(ctx, tracksQuery, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	playlists := []UserPlaylistSummary{}
-	indexByID := map[int64]int{}
-	seenCoverURLsByPlaylistID := map[int64]map[string]struct{}{}
-
 	for rows.Next() {
-		var id int64
-		var name string
-		var payload sql.NullString
-
-		if err := rows.Scan(&id, &name, &payload); err != nil {
+		var playlistID int64
+		track := types.TidalSong{}
+		album := types.TidalAlbum{}
+		err = rows.Scan(
+			&playlistID,
+			&track.Duration,
+			&album.Cover,
+		)
+		if err != nil {
 			return nil, err
 		}
 
-		index, exists := indexByID[id]
-		if !exists {
-			playlists = append(playlists, UserPlaylistSummary{
-				ID:             id,
-				Name:           name,
-				NumberOfTracks: 0,
-				Duration:       0,
-				CoverURLs:      []string{},
-			})
-			index = len(playlists) - 1
-			indexByID[id] = index
-			seenCoverURLsByPlaylistID[id] = map[string]struct{}{}
-		}
+		summary := playlistsMap[playlistID]
 
-		if payload.Valid {
-			track, err := unmarshalTrackPayload(payload.String)
-			if err != nil {
-				return nil, err
-			}
+		summary.NumberOfTracks++
+		summary.Duration += track.Duration
+		summary.CoverURLs = appendUniqueCoverURL(
+			summary.CoverURLs,
+			seenCoverURLsByPlaylistId[playlistID],
+			album.Cover,
+		)
 
-			playlists[index].NumberOfTracks++
-			playlists[index].Duration += track.Duration
-			playlists[index].CoverURLs = appendUniqueCoverURL(
-				playlists[index].CoverURLs,
-				seenCoverURLsByPlaylistID[id],
-				track.Album.Cover,
-			)
-		}
+		playlistsMap[playlistID] = summary
 	}
 
-	return playlists, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	playlists := []UserPlaylistSummary{}
+	for _, playlist := range playlistResults {
+		playlists = append(playlists, playlistsMap[playlist.PlaylistId])
+	}
+
+	return playlists, nil
 }
 
 func (db *DB) GetUserPlaylist(userID uuid.UUID, playlistID int64) (*UserPlaylist, error) {
@@ -196,11 +243,40 @@ func (db *DB) GetUserPlaylist(userID uuid.UUID, playlistID int64) (*UserPlaylist
 	}
 
 	tracksQuery := `
-		SELECT tidal_tracks.payload
+		SELECT
+			tt.id,
+			tt.bpm,
+			tt.duration,
+			tt.explicit,
+			tt.isrc,
+			tt.stream_start_date,
+			tt.title,
+			tt.track_number,
+			tt.volume_number,
+			ta.id,
+			ta.name,
+			ta.picture,
+			ta.selected_album_cover_fallback,
+			tal.id,
+			tal.cover,
+			tal.duration,
+			tal.explicit,
+			tal.number_of_tracks,
+			tal.number_of_volumes,
+			tal.release_date,
+			tal.title,
+			tal.type,
+			tal.upc,
+			tal.vibrant_color,
+			tal.video_cover
 		FROM playlist_tracks
-		INNER JOIN tidal_tracks ON tidal_tracks.id = playlist_tracks.track_id
+		JOIN tidal_tracks tt ON tt.id = playlist_tracks.track_id
+		JOIN tidal_artists ta ON tt.artist_id = ta.id
+		JOIN tidal_albums tal ON tt.album_id = tal.id
 		WHERE playlist_tracks.playlist_id = $1
 		ORDER BY playlist_tracks.created_at ASC`
+
+	seenCoverURLs := map[string]struct{}{}
 
 	rows, err := db.QueryContext(ctx, tracksQuery, playlistID)
 	if err != nil {
@@ -208,24 +284,48 @@ func (db *DB) GetUserPlaylist(userID uuid.UUID, playlistID int64) (*UserPlaylist
 	}
 	defer rows.Close()
 
-	seenCoverURLs := map[string]struct{}{}
-
 	for rows.Next() {
-		var payload string
-
-		if err := rows.Scan(&payload); err != nil {
-			return nil, err
-		}
-
-		track, err := unmarshalTrackPayload(payload)
+		track := types.TidalSong{}
+		artist := types.TidalArtist{}
+		album := types.TidalAlbum{}
+		err = rows.Scan(
+			&track.ID,
+			&track.Bpm,
+			&track.Duration,
+			&track.Explicit,
+			&track.ISRC,
+			&track.StreamStartDate,
+			&track.Title,
+			&track.TrackNumber,
+			&track.VolumeNumber,
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+			&album.ID,
+			&album.Cover,
+			&album.Duration,
+			&album.Explicit,
+			&album.NumberOfTracks,
+			&album.NumberOfVolumes,
+			&album.ReleaseDate,
+			&album.Title,
+			&album.Type,
+			&album.UPC,
+			&album.VibrantColor,
+			&album.VideoCover,
+		)
 		if err != nil {
 			return nil, err
 		}
 
+		track.Artists = []types.TidalArtist{artist}
+		track.Album = &album
+
 		playlist.Tracks = append(playlist.Tracks, track)
 		playlist.NumberOfTracks++
 		playlist.Duration += track.Duration
-		playlist.CoverURLs = appendUniqueCoverURL(playlist.CoverURLs, seenCoverURLs, track.Album.Cover)
+		playlist.CoverURLs = appendUniqueCoverURL(playlist.CoverURLs, seenCoverURLs, album.Cover)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -364,12 +464,19 @@ func (db *DB) RemoveTrackFromPlaylist(userID uuid.UUID, playlistID int64, trackI
 	return tx.Commit()
 }
 
-func (db *DB) GetTrackPlaylists(userID uuid.UUID, trackID int64) ([]TrackPlaylist, error) {
+func (db *DB) GetTrackPlaylists(userId uuid.UUID, trackId int64) ([]TrackPlaylist, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	query := `
-		SELECT playlists.id, playlists.name, tidal_tracks.payload
+		SELECT
+			playlists.id as playlist_id,
+			playlists.name as playlist_name,
+			tal.cover
 		FROM playlists
 		LEFT JOIN playlist_tracks ON playlist_tracks.playlist_id = playlists.id
-		LEFT JOIN tidal_tracks ON tidal_tracks.id = playlist_tracks.track_id
+		LEFT JOIN tidal_tracks tt ON tt.id = playlist_tracks.track_id
+		LEFT JOIN tidal_albums tal ON tt.album_id = tal.id
 		WHERE playlists.user_id = $1
 		AND EXISTS (
 			SELECT 1
@@ -379,55 +486,53 @@ func (db *DB) GetTrackPlaylists(userID uuid.UUID, trackID int64) ([]TrackPlaylis
 		)
 		ORDER BY playlists.created_at DESC, playlist_tracks.created_at ASC`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+	playlists := []TrackPlaylist{}
+	indexById := map[int64]int{}
+	seenCoverURLsByPlaylistId := map[int64]map[string]struct{}{}
 
-	rows, err := db.QueryContext(ctx, query, userID, trackID)
+	rows, err := db.QueryContext(ctx, query, userId, trackId)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	playlists := []TrackPlaylist{}
-	indexByID := map[int64]int{}
-	seenCoverURLsByPlaylistID := map[int64]map[string]struct{}{}
-
 	for rows.Next() {
-		var id int64
-		var name string
-		var payload sql.NullString
-
-		if err := rows.Scan(&id, &name, &payload); err != nil {
+		var playlistId int64
+		var playlistName string
+		album := types.TidalAlbum{}
+		err = rows.Scan(
+			&playlistId,
+			&playlistName,
+			&album.Cover,
+		)
+		if err != nil {
 			return nil, err
 		}
 
-		index, exists := indexByID[id]
+		index, exists := indexById[playlistId]
 		if !exists {
 			playlists = append(playlists, TrackPlaylist{
-				ID:        id,
-				Name:      name,
+				ID:        playlistId,
+				Name:      playlistName,
 				CoverURLs: []string{},
 			})
 			index = len(playlists) - 1
-			indexByID[id] = index
-			seenCoverURLsByPlaylistID[id] = map[string]struct{}{}
+			indexById[playlistId] = index
+			seenCoverURLsByPlaylistId[playlistId] = map[string]struct{}{}
 		}
 
-		if payload.Valid {
-			track, err := unmarshalTrackPayload(payload.String)
-			if err != nil {
-				return nil, err
-			}
-
-			playlists[index].CoverURLs = appendUniqueCoverURL(
-				playlists[index].CoverURLs,
-				seenCoverURLsByPlaylistID[id],
-				track.Album.Cover,
-			)
-		}
+		playlists[index].CoverURLs = appendUniqueCoverURL(
+			playlists[index].CoverURLs,
+			seenCoverURLsByPlaylistId[playlistId],
+			album.Cover,
+		)
 	}
 
-	return playlists, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return playlists, nil
 }
 
 func (db *DB) IsTrackInPlaylist(userID uuid.UUID, playlistID int64, trackID int64) (bool, error) {

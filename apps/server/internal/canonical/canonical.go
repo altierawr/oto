@@ -72,8 +72,8 @@ func TrackFieldsFromTidalTrack(track *types.TidalSong) TrackFields {
 
 	albumCnt := 0
 	var albumCntPtr *int
-	if track.Album.NumberOfTracks > 0 {
-		albumCnt = track.Album.NumberOfTracks
+	if track.Album.NumberOfTracks != nil && *track.Album.NumberOfTracks > 0 {
+		albumCnt = *track.Album.NumberOfTracks
 		albumCntPtr = &albumCnt
 	}
 

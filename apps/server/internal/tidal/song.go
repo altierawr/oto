@@ -59,8 +59,6 @@ func GetSongStreamUrl(id int64) (*string, error) {
 	}
 
 	if err := json.Unmarshal(decoded, &manifest); err != nil {
-		fmt.Println("decoded data:")
-		fmt.Println(string(decoded))
 		return nil, err
 	}
 
@@ -74,23 +72,23 @@ func GetSongStreamUrl(id int64) (*string, error) {
 }
 
 type TidalTrackResponse struct {
-	ID              int    `json:"id"`
-	Duration        int    `json:"duration"`
-	Title           string `json:"title"`
-	ISRC            string `json:"isrc,omitempty"`
-	TrackNumber     int    `json:"trackNumber,omitempty"`
-	VolumeNumber    int    `json:"volumeNumber,omitempty"`
-	Explicit        bool   `json:"explicit,omitempty"`
-	StreamStartDate string `json:"streamStartDate,omitempty"`
+	ID              int     `json:"id"`
+	Duration        int     `json:"duration"`
+	Title           string  `json:"title"`
+	ISRC            *string `json:"isrc"`
+	TrackNumber     *int    `json:"trackNumber"`
+	VolumeNumber    *int    `json:"volumeNumber"`
+	Explicit        bool    `json:"explicit"`
+	StreamStartDate *string `json:"streamStartDate"`
 	Artists         []struct {
-		ID      int    `json:"id,omitempty"`
-		Name    string `json:"name,omitempty"`
-		Picture string `json:"picture,omitempty"`
+		ID      int     `json:"id"`
+		Name    string  `json:"name"`
+		Picture *string `json:"picture"`
 	} `json:"artists"`
 	Album struct {
-		ID    int    `json:"id"`
-		Title string `json:"title"`
-		Cover string `json:"cover"`
+		ID    int     `json:"id"`
+		Title string  `json:"title"`
+		Cover *string `json:"cover"`
 	} `json:"album"`
 }
 
@@ -143,7 +141,7 @@ func GetSong(id int64) (*types.TidalSong, error) {
 		Explicit:        trackResp.Explicit,
 		StreamStartDate: trackResp.StreamStartDate,
 		Artists:         []types.TidalArtist{},
-		Album: types.TidalAlbum{
+		Album: &types.TidalAlbum{
 			ID:    trackResp.Album.ID,
 			Title: trackResp.Album.Title,
 			Cover: trackResp.Album.Cover,

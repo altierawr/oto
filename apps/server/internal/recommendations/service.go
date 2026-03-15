@@ -3,7 +3,6 @@ package recommendations
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
@@ -233,11 +232,9 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 		return err
 	}
 
-	fmt.Println(len(similarArtists.Artists), "artists")
 	if len(similarArtists.Artist) > 0 {
 		limit := 50
 		for idx, artist := range similarArtists.Artists {
-			fmt.Println("Similar artist:", artist.Name)
 			if idx+1 > limit {
 				break
 			}
@@ -317,7 +314,6 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 		}
 
 		if len(similarTracks.Tracks) == 0 {
-			fmt.Println("no similar tracks for", track.Title)
 			continue
 		}
 

@@ -1,58 +1,64 @@
 package types
 
 type TidalAlbum struct {
-	ID              int           `json:"id"`
-	Cover           string        `json:"cover,omitempty"`
-	Explicit        bool          `json:"explicit,omitempty"`
-	Duration        int           `json:"duration,omitempty"`
-	NumberOfTracks  int           `json:"numberOfTracks,omitempty"`
-	NumberOfVolumes int           `json:"numberOfVolumes,omitempty"`
-	ReleaseDate     string        `json:"releaseDate,omitempty"`
-	Title           string        `json:"title"`
-	Type            string        `json:"type,omitempty"` // SINGLE, EP, ALBUM
-	UPC             string        `json:"upc,omitempty"`
-	VibrantColor    string        `json:"vibrantColor,omitempty"`
-	VideoCover      string        `json:"videoCover,omitempty"`
+	ID              int           `db:"id" json:"id"`
+	Cover           *string       `db:"cover" json:"cover,omitempty"`
+	Explicit        bool          `db:"explicit" json:"explicit,omitempty"`
+	Duration        *int          `db:"duration" json:"duration,omitempty"`
+	NumberOfTracks  *int          `db:"number_of_tracks" json:"numberOfTracks,omitempty"`
+	NumberOfVolumes *int          `db:"number_of_volumes" json:"numberOfVolumes,omitempty"`
+	ReleaseDate     *string       `db:"release_date" json:"releaseDate,omitempty"`
+	Title           string        `db:"title" json:"title"`
+	Type            *string       `db:"type" json:"type,omitempty"` // SINGLE, EP, ALBUM
+	UPC             *string       `db:"upc" json:"upc,omitempty"`
+	VibrantColor    *string       `db:"vibrant_color" json:"vibrantColor,omitempty"`
+	VideoCover      *string       `db:"video_cover" json:"videoCover,omitempty"`
 	Songs           []TidalSong   `json:"songs,omitempty"`
 	Artists         []TidalArtist `json:"artists,omitempty"`
+	UpdatedAt       *int64        `db:"updated_at"`
+	ArtistId        *int          `db:"artist_id"`
 }
 
 type TidalArtist struct {
-	ID                         int    `json:"id"`
-	Name                       string `json:"name"`
-	Picture                    string `json:"picture,omitempty"`
-	SelectedAlbumCoverFallback string `json:"SelectedAlbumCoverFallback,omitempty"`
+	ID                         int     `db:"id" json:"id"`
+	Name                       string  `db:"name" json:"name"`
+	Picture                    *string `db:"picture" json:"picture,omitempty"`
+	SelectedAlbumCoverFallback *string `db:"selected_album_cover_fallback" json:"SelectedAlbumCoverFallback,omitempty"`
+	UpdatedAt                  *int64  `db:"updated_at"`
 }
 
 type TidalSong struct {
-	ID              int           `json:"id"`
-	Bpm             int           `json:"bpm,omitempty"`
-	Duration        int           `json:"duration"`
-	Explicit        bool          `json:"explicit"`
-	ISRC            string        `json:"isrc,omitempty"`
-	StreamStartDate string        `json:"StreamStartDate,omitempty"`
-	Title           string        `json:"title"`
-	TrackNumber     int           `json:"trackNumber,omitempty"`
-	VolumeNumber    int           `json:"volumeNumber,omitempty"`
+	ID              int           `db:"id" json:"id"`
+	Bpm             *int          `db:"bpm" json:"bpm,omitempty"`
+	Duration        int           `db:"duration" json:"duration"`
+	Explicit        bool          `db:"explicit" json:"explicit"`
+	ISRC            *string       `db:"isrc" json:"isrc,omitempty"`
+	StreamStartDate *string       `db:"stream_start_date" json:"streamStartDate,omitempty"`
+	Title           string        `db:"title" json:"title"`
+	TrackNumber     *int          `db:"track_number" json:"trackNumber,omitempty"`
+	VolumeNumber    *int          `db:"volume_number" json:"volumeNumber,omitempty"`
 	Artists         []TidalArtist `json:"artists"`
-	Album           TidalAlbum    `json:"album"`
+	Album           *TidalAlbum   `json:"album"`
+	UpdatedAt       *int64        `db:"updated_at"`
+	ArtistId        *int          `db:"artist_id"`
+	AlbumId         *int          `db:"album_id"`
 }
 
 type TidalPlaylist struct {
 	UUID                string        `json:"uuid"`
-	Created             string        `json:"created"`
-	Description         string        `json:"description"`
-	Popularity          float64       `json:"popularity"`
-	Duration            int           `json:"duration"`
-	LastItemAddedAt     string        `json:"lastItemAddedAt"`
-	LastUpdated         string        `json:"lastUpdated"`
-	NumberOfAudioTracks int           `json:"numberOfAudioTracks"`
-	NumberOfTracks      int           `json:"numberOfTracks"`
+	Created             *string       `json:"created,omitempty"`
+	Description         *string       `json:"description,omitempty"`
+	Popularity          *float64      `json:"popularity,omitempty"`
+	Duration            *int          `json:"duration,omitempty"`
+	LastItemAddedAt     *string       `json:"lastItemAddedAt,omitempty"`
+	LastUpdated         *string       `json:"lastUpdated,omitempty"`
+	NumberOfAudioTracks *int          `json:"numberOfAudioTracks,omitempty"`
+	NumberOfTracks      *int          `json:"numberOfTracks,omitempty"`
 	PromotedArtists     []TidalArtist `json:"promotedArtists"`
-	PublicPlaylist      bool          `json:"publicPlaylist"`
+	PublicPlaylist      *bool         `json:"publicPlaylist,omitempty"`
 	Title               string        `json:"title"`
-	SquareImage         string        `json:"squareImage,omitempty"`
-	Type                string        `json:"type"`
+	SquareImage         *string       `json:"squareImage,omitempty"`
+	Type                *string       `json:"type,omitempty"`
 }
 
 type TidalTopHit struct {
@@ -84,9 +90,9 @@ type TidalSearch struct {
 type TidalArtistPage struct {
 	ID                         int           `json:"id"`
 	Name                       string        `json:"name"`
-	Picture                    string        `json:"picture,omitempty"`
-	SelectedAlbumCoverFallback string        `json:"selectedAlbumCoverFallback,omitempty"`
-	Biography                  string        `json:"biography,omitempty"`
+	Picture                    *string       `json:"picture,omitempty"`
+	SelectedAlbumCoverFallback *string       `json:"selectedAlbumCoverFallback,omitempty"`
+	Biography                  *string       `json:"biography,omitempty"`
 	TopTracks                  []TidalSong   `json:"topTracks,omitempty"`
 	Albums                     []TidalAlbum  `json:"albums,omitempty"`
 	Compilations               []TidalAlbum  `json:"compilations,omitempty"`

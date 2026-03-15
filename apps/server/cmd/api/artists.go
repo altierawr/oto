@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/altierawr/oto/internal/tidal"
+	"github.com/altierawr/oto/internal/types"
 )
 
 func (app *application) viewArtistHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,13 +14,27 @@ func (app *application) viewArtistHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	artist, err := tidal.GetArtistPage(id)
+	page, err := tidal.GetArtistPage(id)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, 200, artist, nil)
+	artist := types.TidalArtist{
+		ID:                         page.ID,
+		Name:                       page.Name,
+		Picture:                    page.Picture,
+		SelectedAlbumCoverFallback: page.SelectedAlbumCoverFallback,
+	}
+
+	err = app.db.InsertTidalArtist(&artist, nil)
+	if err != nil {
+		app.logger.Error("error inserting artist in view artist handler",
+			"error", err.Error(),
+			"id", id)
+	}
+
+	err = app.writeJSON(w, 200, page, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

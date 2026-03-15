@@ -213,10 +213,24 @@ func (app *application) addTrackToPlaylistHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	track, err := tidal.GetSong(input.TrackID)
+	track, err := app.db.GetTidalTrack(input.TrackID)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
+		switch {
+		case errors.Is(err, database.ErrRecordNotFound):
+			app.logger.Warn("tidal track doesn't exist in database even though it should",
+				"id", input.TrackID)
+		default:
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	if err != nil || track == nil {
+		track, err = tidal.GetSong(input.TrackID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
 	}
 
 	if track == nil || int64(track.ID) != input.TrackID {

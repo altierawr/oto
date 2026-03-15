@@ -26,11 +26,6 @@ func (db *DB) AddFavoriteArtist(userId uuid.UUID, artist *types.TidalArtist) err
 		return errors.New("artist is nil")
 	}
 
-	payload, err := marshalPayload(artist)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -40,13 +35,7 @@ func (db *DB) AddFavoriteArtist(userId uuid.UUID, artist *types.TidalArtist) err
 	}
 	defer tx.Rollback()
 
-	upsertArtistQuery := `
-		INSERT INTO tidal_artists (id, payload, updated_at)
-		VALUES ($1, $2, unixepoch())
-		ON CONFLICT(id) DO UPDATE
-		SET payload = excluded.payload, updated_at = excluded.updated_at`
-
-	_, err = tx.ExecContext(ctx, upsertArtistQuery, artist.ID, payload)
+	err = db.InsertTidalArtist(artist, tx)
 	if err != nil {
 		return err
 	}
@@ -76,19 +65,6 @@ func (db *DB) RemoveFavoriteArtist(userId uuid.UUID, artistId int64) error {
 		return err
 	}
 
-	cleanupArtistQuery := `
-		DELETE FROM tidal_artists
-		WHERE id = $1
-		AND NOT EXISTS (
-			SELECT 1
-			FROM favorite_artists
-			WHERE artist_id = $1
-		)`
-	_, err = tx.ExecContext(ctx, cleanupArtistQuery, artistId)
-	if err != nil {
-		return err
-	}
-
 	return tx.Commit()
 }
 
@@ -108,38 +84,23 @@ func (db *DB) IsFavoriteArtist(userId uuid.UUID, artistId int64) (bool, error) {
 }
 
 func (db *DB) GetFavoriteArtists(userId uuid.UUID) ([]types.TidalArtist, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	query := `
-		SELECT tidal_artists.payload
+		SELECT tidal_artists.*
 		FROM favorite_artists
 		INNER JOIN tidal_artists ON tidal_artists.id = favorite_artists.artist_id
 		WHERE favorite_artists.user_id = $1
 		ORDER BY favorite_artists.created_at DESC`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	rows, err := db.QueryContext(ctx, query, userId)
+	artists := []types.TidalArtist{}
+	err := db.SelectContext(ctx, &artists, query, userId)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	artists := []types.TidalArtist{}
-	for rows.Next() {
-		var payload string
-		if err := rows.Scan(&payload); err != nil {
-			return nil, err
-		}
-
-		var artist types.TidalArtist
-		if err := json.Unmarshal([]byte(payload), &artist); err != nil {
-			return nil, err
-		}
-
-		artists = append(artists, artist)
-	}
-
-	return artists, rows.Err()
+	return artists, nil
 }
 
 // --- Albums ---
@@ -147,11 +108,6 @@ func (db *DB) GetFavoriteArtists(userId uuid.UUID) ([]types.TidalArtist, error) 
 func (db *DB) AddFavoriteAlbum(userId uuid.UUID, album *types.TidalAlbum) error {
 	if album == nil {
 		return errors.New("album is nil")
-	}
-
-	payload, err := marshalPayload(album)
-	if err != nil {
-		return err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -163,13 +119,7 @@ func (db *DB) AddFavoriteAlbum(userId uuid.UUID, album *types.TidalAlbum) error 
 	}
 	defer tx.Rollback()
 
-	upsertAlbumQuery := `
-		INSERT INTO tidal_albums (id, payload, updated_at)
-		VALUES ($1, $2, unixepoch())
-		ON CONFLICT(id) DO UPDATE
-		SET payload = excluded.payload, updated_at = excluded.updated_at`
-
-	_, err = tx.ExecContext(ctx, upsertAlbumQuery, album.ID, payload)
+	err = db.InsertTidalAlbum(album, tx)
 	if err != nil {
 		return err
 	}
@@ -199,19 +149,6 @@ func (db *DB) RemoveFavoriteAlbum(userId uuid.UUID, albumId int64) error {
 		return err
 	}
 
-	cleanupAlbumQuery := `
-		DELETE FROM tidal_albums
-		WHERE id = $1
-		AND NOT EXISTS (
-			SELECT 1
-			FROM favorite_albums
-			WHERE album_id = $1
-		)`
-	_, err = tx.ExecContext(ctx, cleanupAlbumQuery, albumId)
-	if err != nil {
-		return err
-	}
-
 	return tx.Commit()
 }
 
@@ -231,15 +168,32 @@ func (db *DB) IsFavoriteAlbum(userId uuid.UUID, albumId int64) (bool, error) {
 }
 
 func (db *DB) GetFavoriteAlbums(userId uuid.UUID) ([]types.TidalAlbum, error) {
-	query := `
-		SELECT tidal_albums.payload
-		FROM favorite_albums
-		INNER JOIN tidal_albums ON tidal_albums.id = favorite_albums.album_id
-		WHERE favorite_albums.user_id = $1
-		ORDER BY favorite_albums.created_at DESC`
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+
+	query := `
+		SELECT
+			tidal_albums.id,
+			tidal_albums.cover,
+			tidal_albums.duration,
+			tidal_albums.explicit,
+			tidal_albums.number_of_tracks,
+			tidal_albums.number_of_volumes,
+			tidal_albums.release_date,
+			tidal_albums.title,
+			tidal_albums.type,
+			tidal_albums.upc,
+			tidal_albums.vibrant_color,
+			tidal_albums.video_cover,
+			tidal_artists.id,
+			tidal_artists.name,
+			tidal_artists.picture,
+			tidal_artists.selected_album_cover_fallback
+		FROM favorite_albums
+		INNER JOIN tidal_albums ON tidal_albums.id = favorite_albums.album_id
+		INNER JOIN tidal_artists ON tidal_albums.artist_id = tidal_artists.id
+		WHERE favorite_albums.user_id = $1
+		ORDER BY favorite_albums.created_at DESC`
 
 	rows, err := db.QueryContext(ctx, query, userId)
 	if err != nil {
@@ -249,20 +203,39 @@ func (db *DB) GetFavoriteAlbums(userId uuid.UUID) ([]types.TidalAlbum, error) {
 
 	albums := []types.TidalAlbum{}
 	for rows.Next() {
-		var payload string
-		if err := rows.Scan(&payload); err != nil {
+		album := types.TidalAlbum{}
+		artist := types.TidalArtist{}
+		err = rows.Scan(
+			&album.ID,
+			&album.Cover,
+			&album.Duration,
+			&album.Explicit,
+			&album.NumberOfTracks,
+			&album.NumberOfVolumes,
+			&album.ReleaseDate,
+			&album.Title,
+			&album.Type,
+			&album.UPC,
+			&album.VibrantColor,
+			&album.VideoCover,
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+		)
+		if err != nil {
 			return nil, err
 		}
 
-		var album types.TidalAlbum
-		if err := json.Unmarshal([]byte(payload), &album); err != nil {
-			return nil, err
-		}
-
+		album.Artists = []types.TidalArtist{artist}
 		albums = append(albums, album)
 	}
 
-	return albums, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return albums, nil
 }
 
 // --- Tracks ---
@@ -270,11 +243,6 @@ func (db *DB) GetFavoriteAlbums(userId uuid.UUID) ([]types.TidalAlbum, error) {
 func (db *DB) AddFavoriteTrack(userId uuid.UUID, track *types.TidalSong) error {
 	if track == nil {
 		return errors.New("track is nil")
-	}
-
-	payload, err := marshalPayload(track)
-	if err != nil {
-		return err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -286,13 +254,7 @@ func (db *DB) AddFavoriteTrack(userId uuid.UUID, track *types.TidalSong) error {
 	}
 	defer tx.Rollback()
 
-	upsertTrackQuery := `
-		INSERT INTO tidal_tracks (id, payload, updated_at)
-		VALUES ($1, $2, unixepoch())
-		ON CONFLICT(id) DO UPDATE
-		SET payload = excluded.payload, updated_at = excluded.updated_at`
-
-	_, err = tx.ExecContext(ctx, upsertTrackQuery, track.ID, payload)
+	err = db.InsertTidalTrack(track, tx)
 	if err != nil {
 		return err
 	}
@@ -341,15 +303,42 @@ func (db *DB) IsFavoriteTrack(userId uuid.UUID, trackId int64) (bool, error) {
 }
 
 func (db *DB) GetFavoriteTracks(userId uuid.UUID) ([]types.TidalSong, error) {
-	query := `
-		SELECT tidal_tracks.payload
-		FROM favorite_tracks
-		INNER JOIN tidal_tracks ON tidal_tracks.id = favorite_tracks.track_id
-		WHERE favorite_tracks.user_id = $1
-		ORDER BY favorite_tracks.created_at DESC`
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+
+	query := `
+		SELECT
+			tt.id,
+			tt.bpm,
+			tt.duration,
+			tt.explicit,
+			tt.isrc,
+			tt.stream_start_date,
+			tt.title,
+			tt.track_number,
+			tt.volume_number,
+			tidal_artists.id,
+			tidal_artists.name,
+			tidal_artists.picture,
+			tidal_artists.selected_album_cover_fallback,
+			tidal_albums.id,
+			tidal_albums.cover,
+			tidal_albums.duration,
+			tidal_albums.explicit,
+			tidal_albums.number_of_tracks,
+			tidal_albums.number_of_volumes,
+			tidal_albums.release_date,
+			tidal_albums.title,
+			tidal_albums.type,
+			tidal_albums.upc,
+			tidal_albums.vibrant_color,
+			tidal_albums.video_cover
+		FROM favorite_tracks
+		INNER JOIN tidal_tracks tt ON tt.id = favorite_tracks.track_id
+		INNER JOIN tidal_artists ON tt.artist_id = tidal_artists.id
+		INNER JOIN tidal_albums ON tt.album_id = tidal_albums.id
+		WHERE favorite_tracks.user_id = $1
+		ORDER BY favorite_tracks.created_at DESC`
 
 	rows, err := db.QueryContext(ctx, query, userId)
 	if err != nil {
@@ -359,18 +348,48 @@ func (db *DB) GetFavoriteTracks(userId uuid.UUID) ([]types.TidalSong, error) {
 
 	tracks := []types.TidalSong{}
 	for rows.Next() {
-		var payload string
-		if err := rows.Scan(&payload); err != nil {
+		track := types.TidalSong{}
+		artist := types.TidalArtist{}
+		album := types.TidalAlbum{}
+		err = rows.Scan(
+			&track.ID,
+			&track.Bpm,
+			&track.Duration,
+			&track.Explicit,
+			&track.ISRC,
+			&track.StreamStartDate,
+			&track.Title,
+			&track.TrackNumber,
+			&track.VolumeNumber,
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+			&album.ID,
+			&album.Cover,
+			&album.Duration,
+			&album.Explicit,
+			&album.NumberOfTracks,
+			&album.NumberOfVolumes,
+			&album.ReleaseDate,
+			&album.Title,
+			&album.Type,
+			&album.UPC,
+			&album.VibrantColor,
+			&album.VideoCover,
+		)
+		if err != nil {
 			return nil, err
 		}
 
-		var track types.TidalSong
-		if err := json.Unmarshal([]byte(payload), &track); err != nil {
-			return nil, err
-		}
-
+		track.Artists = []types.TidalArtist{artist}
+		track.Album = &album
 		tracks = append(tracks, track)
 	}
 
-	return tracks, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tracks, nil
 }

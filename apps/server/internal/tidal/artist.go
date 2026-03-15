@@ -19,13 +19,13 @@ type ModuleItemItem struct {
 }
 
 type ModuleItem struct {
-	ModuleID string           `json:"moduleId,omitempty"`
+	ModuleID string           `json:"moduleId"`
 	Items    []ModuleItemItem `json:"items"`
 }
 
 func (m *ModuleItem) UnmarshalJSON(data []byte) error {
 	type Alias struct {
-		ModuleID string `json:"moduleId,omitempty"`
+		ModuleID string `json:"moduleId"`
 		Items    []struct {
 			Type string          `json:"type"`
 			Data json.RawMessage `json:"data"`
@@ -103,105 +103,105 @@ func (m *ModuleItem) UnmarshalJSON(data []byte) error {
 type TidalArtistResponse struct {
 	Header struct {
 		Biography struct {
-			Text string `json:"text,omitempty"`
+			Text *string `json:"text"`
 		} `json:"biography"`
-		FollowersAmount int `json:"followersAmount,omitempty"`
+		FollowersAmount *int `json:"followersAmount"`
 	} `json:"header"`
 	Item struct {
 		Data struct {
-			ID                         int     `json:"id"`
-			Name                       string  `json:"name"`
-			Picture                    string  `json:"picture"`
-			DoublePopularity           float32 `json:"doublePopularity"`
-			SelectedAlbumCoverFallback string  `json:"selectedAlbumCoverFallback"`
-			VibrantColor               string  `json:"vibrantColor,omitempty"`
+			ID                         int      `json:"id"`
+			Name                       string   `json:"name"`
+			Picture                    *string  `json:"picture"`
+			DoublePopularity           *float32 `json:"doublePopularity"`
+			SelectedAlbumCoverFallback *string  `json:"selectedAlbumCoverFallback"`
+			VibrantColor               *string  `json:"vibrantColor"`
 		} `json:"data"`
 	} `json:"item"`
 	Items []ModuleItem `json:"items"`
 }
 
 type TidalArtistTopTrack struct {
-	ID               int     `json:"id"`
-	Bpm              int     `json:"bpm,omitempty"`
-	DoublePopularity float32 `json:"doublePopularity,omitempty"`
-	Duration         int     `json:"duration"`
-	Explicit         bool    `json:"explicit,omitempty"`
-	ISRC             string  `json:"isrc,omitempty"`
-	StreamStartDate  string  `json:"streamStartDate,omitempty"`
-	Title            string  `json:"title"`
-	TrackNumber      int     `json:"trackNumber,omitempty"`
-	VolumeNumber     int     `json:"volumenumber,omitempty"`
+	ID               int      `json:"id"`
+	Bpm              *int     `json:"bpm"`
+	DoublePopularity *float32 `json:"doublePopularity"`
+	Duration         int      `json:"duration"`
+	Explicit         bool     `json:"explicit"`
+	ISRC             *string  `json:"isrc"`
+	StreamStartDate  *string  `json:"streamStartDate"`
+	Title            string   `json:"title"`
+	TrackNumber      *int     `json:"trackNumber"`
+	VolumeNumber     *int     `json:"volumenumber"`
 	Artists          []struct {
-		ID      int    `json:"id,omitempty"`
-		Name    string `json:"name,omitempty"`
-		Picture string `json:"picture,omitempty"`
+		ID      int     `json:"id"`
+		Name    string  `json:"name"`
+		Picture *string `json:"picture"`
 	} `json:"artists"`
 	Album struct {
-		ID           int    `json:"id"`
-		Cover        string `json:"cover"`
-		ReleaseDate  string `json:"releaseDate"`
-		Title        string `json:"title"`
-		VibrantColor string `json:"vibrantColor,omitempty"`
-		VideoCover   string `json:"videoCover,omitempty"`
+		ID           int     `json:"id"`
+		Cover        *string `json:"cover"`
+		ReleaseDate  *string `json:"releaseDate"`
+		Title        string  `json:"title"`
+		VibrantColor *string `json:"vibrantColor"`
+		VideoCover   *string `json:"videoCover"`
 	} `json:"album"`
 }
 
 type TidalArtistAlbum struct {
-	ID              int    `json:"id"`
-	Cover           string `json:"cover,omitempty"`
-	Explicit        bool   `json:"explicit,omitempty"`
-	Duration        int    `json:"duration"`
-	NumberOfTracks  int    `json:"numberOfTracks"`
-	NumberOfVolumes int    `json:"NumberOfVolumes"`
-	ReleaseDate     string `json:"releaseDate,omitempty"`
-	Title           string `json:"title"`
-	Type            string `json:"type"` // SINGLE, EP, ALBUM
-	UPC             string `json:"upc,omitempty"`
-	VibrantColor    string `json:"vibrantColor,omitempty"`
-	VideoCover      string `json:"videoCover,omitempty"`
+	ID              int     `json:"id"`
+	Cover           *string `json:"cover"`
+	Explicit        bool    `json:"explicit"`
+	Duration        *int    `json:"duration"`
+	NumberOfTracks  *int    `json:"numberOfTracks"`
+	NumberOfVolumes *int    `json:"NumberOfVolumes"`
+	ReleaseDate     *string `json:"releaseDate"`
+	Title           string  `json:"title"`
+	Type            *string `json:"type"` // SINGLE, EP, ALBUM
+	UPC             *string `json:"upc"`
+	VibrantColor    *string `json:"vibrantColor"`
+	VideoCover      *string `json:"videoCover"`
 	Artists         []struct {
-		ID      int    `json:"id,omitempty"`
-		Name    string `json:"name,omitempty"`
-		Picture string `json:"picture,omitempty"`
-		Type    string `json:"type,omitempty"` // MAIN, FEATURED
+		ID      int     `json:"id"`
+		Name    string  `json:"name"`
+		Picture *string `json:"picture"`
+		Type    *string `json:"type"` // MAIN, FEATURED
 	} `json:"artists"`
 }
 
 type TidalArtistSimilarArtist struct {
-	ID                         int     `json:"id"`
-	DoublePopularity           float32 `json:"doublePopularity"`
-	Name                       string  `json:"name"`
-	Picture                    string  `json:"picture"`
-	SelectedAlbumCoverFallback string  `json:"selectedAlbumCoverFallback"`
-	VibrantColor               string  `json:"vibrantColor,omitempty"`
+	ID                         int      `json:"id"`
+	DoublePopularity           *float32 `json:"doublePopularity"`
+	Name                       string   `json:"name"`
+	Picture                    *string  `json:"picture"`
+	SelectedAlbumCoverFallback *string  `json:"selectedAlbumCoverFallback"`
+	VibrantColor               *string  `json:"vibrantColor"`
 }
 
 type TidalArtistAlbumTypeResponse struct {
 	Items []struct {
 		Type string `json:"type"`
 		Data struct {
-			ID              int    `json:"id"`
-			Cover           string `json:"cover,omitempty"`
-			Explicit        bool   `json:"explicit,omitempty"`
-			Duration        int    `json:"duration,omitempty"`
-			NumberOfTracks  int    `json:"numberOfTracks"`
-			NumberOfVolumes int    `json:"NumberOfVolumes"`
-			ReleaseDate     string `json:"releaseDate,omitempty"`
-			Title           string `json:"title"`
-			Type            string `json:"type,omitempty"` // SINGLE, EP, ALBUM
-			UPC             string `json:"upc,omitempty"`
-			VibrantColor    string `json:"vibrantColor,omitempty"`
-			VideoCover      string `json:"videoCover,omitempty"`
+			ID              int     `json:"id"`
+			Cover           *string `json:"cover"`
+			Explicit        bool    `json:"explicit"`
+			Duration        *int    `json:"duration"`
+			NumberOfTracks  *int    `json:"numberOfTracks"`
+			NumberOfVolumes *int    `json:"NumberOfVolumes"`
+			ReleaseDate     *string `json:"releaseDate"`
+			Title           string  `json:"title"`
+			Type            *string `json:"type"` // SINGLE, EP, ALBUM
+			UPC             *string `json:"upc"`
+			VibrantColor    *string `json:"vibrantColor"`
+			VideoCover      *string `json:"videoCover"`
 			Artists         []struct {
-				ID      int    `json:"id,omitempty"`
-				Name    string `json:"name,omitempty"`
-				Picture string `json:"picture,omitempty"`
+				ID      int     `json:"id"`
+				Name    string  `json:"name"`
+				Picture *string `json:"picture"`
 			} `json:"artists"`
 		} `json:"data"`
 	} `json:"items"`
 }
 
-func GetArtistPage(id int64) (any, error) {
+func GetArtistPage(id int64) (*types.TidalArtistPage, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -274,7 +274,7 @@ func GetArtistPage(id int64) (any, error) {
 					VolumeNumber:    track.VolumeNumber,
 					StreamStartDate: track.StreamStartDate,
 					TrackNumber:     track.TrackNumber,
-					Album: types.TidalAlbum{
+					Album: &types.TidalAlbum{
 						ID:           track.Album.ID,
 						Cover:        track.Album.Cover,
 						ReleaseDate:  track.Album.ReleaseDate,
@@ -342,14 +342,14 @@ func GetArtistPage(id int64) (any, error) {
 		}
 	}
 
-	return page, nil
+	return &page, nil
 }
 
 type TidalArtistInfoResponse struct {
-	ID                         int    `json:"id"`
-	Name                       string `json:"name"`
-	Picture                    string `json:"picture,omitempty"`
-	SelectedAlbumCoverFallback string `json:"selectedAlbumCoverFallback"`
+	ID                         int     `json:"id"`
+	Name                       string  `json:"name"`
+	Picture                    *string `json:"picture"`
+	SelectedAlbumCoverFallback *string `json:"selectedAlbumCoverFallback"`
 }
 
 func GetArtistBasicInfo(id int64) (*types.TidalArtist, error) {
@@ -427,27 +427,27 @@ type TidalArtistTopTracksResponse struct {
 	Items []struct {
 		Type string `json:"type"`
 		Data struct {
-			ID               int     `json:"id"`
-			DoublePopularity float32 `json:"doublePopularity,omitempty"`
-			Duration         int     `json:"duration"`
-			Explicit         bool    `json:"explicit,omitempty"`
-			ISRC             string  `json:"isrc,omitempty"`
-			StreamStartDate  string  `json:"streamStartDate,omitempty"`
-			TrackNumber      int     `json:"trackNumber,omitempty"`
-			VolumeNumber     int     `json:"volumenumber,omitempty"`
-			Title            string  `json:"title"`
+			ID               int      `json:"id"`
+			DoublePopularity *float32 `json:"doublePopularity"`
+			Duration         int      `json:"duration"`
+			Explicit         bool     `json:"explicit"`
+			ISRC             *string  `json:"isrc"`
+			StreamStartDate  *string  `json:"streamStartDate"`
+			TrackNumber      *int     `json:"trackNumber"`
+			VolumeNumber     *int     `json:"volumenumber"`
+			Title            string   `json:"title"`
 			Artists          []struct {
-				ID      int    `json:"id,omitempty"`
-				Name    string `json:"name,omitempty"`
-				Picture string `json:"picture,omitempty"`
+				ID      int     `json:"id"`
+				Name    string  `json:"name"`
+				Picture *string `json:"picture"`
 			} `json:"artists"`
 			Album struct {
-				ID           int    `json:"id"`
-				Cover        string `json:"cover"`
-				ReleaseDate  string `json:"releaseDate,omitempty"`
-				Title        string `json:"title"`
-				VibrantColor string `json:"vibrantColor"`
-				VideoCover   string `json:"videoCover"`
+				ID           int     `json:"id"`
+				Cover        *string `json:"cover"`
+				ReleaseDate  *string `json:"releaseDate"`
+				Title        string  `json:"title"`
+				VibrantColor *string `json:"vibrantColor"`
+				VideoCover   *string `json:"videoCover"`
 			} `json:"album"`
 		} `json:"data"`
 	} `json:"items"`
@@ -513,7 +513,7 @@ func GetArtistTopTracks(id int64, page int) (*ArtistTopTracksResult, error) {
 			TrackNumber:     item.Data.TrackNumber,
 			VolumeNumber:    item.Data.VolumeNumber,
 			Artists:         []types.TidalArtist{},
-			Album: types.TidalAlbum{
+			Album: &types.TidalAlbum{
 				ID:          item.Data.Album.ID,
 				Cover:       item.Data.Album.Cover,
 				Title:       item.Data.Album.Title,

@@ -42,7 +42,7 @@ func (db *DB) AddTrackPlay(trackId int64, userId uuid.UUID, isAutoplay bool, sta
 	return nil
 }
 
-func (db *DB) GetUserTopPlayedTracks(userId uuid.UUID, decayDays float64) (*[]types.TidalSong, error) {
+func (db *DB) GetUserTopPlayedTracks(userId uuid.UUID, decayDays float64) ([]types.TidalSong, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -61,9 +61,36 @@ func (db *DB) GetUserTopPlayedTracks(userId uuid.UUID, decayDays float64) (*[]ty
 	    WHERE plays.user_id = :user_id
 	    GROUP BY plays.track_id
 	  )
-	  SELECT tidal_tracks.payload
+	  SELECT
+			tt.id,
+			tt.bpm,
+			tt.duration,
+			tt.explicit,
+			tt.isrc,
+			tt.stream_start_date,
+			tt.title,
+			tt.track_number,
+			tt.volume_number,
+			ta.id,
+			ta.name,
+			ta.picture,
+			ta.selected_album_cover_fallback,
+			tal.id,
+			tal.cover,
+			tal.duration,
+			tal.explicit,
+			tal.number_of_tracks,
+			tal.number_of_volumes,
+			tal.release_date,
+			tal.title,
+			tal.type,
+			tal.upc,
+			tal.vibrant_color,
+			tal.video_cover
 	  FROM ranked
-	  JOIN tidal_tracks ON tidal_tracks.id = ranked.track_id
+	  JOIN tidal_tracks tt ON tt.id = ranked.track_id
+		JOIN tidal_artists ta ON tt.artist_id = ta.id
+		JOIN tidal_albums tal ON tt.album_id = tal.id
 	  ORDER BY ranked.weighted_score DESC, ranked.play_count DESC, ranked.last_played_at DESC
 	  LIMIT :limit`
 
@@ -79,21 +106,46 @@ func (db *DB) GetUserTopPlayedTracks(userId uuid.UUID, decayDays float64) (*[]ty
 
 	tracks := []types.TidalSong{}
 	for rows.Next() {
-		var payload string
-
-		if err = rows.Scan(&payload); err != nil {
-			return nil, err
-		}
-
-		track, err := unmarshalTrackPayload(payload)
+		track := types.TidalSong{}
+		artist := types.TidalArtist{}
+		album := types.TidalAlbum{}
+		err := rows.Scan(
+			&track.ID,
+			&track.Bpm,
+			&track.Duration,
+			&track.Explicit,
+			&track.ISRC,
+			&track.StreamStartDate,
+			&track.Title,
+			&track.TrackNumber,
+			&track.VolumeNumber,
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+			&album.ID,
+			&album.Cover,
+			&album.Duration,
+			&album.Explicit,
+			&album.NumberOfTracks,
+			&album.NumberOfVolumes,
+			&album.ReleaseDate,
+			&album.Title,
+			&album.Type,
+			&album.UPC,
+			&album.VibrantColor,
+			&album.VideoCover,
+		)
 		if err != nil {
 			return nil, err
 		}
 
+		track.Artists = []types.TidalArtist{artist}
+		track.Album = &album
 		tracks = append(tracks, track)
 	}
 
-	return &tracks, rows.Err()
+	return tracks, rows.Err()
 }
 
 func (db *DB) HasUserPlayedTrackByID(userId uuid.UUID, trackId int) (bool, error) {

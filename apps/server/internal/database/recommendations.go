@@ -15,11 +15,6 @@ func (db *DB) AddUserRecommendedArtist(userId uuid.UUID, artist *types.TidalArti
 		return errors.New("artist is nil")
 	}
 
-	payload, err := marshalPayload(artist)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -29,13 +24,7 @@ func (db *DB) AddUserRecommendedArtist(userId uuid.UUID, artist *types.TidalArti
 	}
 	defer tx.Rollback()
 
-	upsertArtistQuery := `
-		INSERT INTO tidal_artists (id, payload, updated_at)
-		VALUES ($1, $2, unixepoch())
-		ON CONFLICT(id) DO UPDATE
-		SET payload = excluded.payload, updated_at = excluded.updated_at`
-
-	_, err = tx.ExecContext(ctx, upsertArtistQuery, artist.ID, payload)
+	err = db.InsertTidalArtist(artist, tx)
 	if err != nil {
 		return err
 	}
@@ -65,12 +54,6 @@ func (db *DB) SetUserRecommendedArtists(userId uuid.UUID, artists []*types.Tidal
 		return err
 	}
 
-	upsertArtistQuery := `
-		INSERT INTO tidal_artists (id, payload, updated_at)
-		VALUES ($1, $2, unixepoch())
-		ON CONFLICT(id) DO UPDATE
-		SET payload = excluded.payload, updated_at = excluded.updated_at`
-
 	addRecommendationQuery := `INSERT OR IGNORE INTO user_recommended_artists (user_id, artist_id) VALUES ($1, $2)`
 
 	for _, artist := range artists {
@@ -78,12 +61,7 @@ func (db *DB) SetUserRecommendedArtists(userId uuid.UUID, artists []*types.Tidal
 			return errors.New("artist is nil")
 		}
 
-		payload, err := marshalPayload(artist)
-		if err != nil {
-			return err
-		}
-
-		_, err = tx.ExecContext(ctx, upsertArtistQuery, artist.ID, payload)
+		err = db.InsertTidalArtist(artist, tx)
 		if err != nil {
 			return err
 		}
@@ -99,7 +77,7 @@ func (db *DB) SetUserRecommendedArtists(userId uuid.UUID, artists []*types.Tidal
 
 func (db *DB) GetUserRecommendedArtists(userId uuid.UUID) ([]types.TidalArtist, error) {
 	query := `
-		SELECT tidal_artists.payload
+		SELECT tidal_artists.*
 		FROM user_recommended_artists
 		INNER JOIN tidal_artists ON tidal_artists.id = user_recommended_artists.artist_id
 		WHERE user_recommended_artists.user_id = $1
@@ -108,28 +86,13 @@ func (db *DB) GetUserRecommendedArtists(userId uuid.UUID) ([]types.TidalArtist, 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := db.QueryContext(ctx, query, userId)
+	artists := []types.TidalArtist{}
+	err := db.SelectContext(ctx, &artists, query, userId)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	artists := []types.TidalArtist{}
-	for rows.Next() {
-		var payload string
-		if err := rows.Scan(&payload); err != nil {
-			return nil, err
-		}
-
-		artist, err := unmarshalArtistPayload(payload)
-		if err != nil {
-			return nil, err
-		}
-
-		artists = append(artists, artist)
-	}
-
-	return artists, rows.Err()
+	return artists, nil
 }
 
 func (db *DB) DeleteAllUserRecommendedArtists(userId uuid.UUID) error {
@@ -151,16 +114,6 @@ func (db *DB) AddUserRecommendedAlbum(userId uuid.UUID, album *types.TidalAlbum,
 		return errors.New("recommendedFromAlbum is nil")
 	}
 
-	albumPayload, err := marshalPayload(album)
-	if err != nil {
-		return err
-	}
-
-	recommendedFromPayload, err := marshalPayload(recommendedFromAlbum)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -170,18 +123,12 @@ func (db *DB) AddUserRecommendedAlbum(userId uuid.UUID, album *types.TidalAlbum,
 	}
 	defer tx.Rollback()
 
-	upsertAlbumQuery := `
-		INSERT INTO tidal_albums (id, payload, updated_at)
-		VALUES ($1, $2, unixepoch())
-		ON CONFLICT(id) DO UPDATE
-		SET payload = excluded.payload, updated_at = excluded.updated_at`
-
-	_, err = tx.ExecContext(ctx, upsertAlbumQuery, album.ID, albumPayload)
+	err = db.InsertTidalAlbum(album, tx)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, upsertAlbumQuery, recommendedFromAlbum.ID, recommendedFromPayload)
+	err = db.InsertTidalAlbum(recommendedFromAlbum, tx)
 	if err != nil {
 		return err
 	}
@@ -213,38 +160,17 @@ func (db *DB) SetUserRecommendedAlbums(userId uuid.UUID, albums []data.UserRecom
 		return err
 	}
 
-	upsertAlbumQuery := `
-		INSERT INTO tidal_albums (id, payload, updated_at)
-		VALUES ($1, $2, unixepoch())
-		ON CONFLICT(id) DO UPDATE
-		SET payload = excluded.payload, updated_at = excluded.updated_at`
-
 	addRecommendationQuery := `
 		INSERT OR IGNORE INTO user_recommended_albums (user_id, album_id, album_recommended_from_id)
 		VALUES ($1, $2, $3)`
 
 	for _, recommendation := range albums {
-		albumPayload, err := marshalPayload(recommendation.Album)
+		err = db.InsertTidalAlbum(&recommendation.Album, tx)
 		if err != nil {
 			return err
 		}
 
-		recommendedFromPayload, err := marshalPayload(recommendation.RecommendedFromAlbum)
-		if err != nil {
-			return err
-		}
-
-		_, err = tx.ExecContext(ctx, upsertAlbumQuery, recommendation.Album.ID, albumPayload)
-		if err != nil {
-			return err
-		}
-
-		_, err = tx.ExecContext(
-			ctx,
-			upsertAlbumQuery,
-			recommendation.RecommendedFromAlbum.ID,
-			recommendedFromPayload,
-		)
+		err = db.InsertTidalAlbum(&recommendation.RecommendedFromAlbum, tx)
 		if err != nil {
 			return err
 		}
@@ -264,17 +190,33 @@ func (db *DB) SetUserRecommendedAlbums(userId uuid.UUID, albums []data.UserRecom
 	return tx.Commit()
 }
 
-func (db *DB) GetUserRecommendedAlbums(userId uuid.UUID) ([]data.UserRecommendedAlbum, error) {
-	query := `
-		SELECT recommended.payload, recommended_from.payload
-		FROM user_recommended_albums
-		INNER JOIN tidal_albums AS recommended ON recommended.id = user_recommended_albums.album_id
-		INNER JOIN tidal_albums AS recommended_from ON recommended_from.id = user_recommended_albums.album_recommended_from_id
-		WHERE user_recommended_albums.user_id = $1
-		ORDER BY user_recommended_albums.rowid ASC`
-
+func (db *DB) GetUserRecommendedAlbums(userId uuid.UUID) ([]types.TidalAlbum, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+
+	query := `
+		SELECT
+			recommended.id,
+			recommended.cover,
+			recommended.duration,
+			recommended.explicit,
+			recommended.number_of_tracks,
+			recommended.number_of_volumes,
+			recommended.release_date,
+			recommended.title,
+			recommended.type,
+			recommended.upc,
+			recommended.vibrant_color,
+			recommended.video_cover,
+			tidal_artists.id,
+			tidal_artists.name,
+			tidal_artists.picture,
+			tidal_artists.selected_album_cover_fallback
+		FROM user_recommended_albums
+		INNER JOIN tidal_albums AS recommended ON recommended.id = user_recommended_albums.album_id
+		INNER JOIN tidal_artists ON recommended.artist_id = tidal_artists.id
+		WHERE user_recommended_albums.user_id = $1
+		ORDER BY user_recommended_albums.rowid ASC`
 
 	rows, err := db.QueryContext(ctx, query, userId)
 	if err != nil {
@@ -282,32 +224,41 @@ func (db *DB) GetUserRecommendedAlbums(userId uuid.UUID) ([]data.UserRecommended
 	}
 	defer rows.Close()
 
-	albums := []data.UserRecommendedAlbum{}
+	albums := []types.TidalAlbum{}
 	for rows.Next() {
-		var albumPayload string
-		var recommendedFromPayload string
-
-		if err := rows.Scan(&albumPayload, &recommendedFromPayload); err != nil {
-			return nil, err
-		}
-
-		album, err := unmarshalAlbumPayload(albumPayload)
+		album := types.TidalAlbum{}
+		artist := types.TidalArtist{}
+		err = rows.Scan(
+			&album.ID,
+			&album.Cover,
+			&album.Duration,
+			&album.Explicit,
+			&album.NumberOfTracks,
+			&album.NumberOfVolumes,
+			&album.ReleaseDate,
+			&album.Title,
+			&album.Type,
+			&album.UPC,
+			&album.VibrantColor,
+			&album.VideoCover,
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+		)
 		if err != nil {
 			return nil, err
 		}
 
-		recommendedFromAlbum, err := unmarshalAlbumPayload(recommendedFromPayload)
-		if err != nil {
-			return nil, err
-		}
-
-		albums = append(albums, data.UserRecommendedAlbum{
-			Album:                album,
-			RecommendedFromAlbum: recommendedFromAlbum,
-		})
+		album.Artists = []types.TidalArtist{artist}
+		albums = append(albums, album)
 	}
 
-	return albums, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return albums, nil
 }
 
 func (db *DB) DeleteAllUserRecommendedAlbums(userId uuid.UUID) error {
@@ -382,9 +333,36 @@ func (db *DB) SetUserRecommendedTracks(userId uuid.UUID, tracks []types.TidalSon
 
 func (db *DB) GetUserRecommendedTracks(userId uuid.UUID) ([]types.TidalSong, error) {
 	query := `
-		SELECT tidal_tracks.payload
+		SELECT
+			tt.id,
+			tt.bpm,
+			tt.duration,
+			tt.explicit,
+			tt.isrc,
+			tt.stream_start_date,
+			tt.title,
+			tt.track_number,
+			tt.volume_number,
+			ta.id,
+			ta.name,
+			ta.picture,
+			ta.selected_album_cover_fallback,
+			tal.id,
+			tal.cover,
+			tal.duration,
+			tal.explicit,
+			tal.number_of_tracks,
+			tal.number_of_volumes,
+			tal.release_date,
+			tal.title,
+			tal.type,
+			tal.upc,
+			tal.vibrant_color,
+			tal.video_cover
 		FROM user_recommended_tracks
-		INNER JOIN tidal_tracks ON tidal_tracks.id = user_recommended_tracks.track_id
+		INNER JOIN tidal_tracks tt ON tt.id = user_recommended_tracks.track_id
+		INNER JOIN tidal_artists ta ON tt.artist_id = ta.id
+		INNER JOIN tidal_albums tal ON tt.album_id = tal.id
 		WHERE user_recommended_tracks.user_id = $1
 		ORDER BY user_recommended_tracks.rowid ASC`
 
@@ -399,20 +377,50 @@ func (db *DB) GetUserRecommendedTracks(userId uuid.UUID) ([]types.TidalSong, err
 
 	tracks := []types.TidalSong{}
 	for rows.Next() {
-		var payload string
-		if err := rows.Scan(&payload); err != nil {
-			return nil, err
-		}
-
-		track, err := unmarshalTrackPayload(payload)
+		track := types.TidalSong{}
+		artist := types.TidalArtist{}
+		album := types.TidalAlbum{}
+		err = rows.Scan(
+			&track.ID,
+			&track.Bpm,
+			&track.Duration,
+			&track.Explicit,
+			&track.ISRC,
+			&track.StreamStartDate,
+			&track.Title,
+			&track.TrackNumber,
+			&track.VolumeNumber,
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+			&album.ID,
+			&album.Cover,
+			&album.Duration,
+			&album.Explicit,
+			&album.NumberOfTracks,
+			&album.NumberOfVolumes,
+			&album.ReleaseDate,
+			&album.Title,
+			&album.Type,
+			&album.UPC,
+			&album.VibrantColor,
+			&album.VideoCover,
+		)
 		if err != nil {
 			return nil, err
 		}
 
+		track.Artists = []types.TidalArtist{artist}
+		track.Album = &album
 		tracks = append(tracks, track)
 	}
 
-	return tracks, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tracks, nil
 }
 
 func (db *DB) DeleteAllUserRecommendedTracks(userId uuid.UUID) error {

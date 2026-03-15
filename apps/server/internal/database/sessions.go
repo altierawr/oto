@@ -308,9 +308,37 @@ func (db *DB) GetSession(userId uuid.UUID, sessionId uuid.UUID) (*data.Session, 
 	}
 
 	tracksQuery := `
-		SELECT tidal_tracks.payload, session_tracks.is_autoplay
+		SELECT
+			session_tracks.is_autoplay,
+			tt.id,
+			tt.bpm,
+			tt.duration,
+			tt.explicit,
+			tt.isrc,
+			tt.stream_start_date,
+			tt.title,
+			tt.track_number,
+			tt.volume_number,
+			ta.id,
+			ta.name,
+			ta.picture,
+			ta.selected_album_cover_fallback,
+			tal.id,
+			tal.cover,
+			tal.duration,
+			tal.explicit,
+			tal.number_of_tracks,
+			tal.number_of_volumes,
+			tal.release_date,
+			tal.title,
+			tal.type,
+			tal.upc,
+			tal.vibrant_color,
+			tal.video_cover
 		FROM session_tracks
-		INNER JOIN tidal_tracks ON tidal_tracks.id = session_tracks.track_id
+		INNER JOIN tidal_tracks tt ON tt.id = session_tracks.track_id
+		INNER JOIN tidal_artists ta ON tt.artist_id = ta.id
+		INNER JOIN tidal_albums tal ON tt.album_id = tal.id
 		WHERE session_tracks.session_id = $1
 		ORDER BY session_tracks.position ASC`
 
@@ -321,17 +349,46 @@ func (db *DB) GetSession(userId uuid.UUID, sessionId uuid.UUID) (*data.Session, 
 	defer rows.Close()
 
 	for rows.Next() {
-		var payload string
 		var isAutoplay bool
 
-		if err := rows.Scan(&payload, &isAutoplay); err != nil {
-			return nil, err
-		}
+		track := types.TidalSong{}
+		artist := types.TidalArtist{}
+		album := types.TidalAlbum{}
+		err := rows.Scan(
+			&isAutoplay,
+			&track.ID,
+			&track.Bpm,
+			&track.Duration,
+			&track.Explicit,
+			&track.ISRC,
+			&track.StreamStartDate,
+			&track.Title,
+			&track.TrackNumber,
+			&track.VolumeNumber,
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+			&album.ID,
+			&album.Cover,
+			&album.Duration,
+			&album.Explicit,
+			&album.NumberOfTracks,
+			&album.NumberOfVolumes,
+			&album.ReleaseDate,
+			&album.Title,
+			&album.Type,
+			&album.UPC,
+			&album.VibrantColor,
+			&album.VideoCover,
+		)
 
-		track, err := unmarshalTrackPayload(payload)
 		if err != nil {
 			return nil, err
 		}
+
+		track.Artists = []types.TidalArtist{artist}
+		track.Album = &album
 
 		session.Tracks = append(session.Tracks, data.SessionTrack{
 			TidalSong:  track,
