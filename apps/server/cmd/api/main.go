@@ -50,6 +50,7 @@ type application struct {
 	lastFm   *api.Client
 	recs     *recommendations.Service
 	sessions *sessions.Service
+	tidal    *tidal.Service
 }
 
 func main() {
@@ -156,6 +157,9 @@ func main() {
 
 	app.sessions = sessions.New(app.db, app.logger)
 	app.background(app.sessions.RunBackground)
+
+	app.tidal = tidal.New(app.db, app.logger)
+	app.background(app.tidal.RunBackground)
 
 	createdAdmin, err := createAdminUser(app)
 	if err != nil {

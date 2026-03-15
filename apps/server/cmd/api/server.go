@@ -51,6 +51,10 @@ func (app *application) serve() error {
 			app.sessions.Stop()
 		}
 
+		if app.tidal != nil {
+			app.tidal.Stop()
+		}
+
 		app.wg.Wait()
 		shutdownError <- nil
 	}()

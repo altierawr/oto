@@ -207,6 +207,46 @@ func (db *DB) InsertTidalTrack(track *types.TidalSong, tx *sqlx.Tx) error {
 	}
 }
 
+func (db *DB) GetMissingTidalArtistIds() ([]int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT DISTINCT artist_id
+		FROM tidal_tracks tt
+		WHERE NOT EXISTS (
+			SELECT 1 FROM tidal_artists ta WHERE ta.id = tt.artist_id
+		)`
+
+	ids := []int64{}
+	err := db.SelectContext(ctx, &ids, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+func (db *DB) GetMissingTidalAlbumIds() ([]int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT DISTINCT album_id
+		FROM tidal_tracks tt
+		WHERE NOT EXISTS (
+			SELECT 1 FROM tidal_albums tal WHERE tal.id = tt.album_id
+		)`
+
+	ids := []int64{}
+	err := db.SelectContext(ctx, &ids, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
 func (db *DB) GetTidalTrack(id int64) (*types.TidalSong, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
