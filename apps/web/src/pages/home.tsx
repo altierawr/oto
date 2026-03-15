@@ -11,11 +11,11 @@ const HomePage = () => {
   const { data: recommendedTracks, isLoading: isRecommendedTracksLoading } = useUserRecommendedTracks();
   const navigate = useNavigate();
 
-  const hasNoRecommendations = !recommendedTracks && !isRecommendedTracksLoading;
+  const hasNoRecommendations = (!recommendedTracks || recommendedTracks.length === 0) && !isRecommendedTracksLoading;
 
   return (
     <>
-      {!isTopTracksLoading && topTracks !== undefined && (
+      {!isTopTracksLoading && topTracks !== undefined && topTracks.length > 0 && (
         <>
           <Spacer size="8" />
           <h2 className="text-xl font-semibold text-(--gray-12)">Your top played tracks</h2>
@@ -26,7 +26,7 @@ const HomePage = () => {
         </>
       )}
 
-      {!isRecommendedTracksLoading && recommendedTracks !== undefined && (
+      {!isRecommendedTracksLoading && recommendedTracks !== undefined && recommendedTracks.length > 0 && (
         <>
           <Spacer size="8" />
           <h2 className="text-xl font-semibold text-(--gray-12)">Recommended new tracks for you</h2>
@@ -40,7 +40,7 @@ const HomePage = () => {
       {hasNoRecommendations && (
         <p className="mt-2 max-w-[500px] text-(--gray-11)">
           You currently have no music recommendations. Listen to music to start getting recommendations! Initial
-          recommendations might take a bit to appear.
+          recommendations might take a bit of time to appear.
         </p>
       )}
     </>
