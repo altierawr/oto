@@ -1,5 +1,12 @@
 # web
 
+## 0.11.4
+
+### Patch Changes
+
+- 972b340: Fixed an issue with repeat mode where it would not function properly when only 1 track is in the playlist.
+- 18119e1: Fixed an issue where an empty track recommendations grid was being rendered when no recommendations were available.
+
 ## 0.11.3
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # server
 
+## 0.9.0
+
+### Minor Changes
+
+- 566e5a2: Refactored tidal database tables & queries to no longer store data in json encoded format.
+
 ## 0.8.1
 
 ### Patch Changes
