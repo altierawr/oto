@@ -223,7 +223,10 @@ export class MusicPlayer {
   }
 
   async #checkForSingleRepeat(options?: { forceReset?: boolean }) {
-    if (this.#repeatMode !== "single") {
+    const shouldCheckForRepeat =
+      this.#repeatMode === "single" || (this.#repeatMode === "full" && this.playlist.length === 1);
+
+    if (!shouldCheckForRepeat) {
       return;
     }
 
@@ -352,15 +355,17 @@ export class MusicPlayer {
           return;
         }
 
-        // All checks passed, we should be at the end of the last song,
-        // let's pause and jump to the start of the last track
-        this.#audio.pause();
-        this.#audio.currentTime = pe.timestampOffset;
+        if (this.#repeatMode === "off") {
+          // All checks passed, we should be at the end of the last song,
+          // let's pause and jump to the start of the last track
+          this.#audio.pause();
+          this.#audio.currentTime = pe.timestampOffset;
 
-        this.#updatePlayerState({
-          isPaused: true,
-          currentTime: pe.timestampOffset,
-        });
+          this.#updatePlayerState({
+            isPaused: true,
+            currentTime: pe.timestampOffset,
+          });
+        }
       }
     });
 
@@ -1070,6 +1075,10 @@ export class MusicPlayer {
     let pe = this.playlist[playlistIndex];
     let te = this.playlist[targetIndex];
     const segmentIndex = te.seekOffset > 0 || te.segments.length === 0 || !te.segments[0] ? null : 0;
+
+    if (targetIndex === playlistIndex) {
+      direction = 1;
+    }
 
     // When jumping backwards let's just clear all the offsets because repeat functionality
     // can be annoying otherwise (tracks behind can have higher offset than tracks forward)
@@ -2227,7 +2236,7 @@ export class MusicPlayer {
 
       const nextIndex = this.#getNextPlaylistIndex(playlistIndex);
 
-      if (nextIndex !== null && pe.timestampOffset !== null) {
+      if (nextIndex !== null && pe.timestampOffset !== null && nextIndex !== playlistIndex) {
         this.playlist[nextIndex].timestampOffset = pe.timestampOffset + pe.seekOffset + endTime;
       }
     }
