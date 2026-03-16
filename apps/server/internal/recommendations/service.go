@@ -83,7 +83,7 @@ func (s *Service) Run() {
 		})
 	}
 
-	ticker := time.NewTicker(30 * time.Minute)
+	ticker := time.NewTicker(120 * time.Minute)
 	defer ticker.Stop()
 
 	s.updateUserRecommendations()
