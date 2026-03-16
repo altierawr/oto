@@ -1,5 +1,15 @@
 # server
 
+## 0.10.0
+
+### Minor Changes
+
+- 92c02b8: Added album recommendations based on most listened albums.
+
+### Patch Changes
+
+- 6b14422: Fixed some issues with recommendation service not exiting or finishing properly.
+
 ## 0.9.1
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # web
 
+## 0.12.0
+
+### Minor Changes
+
+- 92c02b8: Added album recommendations based on most listened albums.
+
+### Patch Changes
+
+- 6d59f51: Fixed an issue where music playback would sometimes stall on autoplay tracks or when adding tracks to queue.
+
 ## 0.11.4
 
 ### Patch Changes
