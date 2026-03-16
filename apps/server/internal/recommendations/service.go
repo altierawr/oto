@@ -59,7 +59,7 @@ func New(db *database.DB, lastFm *api.Client, logger *slog.Logger) *Service {
 		logger:  logger,
 		ctx:     ctx,
 		cancel:  cancel,
-		limiter: rate.NewLimiter(rate.Every(1*time.Second/50), 1),
+		limiter: rate.NewLimiter(rate.Every(1*time.Second/20), 1),
 		queue:   make(chan queueItem, defaultQueueSize),
 		stop:    make(chan struct{}),
 		done:    make(chan struct{}),
