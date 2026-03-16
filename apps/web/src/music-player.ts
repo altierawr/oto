@@ -980,6 +980,10 @@ export class MusicPlayer {
   }
 
   async #updateTrackTimestampOffsets(startIndex: number) {
+    if (this.playlist.length <= 1) {
+      return;
+    }
+
     for (let i = startIndex; ; i++) {
       // Stop if we've looped back around
       if (i === startIndex - 1 || (startIndex === 0 && i === this.playlist.length - 1)) {
@@ -1262,6 +1266,16 @@ export class MusicPlayer {
     },
   ) {
     const entry = this.#getInitialPlaylistSongFromSong(song, options);
+    const lastIndex = this.playlist.length > 0 ? this.playlist.length - 1 : null;
+
+    if (lastIndex !== null) {
+      const pe = this.playlist[lastIndex];
+
+      if (pe.timestampOffset !== null && pe.lastSegmentIndex !== null && pe.accurateDuration !== null) {
+        entry.timestampOffset = pe.timestampOffset + pe.seekOffset + pe.accurateDuration;
+      }
+    }
+
     this.playlist.push(entry);
     if (this.originalPlaylist) {
       this.originalPlaylist.push(entry);
