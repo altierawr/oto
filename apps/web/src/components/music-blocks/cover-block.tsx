@@ -53,7 +53,11 @@ const CoverBlock = ({ variant, imageUrls, linkUrl, isPlaying, isPlayLoading, onP
             </Link>
           )}
 
-          {!linkUrl && <Block imageUrls={imageUrls} />}
+          {!linkUrl && (
+            <div className="relative aspect-square overflow-hidden rounded-md md:rounded-lg">
+              <Block imageUrls={imageUrls} />
+            </div>
+          )}
         </>
       )}
 
@@ -143,7 +147,7 @@ const Block = ({ imageUrls, showHoverZoom }: TBlockProps) => {
   return (
     <div
       className={clsx(
-        "h-full w-full overflow-hidden rounded-md bg-(--gray-3) transition-transform md:rounded-xl",
+        "h-full w-full overflow-hidden rounded-md bg-(--gray-3) transition-transform",
         hasSingleImage && "bg-cover bg-center",
         showHoverZoom && "group-hover:scale-[0.98]",
       )}

@@ -8,10 +8,11 @@ import useHorizontalScrollSnap from "../../hooks/useHorizontalScrollSnap";
 
 type TClassNameProps = {
   id: string;
-  title: string;
+  title: React.ReactNode | string;
   viewAllUrl?: string;
   className?: string;
   isLoading?: boolean;
+  titleContentGap?: React.ComponentProps<typeof Spacer>["size"];
   style?: HTMLAttributes<HTMLDivElement>["style"];
 };
 
@@ -22,6 +23,7 @@ const HorizontalMediaScroller = ({
   children,
   className,
   isLoading,
+  titleContentGap = "2",
   style,
 }: PropsWithChildren<TClassNameProps>) => {
   const navigate = useNavigate();
@@ -39,8 +41,9 @@ const HorizontalMediaScroller = ({
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">{title}</h2>
+      <div className="flex items-center justify-between gap-4">
+        {typeof title === "string" && <h2 className="text-2xl font-semibold">{title}</h2>}
+        {typeof title !== "string" && title}
         <div
           className={clsx(
             "flex items-center gap-2",
@@ -53,13 +56,15 @@ const HorizontalMediaScroller = ({
           <IconButton variant="soft" color="gray" size="xs" isDisabled={!canScrollRight} onClick={scrollRight}>
             <ChevronRight />
           </IconButton>
-          <Button variant="soft" color="gray" size="xs" onClick={handleViewAllClick}>
-            View All
-          </Button>
+          {viewAllUrl !== undefined && (
+            <Button variant="soft" color="gray" size="xs" onClick={handleViewAllClick}>
+              View All
+            </Button>
+          )}
         </div>
       </div>
 
-      <Spacer size="2" />
+      <Spacer size={titleContentGap} />
 
       <div
         ref={ref}

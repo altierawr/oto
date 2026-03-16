@@ -253,35 +253,35 @@ func (db *DB) GetTidalTrack(id int64) (*types.TidalSong, error) {
 
 	query := `
 		SELECT
-			tidal_tracks.id,
-			tidal_tracks.bpm,
-			tidal_tracks.duration,
-			tidal_tracks.explicit,
-			tidal_tracks.isrc,
-			tidal_tracks.stream_start_date,
-			tidal_tracks.title,
-			tidal_tracks.track_number,
-			tidal_tracks.volume_number,
-			tidal_artists.id,
-			tidal_artists.name,
-			tidal_artists.picture,
-			tidal_artists.selected_album_cover_fallback,
-			tidal_albums.id,
-			tidal_albums.cover,
-			tidal_albums.duration,
-			tidal_albums.explicit,
-			tidal_albums.number_of_tracks,
-			tidal_albums.number_of_volumes,
-			tidal_albums.release_date,
-			tidal_albums.title,
-			tidal_albums.type,
-			tidal_albums.upc,
-			tidal_albums.vibrant_color,
-			tidal_albums.video_cover
-		FROM tidal_tracks
-		JOIN tidal_artists ON tidal_tracks.artist_id = tidal_artists.id
-		JOIN tidal_albums ON tidal_tracks.album_id = tidal_albums.id
-		WHERE tidal_tracks.id = $1`
+			tt.id,
+			tt.bpm,
+			tt.duration,
+			tt.explicit,
+			tt.isrc,
+			tt.stream_start_date,
+			tt.title,
+			tt.track_number,
+			tt.volume_number,
+			ta.id,
+			ta.name,
+			ta.picture,
+			ta.selected_album_cover_fallback,
+			tal.id,
+			tal.cover,
+			tal.duration,
+			tal.explicit,
+			tal.number_of_tracks,
+			tal.number_of_volumes,
+			tal.release_date,
+			tal.title,
+			tal.type,
+			tal.upc,
+			tal.vibrant_color,
+			tal.video_cover
+		FROM tidal_tracks tt
+		JOIN tidal_artists ta ON tt.artist_id = ta.id
+		JOIN tidal_albums tal ON tt.album_id = tal.id
+		WHERE tt.id = $1`
 
 	track := types.TidalSong{}
 	artist := types.TidalArtist{}
@@ -326,6 +326,108 @@ func (db *DB) GetTidalTrack(id int64) (*types.TidalSong, error) {
 	track.Album = &album
 
 	return &track, nil
+}
+
+func (db *DB) GetTidalAlbum(id int) (*types.TidalAlbum, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT
+	    tt.id,
+	    tt.bpm,
+	    tt.duration,
+	    tt.explicit,
+	    tt.isrc,
+	    tt.stream_start_date,
+	    tt.title,
+	    tt.track_number,
+	    tt.volume_number,
+	    ta.id,
+	    ta.name,
+	    ta.picture,
+	    ta.selected_album_cover_fallback,
+	    tal.id,
+	    tal.cover,
+	    tal.duration,
+	    tal.explicit,
+	    tal.number_of_tracks,
+	    tal.number_of_volumes,
+	    tal.release_date,
+	    tal.title,
+	    tal.type,
+	    tal.upc,
+	    tal.vibrant_color,
+	    tal.video_cover,
+	    aa.id,
+	    aa.name,
+	    aa.picture,
+	    aa.selected_album_cover_fallback
+		FROM tidal_tracks tt
+		JOIN tidal_artists ta ON tt.artist_id = ta.id
+		JOIN tidal_albums tal ON tt.album_id = tal.id
+		JOIN tidal_artists aa ON tal.artist_id = aa.id
+		WHERE tal.id = $1
+		ORDER BY tt.volume_number ASC, tt.track_number ASC`
+
+	rows, err := db.QueryContext(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tracks := []types.TidalSong{}
+	var album *types.TidalAlbum
+	for rows.Next() {
+		track := types.TidalSong{}
+		artist := types.TidalArtist{}
+		scanAlbum := types.TidalAlbum{}
+		albumArtist := types.TidalArtist{}
+		err := rows.Scan(
+			&track.ID,
+			&track.Bpm,
+			&track.Duration,
+			&track.Explicit,
+			&track.ISRC,
+			&track.StreamStartDate,
+			&track.Title,
+			&track.TrackNumber,
+			&track.VolumeNumber,
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+			&scanAlbum.ID,
+			&scanAlbum.Cover,
+			&scanAlbum.Duration,
+			&scanAlbum.Explicit,
+			&scanAlbum.NumberOfTracks,
+			&scanAlbum.NumberOfVolumes,
+			&scanAlbum.ReleaseDate,
+			&scanAlbum.Title,
+			&scanAlbum.Type,
+			&scanAlbum.UPC,
+			&scanAlbum.VibrantColor,
+			&scanAlbum.VideoCover,
+			&albumArtist.ID,
+			&albumArtist.Name,
+			&albumArtist.Picture,
+			&albumArtist.SelectedAlbumCoverFallback,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		track.Artists = []types.TidalArtist{artist}
+		scanAlbum.Artists = []types.TidalArtist{albumArtist}
+		track.Album = &scanAlbum
+		album = &scanAlbum
+		tracks = append(tracks, track)
+	}
+
+	album.Songs = tracks
+
+	return album, rows.Err()
 }
 
 func (db *DB) GetTidalTrackByArtistAndTitle(artistName string, title string) (*types.TidalSong, error) {
@@ -410,4 +512,109 @@ func (db *DB) GetTidalTrackByArtistAndTitle(artistName string, title string) (*t
 	track.Album = &album
 
 	return &track, nil
+}
+
+func (db *DB) GetTidalAlbumByArtistAndTitle(artistName string, title string) (*types.TidalAlbum, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT
+			tt.id,
+			tt.bpm,
+			tt.duration,
+			tt.explicit,
+			tt.isrc,
+			tt.stream_start_date,
+			tt.title,
+			tt.track_number,
+			tt.volume_number,
+			ta.id,
+			ta.name,
+			ta.picture,
+			ta.selected_album_cover_fallback,
+			tal.id,
+			tal.cover,
+			tal.duration,
+			tal.explicit,
+			tal.number_of_tracks,
+			tal.number_of_volumes,
+			tal.release_date,
+			tal.title,
+			tal.type,
+			tal.upc,
+			tal.vibrant_color,
+			tal.video_cover,
+			aa.id,
+			aa.name,
+			aa.picture,
+			aa.selected_album_cover_fallback
+		FROM tidal_tracks tt
+		JOIN tidal_artists ta ON tt.artist_id = ta.id
+		JOIN tidal_albums tal ON tt.album_id = tal.id
+		JOIN tidal_artists aa ON tal.artist_id = aa.id
+		WHERE LOWER(TRIM(aa.name)) = LOWER(TRIM($1))
+			AND LOWER(TRIM(tal.title)) = LOWER(TRIM($2))
+		ORDER BY tt.volume_number ASC, tt.track_number ASC`
+
+	rows, err := db.QueryContext(ctx, query, artistName, title)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tracks := []types.TidalSong{}
+	var album *types.TidalAlbum
+	for rows.Next() {
+		track := types.TidalSong{}
+		artist := types.TidalArtist{}
+		scanAlbum := types.TidalAlbum{}
+		albumArtist := types.TidalArtist{}
+		err := rows.Scan(
+			&track.ID,
+			&track.Bpm,
+			&track.Duration,
+			&track.Explicit,
+			&track.ISRC,
+			&track.StreamStartDate,
+			&track.Title,
+			&track.TrackNumber,
+			&track.VolumeNumber,
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+			&scanAlbum.ID,
+			&scanAlbum.Cover,
+			&scanAlbum.Duration,
+			&scanAlbum.Explicit,
+			&scanAlbum.NumberOfTracks,
+			&scanAlbum.NumberOfVolumes,
+			&scanAlbum.ReleaseDate,
+			&scanAlbum.Title,
+			&scanAlbum.Type,
+			&scanAlbum.UPC,
+			&scanAlbum.VibrantColor,
+			&scanAlbum.VideoCover,
+			&albumArtist.ID,
+			&albumArtist.Name,
+			&albumArtist.Picture,
+			&albumArtist.SelectedAlbumCoverFallback,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		track.Artists = []types.TidalArtist{artist}
+		scanAlbum.Artists = []types.TidalArtist{albumArtist}
+		track.Album = &scanAlbum
+		album = &scanAlbum
+		tracks = append(tracks, track)
+	}
+
+	if album != nil {
+		album.Songs = tracks
+	}
+
+	return album, rows.Err()
 }

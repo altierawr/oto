@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/altierawr/oto/internal/canonical"
 	"github.com/altierawr/oto/internal/types"
 	"github.com/google/uuid"
 )
@@ -148,6 +147,95 @@ func (db *DB) GetUserTopPlayedTracks(userId uuid.UUID, decayDays float64) ([]typ
 	return tracks, rows.Err()
 }
 
+func (db *DB) GetUserTopPlayedAlbums(userId uuid.UUID, decayDays float64) ([]types.TidalAlbum, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		WITH ranked AS (
+		  SELECT
+		    plays.track_id,
+		    COUNT(*) AS play_count,
+		    MAX(plays.end_at) AS last_played_at,
+		    SUM(
+		      1.0 / (
+		        1.0 + ((unixepoch() - plays.end_at) / 86400.0) / :decay_days
+		      )
+		    ) AS weighted_score
+		  FROM plays
+		  JOIN tidal_tracks tt on tt.id = plays.track_id
+		  JOIN tidal_albums tal on tal.id = tt.album_id
+		  WHERE plays.user_id = :user_id
+		  GROUP BY tal.id
+		)
+		SELECT
+		  ta.id,
+		  ta.name,
+		  ta.picture,
+		  ta.selected_album_cover_fallback,
+		  tal.id,
+		  tal.cover,
+		  tal.duration,
+		  tal.explicit,
+		  tal.number_of_tracks,
+		  tal.number_of_volumes,
+		  tal.release_date,
+		  tal.title,
+		  tal.type,
+		  tal.upc,
+		  tal.vibrant_color,
+		  tal.video_cover
+		FROM ranked
+		JOIN tidal_tracks tt ON tt.id = ranked.track_id
+		  JOIN tidal_albums tal on tt.album_id = tal.id
+		  JOIN tidal_artists ta ON ta.id = tal.artist_id
+		GROUP BY tal.id
+		ORDER BY ranked.weighted_score DESC, ranked.play_count DESC, ranked.last_played_at DESC
+		LIMIT :limit`
+
+	rows, err := db.NamedQueryContext(ctx, query, map[string]any{
+		"decay_days": decayDays,
+		"user_id":    userId.String(),
+		"limit":      50,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	albums := []types.TidalAlbum{}
+	for rows.Next() {
+		artist := types.TidalArtist{}
+		album := types.TidalAlbum{}
+		err := rows.Scan(
+			&artist.ID,
+			&artist.Name,
+			&artist.Picture,
+			&artist.SelectedAlbumCoverFallback,
+			&album.ID,
+			&album.Cover,
+			&album.Duration,
+			&album.Explicit,
+			&album.NumberOfTracks,
+			&album.NumberOfVolumes,
+			&album.ReleaseDate,
+			&album.Title,
+			&album.Type,
+			&album.UPC,
+			&album.VibrantColor,
+			&album.VideoCover,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		album.Artists = []types.TidalArtist{artist}
+		albums = append(albums, album)
+	}
+
+	return albums, rows.Err()
+}
+
 func (db *DB) HasUserPlayedTrackByID(userId uuid.UUID, trackId int) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -175,11 +263,13 @@ func (db *DB) HasUserPlayedTrackByArtistAndTitle(userId uuid.UUID, artistName, t
 		SELECT COUNT(1)
 		FROM plays
 		JOIN tidal_tracks tt ON tt.id = plays.track_id
+		JOIN tidal_artists ta ON tt.artist_id = ta.id
 		WHERE plays.user_id = $1
-			AND tt.canonical_track_key == $2`
+			AND TRIM(LOWER(ta.name)) == TRIM(LOWER($2))
+			AND TRIM(LOWER(tt.title)) == TRIM(LOWER($3))`
 
 	var count int
-	err := db.QueryRowContext(ctx, query, userId, canonical.TrackKey(artistName, title)).Scan(&count)
+	err := db.QueryRowContext(ctx, query, userId, artistName, title).Scan(&count)
 	if err != nil {
 		return false, nil
 	}

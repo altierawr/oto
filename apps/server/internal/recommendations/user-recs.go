@@ -35,6 +35,7 @@ func (s *Service) updateUserRecommendations() {
 	}
 
 	wg.Wait()
+	s.logger.Info("done updating user recommendations")
 }
 
 func (s *Service) updateSingleUserRecommendations(ctx context.Context, user data.User) error {
@@ -67,7 +68,7 @@ func (s *Service) updateSingleUserRecommendations(ctx context.Context, user data
 		return err
 	}
 
-	err = s.updateSingleUserRecommendedAlbums(ctx, user, topTracks, topTracksByArtist)
+	err = s.updateSingleUserRecommendedAlbums(ctx, user)
 	if err != nil {
 		return err
 	}

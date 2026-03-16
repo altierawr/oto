@@ -10,4 +10,6 @@ type LastfmTrack struct {
 	Duration   *lastfm.Duration
 	ArtistName string
 	ArtistMbid *string
+	AlbumTitle *string
+	AlbumMbid  *string
 }

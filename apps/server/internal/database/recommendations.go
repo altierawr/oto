@@ -190,31 +190,49 @@ func (db *DB) SetUserRecommendedAlbums(userId uuid.UUID, albums []data.UserRecom
 	return tx.Commit()
 }
 
-func (db *DB) GetUserRecommendedAlbums(userId uuid.UUID) ([]types.TidalAlbum, error) {
+func (db *DB) GetUserRecommendedAlbums(userId uuid.UUID) ([]data.UserRecommendedAlbum, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	query := `
 		SELECT
-			recommended.id,
-			recommended.cover,
-			recommended.duration,
-			recommended.explicit,
-			recommended.number_of_tracks,
-			recommended.number_of_volumes,
-			recommended.release_date,
-			recommended.title,
-			recommended.type,
-			recommended.upc,
-			recommended.vibrant_color,
-			recommended.video_cover,
-			tidal_artists.id,
-			tidal_artists.name,
-			tidal_artists.picture,
-			tidal_artists.selected_album_cover_fallback
+			tal.id,
+			tal.cover,
+			tal.duration,
+			tal.explicit,
+			tal.number_of_tracks,
+			tal.number_of_volumes,
+			tal.release_date,
+			tal.title,
+			tal.type,
+			tal.upc,
+			tal.vibrant_color,
+			tal.video_cover,
+			ta.id,
+			ta.name,
+			ta.picture,
+			ta.selected_album_cover_fallback,
+			tral.id,
+			tral.cover,
+			tral.duration,
+			tral.explicit,
+			tral.number_of_tracks,
+			tral.number_of_volumes,
+			tral.release_date,
+			tral.title,
+			tral.type,
+			tral.upc,
+			tral.vibrant_color,
+			tral.video_cover,
+			tra.id,
+			tra.name,
+			tra.picture,
+			tra.selected_album_cover_fallback
 		FROM user_recommended_albums
-		INNER JOIN tidal_albums AS recommended ON recommended.id = user_recommended_albums.album_id
-		INNER JOIN tidal_artists ON recommended.artist_id = tidal_artists.id
+		INNER JOIN tidal_albums AS tal ON tal.id = user_recommended_albums.album_id
+		INNER JOIN tidal_artists ta ON tal.artist_id = ta.id
+		INNER JOIN tidal_albums AS tral ON tral.id = user_recommended_albums.album_recommended_from_id
+		INNER JOIN tidal_artists tra ON tral.artist_id = tra.id
 		WHERE user_recommended_albums.user_id = $1
 		ORDER BY user_recommended_albums.rowid ASC`
 
@@ -224,10 +242,12 @@ func (db *DB) GetUserRecommendedAlbums(userId uuid.UUID) ([]types.TidalAlbum, er
 	}
 	defer rows.Close()
 
-	albums := []types.TidalAlbum{}
+	albums := []data.UserRecommendedAlbum{}
 	for rows.Next() {
 		album := types.TidalAlbum{}
 		artist := types.TidalArtist{}
+		recommendedFromAlbum := types.TidalAlbum{}
+		recommendedFromArtist := types.TidalArtist{}
 		err = rows.Scan(
 			&album.ID,
 			&album.Cover,
@@ -245,13 +265,33 @@ func (db *DB) GetUserRecommendedAlbums(userId uuid.UUID) ([]types.TidalAlbum, er
 			&artist.Name,
 			&artist.Picture,
 			&artist.SelectedAlbumCoverFallback,
+			&recommendedFromAlbum.ID,
+			&recommendedFromAlbum.Cover,
+			&recommendedFromAlbum.Duration,
+			&recommendedFromAlbum.Explicit,
+			&recommendedFromAlbum.NumberOfTracks,
+			&recommendedFromAlbum.NumberOfVolumes,
+			&recommendedFromAlbum.ReleaseDate,
+			&recommendedFromAlbum.Title,
+			&recommendedFromAlbum.Type,
+			&recommendedFromAlbum.UPC,
+			&recommendedFromAlbum.VibrantColor,
+			&recommendedFromAlbum.VideoCover,
+			&recommendedFromArtist.ID,
+			&recommendedFromArtist.Name,
+			&recommendedFromArtist.Picture,
+			&recommendedFromArtist.SelectedAlbumCoverFallback,
 		)
 		if err != nil {
 			return nil, err
 		}
 
 		album.Artists = []types.TidalArtist{artist}
-		albums = append(albums, album)
+		recommendedFromAlbum.Artists = []types.TidalArtist{recommendedFromArtist}
+		albums = append(albums, data.UserRecommendedAlbum{
+			Album:                album,
+			RecommendedFromAlbum: recommendedFromAlbum,
+		})
 	}
 
 	if err := rows.Err(); err != nil {

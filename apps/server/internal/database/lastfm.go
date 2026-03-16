@@ -41,17 +41,26 @@ func (db *DB) InsertLastFmTrack(track *data.LastfmTrack, tx *sqlx.Tx) (*data.Las
 	defer cancel()
 
 	query := `
-		INSERT INTO lastfm_tracks (title, duration, artist_name, artist_mbid)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO lastfm_tracks (title, duration, artist_name, artist_mbid, album_title, album_mbid)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT DO UPDATE
 		SET title = excluded.title,
 				duration = excluded.duration,
 				artist_name = excluded.artist_name,
 				artist_mbid = excluded.artist_mbid,
+				album_title = COALESCE(excluded.album_title, lastfm_tracks.album_title),
+				album_mbid = COALESCE(excluded.album_mbid, lastfm_tracks.album_mbid),
 				updated_at = unixepoch()
 		RETURNING id`
 
-	args := []any{track.Title, track.Duration, track.ArtistName, track.ArtistMbid}
+	args := []any{
+		track.Title,
+		track.Duration,
+		track.ArtistName,
+		track.ArtistMbid,
+		track.AlbumTitle,
+		track.AlbumMbid,
+	}
 
 	var err error
 	if tx != nil {
@@ -105,6 +114,8 @@ func (db *DB) GetLastfmRecommendationsForTidalTrack(tidalTrackId int64) ([]Tidal
 					 lastfm_tracks.duration,
 					 lastfm_tracks.artist_name,
 					 lastfm_tracks.artist_mbid,
+					 lastfm_tracks.album_title,
+					 lastfm_tracks.album_mbid,
 					 tidal_lastfm_recommendations.match
 		FROM tidal_lastfm_recommendations
 		INNER JOIN lastfm_tracks ON lastfm_tracks.id = tidal_lastfm_recommendations.lastfm_track_id
@@ -121,6 +132,8 @@ func (db *DB) GetLastfmRecommendationsForTidalTrack(tidalTrackId int64) ([]Tidal
 		var recommendation TidalLastfmRecommendation
 		var duration sql.NullInt64
 		var artistMBID sql.NullString
+		var albumTitle sql.NullString
+		var albumMBID sql.NullString
 
 		err := rows.Scan(
 			&recommendation.LastfmTrack.ID,
@@ -128,6 +141,8 @@ func (db *DB) GetLastfmRecommendationsForTidalTrack(tidalTrackId int64) ([]Tidal
 			&duration,
 			&recommendation.LastfmTrack.ArtistName,
 			&artistMBID,
+			&albumTitle,
+			&albumMBID,
 			&recommendation.Match,
 		)
 		if err != nil {
@@ -142,6 +157,20 @@ func (db *DB) GetLastfmRecommendationsForTidalTrack(tidalTrackId int64) ([]Tidal
 		if artistMBID.Valid {
 			mbid := artistMBID.String
 			recommendation.LastfmTrack.ArtistMbid = &mbid
+		}
+
+		if albumTitle.Valid {
+			title := albumTitle.String
+			if title != "" {
+				recommendation.LastfmTrack.AlbumTitle = &title
+			}
+		}
+
+		if albumMBID.Valid {
+			mbid := albumMBID.String
+			if mbid != "" {
+				recommendation.LastfmTrack.AlbumMbid = &mbid
+			}
 		}
 
 		result = append(result, recommendation)

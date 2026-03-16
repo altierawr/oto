@@ -53,7 +53,7 @@ func New(db *database.DB, lastFm *api.Client, logger *slog.Logger) *Service {
 		db:      db,
 		lastFm:  lastFm,
 		logger:  logger,
-		limiter: rate.NewLimiter(rate.Every(100*time.Millisecond), 1),
+		limiter: rate.NewLimiter(rate.Every(1*time.Second/50), 1),
 		queue:   make(chan queueItem, defaultQueueSize),
 		stop:    make(chan struct{}),
 		done:    make(chan struct{}),
@@ -123,6 +123,12 @@ func (s *Service) SyncIfMissing(ctx context.Context, trackID int64) error {
 }
 
 func (s *Service) handleQueueItem(item queueItem) {
+	select {
+	case <-s.stop:
+		return
+	default:
+	}
+
 	if s.lastFm == nil {
 		return
 	}
@@ -137,7 +143,7 @@ func (s *Service) handleQueueItem(item queueItem) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
 	s.logger.Info("fetching tidal track recommendations",
@@ -185,10 +191,17 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 		}
 	}
 
-	s.handleSimilarTracksResponse(trackId, similarTracks)
+	err = s.handleSimilarTracksResponse(ctx, trackId, similarTracks)
+	if err != nil {
+		return err
+	}
 
 	if len(similarTracks.Tracks) > 0 {
 		return nil
+	}
+
+	if err := s.limiter.Wait(ctx); err != nil {
+		return err
 	}
 
 	// if couldn't get any similar tracks, fall back to selecting another track from the artist
@@ -207,6 +220,12 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 		}
 	}
 
+	select {
+	case <-s.stop:
+		return errors.New("stopped")
+	default:
+	}
+
 	success, err := s.handleArtistTopTracks(ctx, trackInfo.Artist.MBID, artistName, trackId)
 	if err != nil {
 		return err
@@ -218,6 +237,9 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 
 	similarArtists := &lastfm.SimilarArtists{}
 
+	if err := s.limiter.Wait(ctx); err != nil {
+		return err
+	}
 	if trackInfo != nil && trackInfo.Artist.MBID != "" {
 		similarArtists, err = s.lastFm.Artist.SimilarByMBID(lastfm.ArtistSimilarMBIDParams{
 			MBID: trackInfo.Artist.MBID,
@@ -262,6 +284,10 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, artistName string, trackId int64) (bool, error) {
 	artistTopTracks := &lastfm.ArtistTopTracks{}
 
+	if err := s.limiter.Wait(ctx); err != nil {
+		return false, err
+	}
+
 	var err error
 	if artistMBId != "" {
 		artistTopTracks, err = s.lastFm.Artist.TopTracksByMBID(lastfm.ArtistTopTracksMBIDParams{
@@ -284,6 +310,12 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 	wasSuccesful := false
 	limit := 1
 	for idx, track := range artistTopTracks.Tracks {
+		select {
+		case <-s.stop:
+			return false, errors.New("stopped")
+		default:
+		}
+
 		if idx+1 > limit {
 			break
 		}
@@ -298,6 +330,9 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 
 		similarTracks := &lastfm.SimilarTracks{}
 
+		if err := s.limiter.Wait(ctx); err != nil {
+			return false, err
+		}
 		if track.MBID != "" {
 			similarTracks, err = s.lastFm.Track.SimilarByMBID(lastfm.TrackSimilarMBIDParams{
 				MBID: track.MBID,
@@ -317,7 +352,11 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 			continue
 		}
 
-		s.handleSimilarTracksResponse(trackId, similarTracks)
+		err := s.handleSimilarTracksResponse(ctx, trackId, similarTracks)
+		if err != nil {
+			return false, err
+		}
+
 		wasSuccesful = true
 		break
 	}
@@ -325,8 +364,14 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 	return wasSuccesful, nil
 }
 
-func (s *Service) handleSimilarTracksResponse(trackId int64, similarTracks *lastfm.SimilarTracks) {
+func (s *Service) handleSimilarTracksResponse(ctx context.Context, trackId int64, similarTracks *lastfm.SimilarTracks) error {
 	for _, recommendedTrack := range similarTracks.Tracks {
+		select {
+		case <-s.stop:
+			return errors.New("stopped")
+		default:
+		}
+
 		s.writeMu.Lock()
 
 		lastfmTitle := strings.TrimSpace(recommendedTrack.Title)
@@ -343,11 +388,73 @@ func (s *Service) handleSimilarTracksResponse(trackId int64, similarTracks *last
 			artistMBId = &mbid
 		}
 
+		var trackInfo *lastfm.TrackInfo
+		if recommendedTrack.MBID != "" {
+			if err := s.limiter.Wait(ctx); err != nil {
+				s.logger.Error("couldn't wait on lastfm rate limiter",
+					"error", err.Error())
+				return err
+			}
+
+			info, err := s.lastFm.Track.InfoByMBID(lastfm.TrackInfoMBIDParams{
+				MBID: recommendedTrack.MBID,
+			})
+			if err != nil {
+				s.logger.Warn("couldn't fetch lastfm track info by mbid",
+					"error", err.Error(),
+					"mbid", recommendedTrack.MBID,
+					"artist", lastfmArtist,
+					"title", lastfmTitle,
+				)
+			} else {
+				trackInfo = info
+			}
+		}
+
+		if trackInfo == nil {
+			if err := s.limiter.Wait(ctx); err != nil {
+				s.logger.Error("couldn't wait on lastfm rate limiter",
+					"error", err.Error())
+				return err
+			}
+
+			info, err := s.lastFm.Track.Info(lastfm.TrackInfoParams{
+				Artist: lastfmArtist,
+				Track:  lastfmTitle,
+			})
+			if err != nil {
+				s.logger.Warn("couldn't fetch lastfm track info by artist/title",
+					"error", err.Error(),
+					"artist", lastfmArtist,
+					"title", lastfmTitle,
+				)
+			} else {
+				trackInfo = info
+			}
+		}
+
+		var albumTitle *string
+		var albumMBId *string
+		if trackInfo != nil {
+			if title := strings.TrimSpace(trackInfo.Album.Title); title != "" {
+				albumTitle = &title
+			}
+			if mbid := strings.TrimSpace(trackInfo.Album.MBID); mbid != "" {
+				albumMBId = &mbid
+			}
+			if artistMBId == nil && strings.TrimSpace(trackInfo.Artist.MBID) != "" {
+				mbid := strings.TrimSpace(trackInfo.Artist.MBID)
+				artistMBId = &mbid
+			}
+		}
+
 		lastfmTrack := data.LastfmTrack{
 			Title:      lastfmTitle,
 			Duration:   &duration,
 			ArtistName: lastfmArtist,
 			ArtistMbid: artistMBId,
+			AlbumTitle: albumTitle,
+			AlbumMbid:  albumMBId,
 		}
 
 		storedTrack, err := s.db.InsertLastFmTrack(&lastfmTrack, nil)
@@ -373,6 +480,8 @@ func (s *Service) handleSimilarTracksResponse(trackId int64, similarTracks *last
 			continue
 		}
 	}
+
+	return nil
 }
 
 func (s *Service) enqueueItem(item queueItem) bool {
