@@ -18,10 +18,18 @@ func (s *Service) updateUserRecommendations() {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := s.ctx
 
 	var wg sync.WaitGroup
 	for _, user := range users {
+		select {
+		case <-s.stop:
+			return
+		case <-ctx.Done():
+			return
+		default:
+		}
+
 		wg.Go(func() {
 			err = s.updateSingleUserRecommendations(ctx, user)
 

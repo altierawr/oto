@@ -41,6 +41,9 @@ type Service struct {
 	lastFm *api.Client
 	logger *slog.Logger
 
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	limiter *rate.Limiter
 	writeMu sync.Mutex
 	queue   chan queueItem
@@ -49,10 +52,13 @@ type Service struct {
 }
 
 func New(db *database.DB, lastFm *api.Client, logger *slog.Logger) *Service {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Service{
 		db:      db,
 		lastFm:  lastFm,
 		logger:  logger,
+		ctx:     ctx,
+		cancel:  cancel,
 		limiter: rate.NewLimiter(rate.Every(1*time.Second/50), 1),
 		queue:   make(chan queueItem, defaultQueueSize),
 		stop:    make(chan struct{}),
@@ -102,6 +108,10 @@ func (s *Service) Stop() {
 		close(s.stop)
 	}
 
+	if s.cancel != nil {
+		s.cancel()
+	}
+
 	<-s.done
 }
 
@@ -143,12 +153,9 @@ func (s *Service) handleQueueItem(item queueItem) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-	defer cancel()
-
 	s.logger.Info("fetching tidal track recommendations",
 		"trackId", item.trackID)
-	err = s.fetchAndStoreSimilar(ctx, item.trackID)
+	err = s.fetchAndStoreSimilar(s.ctx, item.trackID)
 	if err == nil {
 		return
 	}
@@ -313,6 +320,8 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 		select {
 		case <-s.stop:
 			return false, errors.New("stopped")
+		case <-ctx.Done():
+			return false, ctx.Err()
 		default:
 		}
 
@@ -369,15 +378,14 @@ func (s *Service) handleSimilarTracksResponse(ctx context.Context, trackId int64
 		select {
 		case <-s.stop:
 			return errors.New("stopped")
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
 		}
-
-		s.writeMu.Lock()
 
 		lastfmTitle := strings.TrimSpace(recommendedTrack.Title)
 		lastfmArtist := strings.TrimSpace(recommendedTrack.Artist.Name)
 		if lastfmTitle == "" || lastfmArtist == "" {
-			s.writeMu.Unlock()
 			continue
 		}
 
@@ -457,6 +465,7 @@ func (s *Service) handleSimilarTracksResponse(ctx context.Context, trackId int64
 			AlbumMbid:  albumMBId,
 		}
 
+		s.writeMu.Lock()
 		storedTrack, err := s.db.InsertLastFmTrack(&lastfmTrack, nil)
 		if err != nil {
 			s.writeMu.Unlock()
