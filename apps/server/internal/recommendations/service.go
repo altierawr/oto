@@ -10,6 +10,7 @@ import (
 
 	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/database"
+	"github.com/altierawr/oto/internal/tidal"
 	"github.com/twoscott/gobble-fm/api"
 	"github.com/twoscott/gobble-fm/lastfm"
 	"golang.org/x/time/rate"
@@ -20,7 +21,7 @@ const (
 )
 
 const (
-	defaultQueueSize = 256
+	defaultQueueSize = 1_000_000
 	maxAttempts      = 3
 	workerCount      = 10
 )
@@ -40,29 +41,33 @@ type Service struct {
 	db     *database.DB
 	lastFm *api.Client
 	logger *slog.Logger
+	tidal  *tidal.Service
 
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	limiter *rate.Limiter
-	writeMu sync.Mutex
-	queue   chan queueItem
-	stop    chan struct{}
-	done    chan struct{}
+	lowPrioLimiter  *rate.Limiter
+	highPrioLimiter *rate.Limiter
+	writeMu         sync.Mutex
+	queue           chan queueItem
+	stop            chan struct{}
+	done            chan struct{}
 }
 
-func New(db *database.DB, lastFm *api.Client, logger *slog.Logger) *Service {
+func New(db *database.DB, lastFm *api.Client, logger *slog.Logger, tidal *tidal.Service) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Service{
-		db:      db,
-		lastFm:  lastFm,
-		logger:  logger,
-		ctx:     ctx,
-		cancel:  cancel,
-		limiter: rate.NewLimiter(rate.Every(1*time.Second/20), 1),
-		queue:   make(chan queueItem, defaultQueueSize),
-		stop:    make(chan struct{}),
-		done:    make(chan struct{}),
+		db:              db,
+		lastFm:          lastFm,
+		logger:          logger,
+		tidal:           tidal,
+		ctx:             ctx,
+		cancel:          cancel,
+		lowPrioLimiter:  rate.NewLimiter(rate.Every(1*time.Second/5), 1),
+		highPrioLimiter: rate.NewLimiter(rate.Every(1*time.Second/5), 1),
+		queue:           make(chan queueItem, defaultQueueSize),
+		stop:            make(chan struct{}),
+		done:            make(chan struct{}),
 	}
 }
 
@@ -83,7 +88,7 @@ func (s *Service) Run() {
 		})
 	}
 
-	ticker := time.NewTicker(120 * time.Minute)
+	ticker := time.NewTicker(60 * time.Minute)
 	defer ticker.Stop()
 
 	s.updateUserRecommendations()
@@ -129,7 +134,9 @@ func (s *Service) SyncIfMissing(ctx context.Context, trackID int64) error {
 		return nil
 	}
 
-	return s.fetchAndStoreSimilar(ctx, trackID)
+	s.logger.Info("fetching tidal track recommendations for track",
+		"trackId", trackID)
+	return s.fetchAndStoreSimilar(ctx, s.highPrioLimiter, trackID)
 }
 
 func (s *Service) handleQueueItem(item queueItem) {
@@ -150,12 +157,14 @@ func (s *Service) handleQueueItem(item queueItem) {
 	}
 
 	if hasRecommendations {
+		s.logger.Info("track already has recommendations",
+			"trackId", item.trackID)
 		return
 	}
 
-	s.logger.Info("fetching tidal track recommendations",
+	s.logger.Info("fetching tidal track recommendations for track",
 		"trackId", item.trackID)
-	err = s.fetchAndStoreSimilar(s.ctx, item.trackID)
+	err = s.fetchAndStoreSimilar(s.ctx, s.lowPrioLimiter, item.trackID)
 	if err == nil {
 		return
 	}
@@ -163,7 +172,7 @@ func (s *Service) handleQueueItem(item queueItem) {
 	s.retryOrLog(item, err)
 }
 
-func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error {
+func (s *Service) fetchAndStoreSimilar(ctx context.Context, limiter *rate.Limiter, trackId int64) error {
 	track, err := s.db.GetTidalTrack(trackId)
 	if err != nil {
 		return err
@@ -179,7 +188,7 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 		return errors.New("tidal track is missing artist name or title")
 	}
 
-	if err := s.limiter.Wait(ctx); err != nil {
+	if err := limiter.Wait(ctx); err != nil {
 		return err
 	}
 
@@ -187,18 +196,11 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 		Artist: artistName,
 		Track:  title,
 	})
-	if err != nil {
-		switch {
-		case err.Error() == lastfmErrorNotFoundStr:
-			s.logger.Warn("couldn't find track when doing similar track search",
-				"artist", artistName,
-				"track", title)
-		default:
-			return err
-		}
+	if err != nil && !strings.Contains(err.Error(), lastfmErrorNotFoundStr) {
+		return err
 	}
 
-	err = s.handleSimilarTracksResponse(ctx, trackId, similarTracks)
+	err = s.handleSimilarTracksResponse(ctx, limiter, trackId, similarTracks)
 	if err != nil {
 		return err
 	}
@@ -207,7 +209,7 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 		return nil
 	}
 
-	if err := s.limiter.Wait(ctx); err != nil {
+	if err := limiter.Wait(ctx); err != nil {
 		return err
 	}
 
@@ -216,15 +218,8 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 		Artist: artistName,
 		Track:  title,
 	})
-	if err != nil {
-		switch {
-		case err.Error() == lastfmErrorNotFoundStr:
-			s.logger.Warn("couldn't find track when doing similar track search",
-				"artist", artistName,
-				"track", title)
-		default:
-			return err
-		}
+	if err != nil && !strings.Contains(err.Error(), lastfmErrorNotFoundStr) {
+		return err
 	}
 
 	select {
@@ -233,7 +228,7 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 	default:
 	}
 
-	success, err := s.handleArtistTopTracks(ctx, trackInfo.Artist.MBID, artistName, trackId)
+	success, err := s.handleArtistTopTracks(ctx, limiter, trackInfo.Artist.MBID, artistName, trackId)
 	if err != nil {
 		return err
 	}
@@ -244,7 +239,7 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 
 	similarArtists := &lastfm.SimilarArtists{}
 
-	if err := s.limiter.Wait(ctx); err != nil {
+	if err := limiter.Wait(ctx); err != nil {
 		return err
 	}
 	if trackInfo != nil && trackInfo.Artist.MBID != "" {
@@ -268,7 +263,7 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 				break
 			}
 
-			success, err = s.handleArtistTopTracks(ctx, artist.MBID, artist.Name, trackId)
+			success, err = s.handleArtistTopTracks(ctx, limiter, artist.MBID, artist.Name, trackId)
 			if err != nil {
 				return err
 			}
@@ -288,10 +283,10 @@ func (s *Service) fetchAndStoreSimilar(ctx context.Context, trackId int64) error
 	return nil
 }
 
-func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, artistName string, trackId int64) (bool, error) {
+func (s *Service) handleArtistTopTracks(ctx context.Context, limiter *rate.Limiter, artistMBId string, artistName string, trackId int64) (bool, error) {
 	artistTopTracks := &lastfm.ArtistTopTracks{}
 
-	if err := s.limiter.Wait(ctx); err != nil {
+	if err := limiter.Wait(ctx); err != nil {
 		return false, err
 	}
 
@@ -333,13 +328,13 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 			continue
 		}
 
-		if err := s.limiter.Wait(ctx); err != nil {
+		if err := limiter.Wait(ctx); err != nil {
 			return false, err
 		}
 
 		similarTracks := &lastfm.SimilarTracks{}
 
-		if err := s.limiter.Wait(ctx); err != nil {
+		if err := limiter.Wait(ctx); err != nil {
 			return false, err
 		}
 		if track.MBID != "" {
@@ -354,6 +349,10 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 		}
 
 		if err != nil {
+			if strings.Contains(err.Error(), lastfmErrorNotFoundStr) {
+				return false, nil
+			}
+
 			return false, err
 		}
 
@@ -361,7 +360,7 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 			continue
 		}
 
-		err := s.handleSimilarTracksResponse(ctx, trackId, similarTracks)
+		err := s.handleSimilarTracksResponse(ctx, limiter, trackId, similarTracks)
 		if err != nil {
 			return false, err
 		}
@@ -373,7 +372,7 @@ func (s *Service) handleArtistTopTracks(ctx context.Context, artistMBId string, 
 	return wasSuccesful, nil
 }
 
-func (s *Service) handleSimilarTracksResponse(ctx context.Context, trackId int64, similarTracks *lastfm.SimilarTracks) error {
+func (s *Service) handleSimilarTracksResponse(ctx context.Context, limiter *rate.Limiter, trackId int64, similarTracks *lastfm.SimilarTracks) error {
 	for _, recommendedTrack := range similarTracks.Tracks {
 		select {
 		case <-s.stop:
@@ -389,16 +388,25 @@ func (s *Service) handleSimilarTracksResponse(ctx context.Context, trackId int64
 			continue
 		}
 
-		duration := recommendedTrack.Duration
-		var artistMBId *string
-		if recommendedTrack.Artist.MBID != "" {
-			mbid := recommendedTrack.Artist.MBID
-			artistMBId = &mbid
+		var trackInfo *data.LastfmTrack
+		if recommendedTrack.MBID != "" {
+			track, err := s.db.GetLastfmTrackByMbid(recommendedTrack.MBID)
+			if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
+				return err
+			}
+
+			trackInfo = track
+		} else {
+			track, err := s.db.GetLastfmTrackByArtistNameAndTitle(lastfmArtist, lastfmTitle)
+			if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
+				return err
+			}
+
+			trackInfo = track
 		}
 
-		var trackInfo *lastfm.TrackInfo
-		if recommendedTrack.MBID != "" {
-			if err := s.limiter.Wait(ctx); err != nil {
+		if trackInfo == nil && recommendedTrack.MBID != "" {
+			if err := limiter.Wait(ctx); err != nil {
 				s.logger.Error("couldn't wait on lastfm rate limiter",
 					"error", err.Error())
 				return err
@@ -408,19 +416,51 @@ func (s *Service) handleSimilarTracksResponse(ctx context.Context, trackId int64
 				MBID: recommendedTrack.MBID,
 			})
 			if err != nil {
-				s.logger.Warn("couldn't fetch lastfm track info by mbid",
-					"error", err.Error(),
-					"mbid", recommendedTrack.MBID,
-					"artist", lastfmArtist,
-					"title", lastfmTitle,
-				)
+				if !strings.Contains(err.Error(), lastfmErrorNotFoundStr) {
+					s.logger.Warn("couldn't fetch lastfm track info by mbid",
+						"error", err.Error(),
+						"mbid", recommendedTrack.MBID,
+						"artist", lastfmArtist,
+						"title", lastfmTitle,
+					)
+				}
 			} else {
-				trackInfo = info
+				dur := info.Duration.Unwrap()
+
+				var mbid *string
+				if info.MBID != "" {
+					mbid = &info.MBID
+				}
+
+				var artistMbid *string
+				if info.Artist.MBID != "" {
+					mbid = &info.Artist.MBID
+				}
+
+				var albumTitle *string
+				if info.Album.Title != "" {
+					albumTitle = &info.Album.Title
+				}
+
+				var albumMbid *string
+				if info.Album.MBID != "" {
+					albumMbid = &info.Album.MBID
+				}
+
+				trackInfo = &data.LastfmTrack{
+					Mbid:       mbid,
+					Title:      info.Title,
+					Duration:   &dur,
+					ArtistName: info.Artist.Name,
+					ArtistMbid: artistMbid,
+					AlbumTitle: albumTitle,
+					AlbumMbid:  albumMbid,
+				}
 			}
 		}
 
 		if trackInfo == nil {
-			if err := s.limiter.Wait(ctx); err != nil {
+			if err := limiter.Wait(ctx); err != nil {
 				s.logger.Error("couldn't wait on lastfm rate limiter",
 					"error", err.Error())
 				return err
@@ -431,38 +471,89 @@ func (s *Service) handleSimilarTracksResponse(ctx context.Context, trackId int64
 				Track:  lastfmTitle,
 			})
 			if err != nil {
-				s.logger.Warn("couldn't fetch lastfm track info by artist/title",
-					"error", err.Error(),
-					"artist", lastfmArtist,
-					"title", lastfmTitle,
-				)
+				if !strings.Contains(err.Error(), lastfmErrorNotFoundStr) {
+					s.logger.Warn("couldn't fetch lastfm track info by artist/title",
+						"error", err.Error(),
+						"artist", lastfmArtist,
+						"title", lastfmTitle,
+					)
+				}
 			} else {
-				trackInfo = info
+				dur := info.Duration.Unwrap()
+
+				var mbid *string
+				if info.MBID != "" {
+					mbid = &info.MBID
+				}
+
+				var artistMbid *string
+				if info.Artist.MBID != "" {
+					mbid = &info.Artist.MBID
+				}
+
+				var albumTitle *string
+				if info.Album.Title != "" {
+					albumTitle = &info.Album.Title
+				}
+
+				var albumMbid *string
+				if info.Album.MBID != "" {
+					albumMbid = &info.Album.MBID
+				}
+
+				trackInfo = &data.LastfmTrack{
+					Mbid:       mbid,
+					Title:      info.Title,
+					Duration:   &dur,
+					ArtistName: info.Artist.Name,
+					ArtistMbid: artistMbid,
+					AlbumTitle: albumTitle,
+					AlbumMbid:  albumMbid,
+				}
 			}
 		}
 
+		var mbid *string
+		title := lastfmTitle
+		duration := recommendedTrack.Duration.Unwrap()
+		artistName := lastfmArtist
+		var artistMbid *string
 		var albumTitle *string
-		var albumMBId *string
+		var albumMbid *string
+
+		if recommendedTrack.MBID != "" {
+			mbid = &recommendedTrack.MBID
+		}
+
+		if recommendedTrack.Artist.MBID != "" {
+			artistMbid = &recommendedTrack.Artist.MBID
+		}
+
 		if trackInfo != nil {
-			if title := strings.TrimSpace(trackInfo.Album.Title); title != "" {
-				albumTitle = &title
+			if trackInfo.Mbid != nil {
+				mbid = trackInfo.Mbid
 			}
-			if mbid := strings.TrimSpace(trackInfo.Album.MBID); mbid != "" {
-				albumMBId = &mbid
+
+			if trackInfo.Duration != nil {
+				duration = *trackInfo.Duration
 			}
-			if artistMBId == nil && strings.TrimSpace(trackInfo.Artist.MBID) != "" {
-				mbid := strings.TrimSpace(trackInfo.Artist.MBID)
-				artistMBId = &mbid
+
+			if trackInfo.ArtistMbid != nil {
+				artistMbid = trackInfo.ArtistMbid
 			}
+
+			albumTitle = trackInfo.AlbumTitle
+			albumMbid = trackInfo.AlbumMbid
 		}
 
 		lastfmTrack := data.LastfmTrack{
-			Title:      lastfmTitle,
+			Mbid:       mbid,
+			Title:      title,
 			Duration:   &duration,
-			ArtistName: lastfmArtist,
-			ArtistMbid: artistMBId,
+			ArtistName: artistName,
+			ArtistMbid: artistMbid,
 			AlbumTitle: albumTitle,
-			AlbumMbid:  albumMBId,
+			AlbumMbid:  albumMbid,
 		}
 
 		s.writeMu.Lock()

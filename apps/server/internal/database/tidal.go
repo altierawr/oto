@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/altierawr/oto/internal/types"
@@ -112,6 +113,28 @@ func (db *DB) InsertTidalAlbum(album *types.TidalAlbum, tx *sqlx.Tx) error {
 	}
 }
 
+func (db *DB) InsertTidalArtists(artists []types.TidalArtist, tx *sqlx.Tx) error {
+	for _, artist := range artists {
+		err := db.InsertTidalArtist(&artist, tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (db *DB) InsertTidalAlbums(albums []types.TidalAlbum, tx *sqlx.Tx) error {
+	for _, album := range albums {
+		err := db.InsertTidalAlbum(&album, tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (db *DB) InsertTidalTracks(tracks []types.TidalSong, tx *sqlx.Tx) error {
 	for _, track := range tracks {
 		err := db.InsertTidalTrack(&track, tx)
@@ -137,9 +160,9 @@ func (db *DB) InsertTidalTrack(track *types.TidalSong, tx *sqlx.Tx) error {
 
 	query := `
 		INSERT INTO tidal_tracks (
-			id, bpm, duration, explicit, isrc, stream_start_date, title, track_number, volume_number, artist_id, album_id, updated_at
+			id, bpm, duration, explicit, isrc, stream_start_date, title, track_number, volume_number, artist_id, album_id, updated_at, created_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, unixepoch())
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, unixepoch(), unixepoch())
 		ON CONFLICT DO UPDATE
 		SET bpm = COALESCE(tidal_tracks.bpm, excluded.bpm),
 				duration = COALESCE(tidal_tracks.duration, excluded.duration),
@@ -152,7 +175,7 @@ func (db *DB) InsertTidalTrack(track *types.TidalSong, tx *sqlx.Tx) error {
 				artist_id = COALESCE(excluded.artist_id, tidal_tracks.artist_id),
 				album_id = COALESCE(excluded.album_id, tidal_tracks.album_id),
 				updated_at = excluded.updated_at
-		`
+		RETURNING (created_at = updated_at) AS is_new_row`
 
 	args := []any{
 		track.ID, track.Bpm, track.Duration, track.Explicit, track.ISRC, track.StreamStartDate, track.Title, track.TrackNumber, track.VolumeNumber,
@@ -170,11 +193,10 @@ func (db *DB) InsertTidalTrack(track *types.TidalSong, tx *sqlx.Tx) error {
 		transaction = txx
 	}
 
-	var err error
-	_, err = transaction.ExecContext(ctx, query, args...)
-
+	var isNewRow bool
+	err := transaction.QueryRowContext(ctx, query, args...).Scan(&isNewRow)
 	if err != nil {
-		if err.Error() != "FOREIGN KEY constraint failed" {
+		if !strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
 			return err
 		}
 
@@ -193,10 +215,13 @@ func (db *DB) InsertTidalTrack(track *types.TidalSong, tx *sqlx.Tx) error {
 			return err
 		}
 
-		_, err = transaction.ExecContext(ctx, query, args...)
+		err = transaction.QueryRowContext(ctx, query, args...).Scan(&isNewRow)
+		if err != nil {
+			return err
+		}
 	}
 
-	if db.onTidalTrackUpsert != nil {
+	if isNewRow && db.onTidalTrackUpsert != nil {
 		defer db.onTidalTrackUpsert(int64(track.ID))
 	}
 

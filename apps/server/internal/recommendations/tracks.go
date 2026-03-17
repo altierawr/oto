@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	"github.com/altierawr/oto/internal/data"
-	"github.com/altierawr/oto/internal/tidal"
 	"github.com/altierawr/oto/internal/types"
 	"github.com/hbollon/go-edlib"
 )
@@ -19,7 +18,7 @@ func (s *Service) updateSingleUserRecommendedTracks(ctx context.Context, user da
 	// try more tracks from the same artists
 	for iteration := range 5 {
 		for _, artistTracks := range topTracksByArtist {
-			if len(tracksToRecommend) >= 15 {
+			if len(tracksToRecommend) >= 30 {
 				break
 			}
 
@@ -35,9 +34,15 @@ func (s *Service) updateSingleUserRecommendedTracks(ctx context.Context, user da
 
 			err := s.SyncIfMissing(ctx, int64(track.ID))
 			if err != nil {
-				s.logger.Error("couldn't fetch missing recommendations for autoplay",
+				artistName := ""
+				if len(track.Artists) > 0 {
+					artistName = track.Artists[0].Name
+				}
+				s.logger.Error("couldn't fetch missing recommendations for track",
 					"error", err.Error(),
-					"trackId", track)
+					"trackId", track.ID,
+					"artist", artistName,
+					"title", track.Title)
 				continue
 			}
 
@@ -51,7 +56,7 @@ func (s *Service) updateSingleUserRecommendedTracks(ctx context.Context, user da
 
 			nrAddedRecommendations := 0
 			for _, recommendation := range recommendations {
-				if nrAddedRecommendations >= 3 {
+				if nrAddedRecommendations >= 5 {
 					break
 				}
 
@@ -68,7 +73,7 @@ func (s *Service) updateSingleUserRecommendedTracks(ctx context.Context, user da
 					continue
 				}
 
-				results, err := tidal.Search(fmt.Sprintf("%s - %s", artistName, title))
+				results, err := s.tidal.Search(fmt.Sprintf("%s - %s", artistName, title))
 				if err != nil {
 					return err
 				}
@@ -98,11 +103,6 @@ func (s *Service) updateSingleUserRecommendedTracks(ctx context.Context, user da
 					continue
 				}
 
-				s.logger.Info("adding new recommended track",
-					"userId", user.ID,
-					"username", user.Username,
-					"artist", artistName,
-					"title", title)
 				tracksToRecommend = append(tracksToRecommend, *bestResult)
 				tracksToRecommendIds = append(tracksToRecommendIds, bestResult.ID)
 				nrAddedRecommendations++

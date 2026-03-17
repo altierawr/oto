@@ -3,8 +3,6 @@ package main
 import (
 	"errors"
 	"net/http"
-
-	"github.com/altierawr/oto/internal/tidal"
 )
 
 func (app *application) searchHandler(w http.ResponseWriter, r *http.Request) {
@@ -14,7 +12,7 @@ func (app *application) searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := tidal.Search(query)
+	result, err := app.tidal.Search(query)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

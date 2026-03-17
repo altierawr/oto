@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"sync"
 
 	"github.com/altierawr/oto/internal/types"
 )
@@ -61,7 +60,7 @@ type TidalAlbumItemsResponse struct {
 	} `json:"items"`
 }
 
-func GetAlbum(id int64) (*types.TidalAlbum, error) {
+func (s *Service) GetAlbum(id int64) (*types.TidalAlbum, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -214,36 +213,21 @@ func GetAlbum(id int64) (*types.TidalAlbum, error) {
 		album.Songs = append(album.Songs, song)
 	}
 
+	err = s.db.InsertTidalAlbum(&album, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal album",
+			"error", err.Error(),
+			"id", album.ID,
+			"title", album.Title)
+	}
+
+	err = s.db.InsertTidalTracks(album.Songs, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal tracks of album",
+			"error", err.Error(),
+			"albumId", album.ID,
+			"albumTitle", album.Title)
+	}
+
 	return &album, nil
-}
-
-func GetAlbumInfoBatch(ids []int64) ([]types.TidalAlbum, error) {
-	albums := make([]types.TidalAlbum, len(ids))
-	errs := make([]error, len(ids))
-	var wg sync.WaitGroup
-
-	for i, id := range ids {
-		wg.Add(1)
-		go func(idx int, albumId int64) {
-			defer wg.Done()
-			album, err := GetAlbum(albumId)
-			if err != nil {
-				errs[idx] = err
-				return
-			}
-			// Clear songs to keep the response lightweight
-			album.Songs = nil
-			albums[idx] = *album
-		}(i, id)
-	}
-
-	wg.Wait()
-
-	for _, err := range errs {
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return albums, nil
 }

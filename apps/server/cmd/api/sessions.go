@@ -10,7 +10,6 @@ import (
 
 	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/database"
-	"github.com/altierawr/oto/internal/tidal"
 	"github.com/altierawr/oto/internal/types"
 	"github.com/hbollon/go-edlib"
 )
@@ -129,7 +128,7 @@ func (app *application) setSessionTracksHandler(w http.ResponseWriter, r *http.R
 		if err != nil {
 			app.logger.Info("tidal track not found in db; fetching from tidal",
 				"id", id)
-			track, err = tidal.GetSong(id)
+			track, err = app.tidal.GetSong(id)
 			if err != nil {
 				app.serverErrorResponse(w, r, err)
 				return
@@ -202,7 +201,7 @@ func (app *application) addSessionTrackHandler(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		app.logger.Info("tidal track not found in db; fetching from tidal",
 			"id", input.TrackId)
-		track, err = tidal.GetSong(*input.TrackId)
+		track, err = app.tidal.GetSong(*input.TrackId)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
@@ -599,7 +598,7 @@ func (app *application) findTidalTrackForRecommendation(
 	title string,
 	sessionTrackIDs map[int64]struct{},
 ) (*types.TidalSong, error) {
-	results, err := tidal.Search(fmt.Sprintf("%s - %s", artistName, title))
+	results, err := app.tidal.Search(fmt.Sprintf("%s - %s", artistName, title))
 	if err != nil {
 		app.logger.Error("error searching tidal for lastfm hit",
 			"error", err.Error(),

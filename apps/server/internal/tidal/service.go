@@ -127,17 +127,9 @@ func (s *Service) fetchMissingTidalAlbums(ctx context.Context) {
 			return
 		}
 
-		album, err := GetAlbum(id)
+		album, err := s.GetAlbum(id)
 		if err != nil {
 			s.logger.Error("couldn't get tidal album",
-				"error", err.Error(),
-				"id", id)
-			continue
-		}
-
-		err = s.db.InsertTidalAlbum(album, nil)
-		if err != nil {
-			s.logger.Error("couldn't insert tidal album",
 				"error", err.Error(),
 				"id", id)
 			continue

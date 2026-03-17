@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"sync"
 
 	"github.com/altierawr/oto/internal/types"
 )
@@ -201,7 +200,7 @@ type TidalArtistAlbumTypeResponse struct {
 	} `json:"items"`
 }
 
-func GetArtistPage(id int64) (*types.TidalArtistPage, error) {
+func (s *Service) GetArtistPage(id int64) (*types.TidalArtistPage, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -342,6 +341,51 @@ func GetArtistPage(id int64) (*types.TidalArtistPage, error) {
 		}
 	}
 
+	artist := types.TidalArtist{
+		ID:                         page.ID,
+		Name:                       page.Name,
+		Picture:                    page.Picture,
+		SelectedAlbumCoverFallback: page.SelectedAlbumCoverFallback,
+	}
+
+	err = s.db.InsertTidalArtist(&artist, nil)
+	if err != nil {
+		s.logger.Error("error inserting artist in artist page getter",
+			"error", err.Error(),
+			"id", id)
+	}
+
+	err = s.db.InsertTidalArtists(page.SimilarArtists, nil)
+	if err != nil {
+		s.logger.Error("error inserting similar artists in artist page getter",
+			"error", err.Error(),
+			"id", id)
+	}
+
+	err = s.db.InsertTidalAlbums(page.Albums, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal albums in artist page getter",
+			"error", err.Error())
+	}
+
+	err = s.db.InsertTidalAlbums(page.AppearsOn, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal albums (appears on) in artist page getter",
+			"error", err.Error())
+	}
+
+	err = s.db.InsertTidalAlbums(page.Compilations, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal albums (compilations) in artist page getter",
+			"error", err.Error())
+	}
+
+	err = s.db.InsertTidalTracks(page.TopTracks, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal tracks (top tracks) in artist page getter",
+			"error", err.Error())
+	}
+
 	return &page, nil
 }
 
@@ -394,35 +438,6 @@ func GetArtistBasicInfo(id int64) (*types.TidalArtist, error) {
 	}, nil
 }
 
-func GetArtistInfoBatch(ids []int64) ([]types.TidalArtist, error) {
-	artists := make([]types.TidalArtist, len(ids))
-	errs := make([]error, len(ids))
-	var wg sync.WaitGroup
-
-	for i, id := range ids {
-		wg.Add(1)
-		go func(idx int, artistId int64) {
-			defer wg.Done()
-			artist, err := GetArtistBasicInfo(artistId)
-			if err != nil {
-				errs[idx] = err
-				return
-			}
-			artists[idx] = *artist
-		}(i, id)
-	}
-
-	wg.Wait()
-
-	for _, err := range errs {
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return artists, nil
-}
-
 type TidalArtistTopTracksResponse struct {
 	Items []struct {
 		Type string `json:"type"`
@@ -458,7 +473,7 @@ type ArtistTopTracksResult struct {
 	MaybeHasMorePages bool              `json:"maybeHasMorePages"`
 }
 
-func GetArtistTopTracks(id int64, page int) (*ArtistTopTracksResult, error) {
+func (s *Service) GetArtistTopTracks(id int64, page int) (*ArtistTopTracksResult, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -532,6 +547,13 @@ func GetArtistTopTracks(id int64, page int) (*ArtistTopTracksResult, error) {
 		tracks = append(tracks, song)
 	}
 
+	err = s.db.InsertTidalTracks(tracks, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal artist top tracks",
+			"error", err.Error(),
+			"artistId", id)
+	}
+
 	return &ArtistTopTracksResult{
 		Items:             tracks,
 		MaybeHasMorePages: len(tracks) == artistPageSize,
@@ -543,7 +565,7 @@ type ArtistAlbumsResult struct {
 	MaybeHasMorePages bool               `json:"maybeHasMorePages"`
 }
 
-func GetArtistAlbums(id int64, page int) (*ArtistAlbumsResult, error) {
+func (s *Service) GetArtistAlbums(id int64, page int) (*ArtistAlbumsResult, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -615,6 +637,12 @@ func GetArtistAlbums(id int64, page int) (*ArtistAlbumsResult, error) {
 		albums = append(albums, album)
 	}
 
+	err = s.db.InsertTidalAlbums(albums, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal albums in artist albums getter",
+			"error", err.Error())
+	}
+
 	return &ArtistAlbumsResult{
 		Items:             albums,
 		MaybeHasMorePages: len(albums) == artistPageSize,
@@ -626,7 +654,7 @@ type ArtistSinglesAndEpsResult struct {
 	MaybeHasMorePages bool               `json:"maybeHasMorePages"`
 }
 
-func GetArtistSinglesAndEps(id int64, page int) (*ArtistSinglesAndEpsResult, error) {
+func (s *Service) GetArtistSinglesAndEps(id int64, page int) (*ArtistSinglesAndEpsResult, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -698,6 +726,12 @@ func GetArtistSinglesAndEps(id int64, page int) (*ArtistSinglesAndEpsResult, err
 		albums = append(albums, album)
 	}
 
+	err = s.db.InsertTidalAlbums(albums, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal singles & eps in artist singles & eps getter",
+			"error", err.Error())
+	}
+
 	return &ArtistSinglesAndEpsResult{
 		Items:             albums,
 		MaybeHasMorePages: len(albums) == artistPageSize,
@@ -709,7 +743,7 @@ type ArtistCompilationsResult struct {
 	MaybeHasMorePages bool               `json:"maybeHasMorePages"`
 }
 
-func GetArtistCompilations(id int64, page int) (*ArtistCompilationsResult, error) {
+func (s *Service) GetArtistCompilations(id int64, page int) (*ArtistCompilationsResult, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -781,6 +815,12 @@ func GetArtistCompilations(id int64, page int) (*ArtistCompilationsResult, error
 		albums = append(albums, album)
 	}
 
+	err = s.db.InsertTidalAlbums(albums, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal compilations in artist compilations getter",
+			"error", err.Error())
+	}
+
 	return &ArtistCompilationsResult{
 		Items:             albums,
 		MaybeHasMorePages: len(albums) == artistPageSize,
@@ -792,7 +832,7 @@ type ArtistAppearsOnResult struct {
 	MaybeHasMorePages bool               `json:"maybeHasMorePages"`
 }
 
-func GetArtistAppearsOn(id int64, page int) (*ArtistAppearsOnResult, error) {
+func (s *Service) GetArtistAppearsOn(id int64, page int) (*ArtistAppearsOnResult, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -862,6 +902,12 @@ func GetArtistAppearsOn(id int64, page int) (*ArtistAppearsOnResult, error) {
 		}
 
 		albums = append(albums, album)
+	}
+
+	err = s.db.InsertTidalAlbums(albums, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal albums in artist appears on getter",
+			"error", err.Error())
 	}
 
 	return &ArtistAppearsOnResult{

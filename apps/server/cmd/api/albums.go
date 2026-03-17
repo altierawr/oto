@@ -2,8 +2,6 @@ package main
 
 import (
 	"net/http"
-
-	"github.com/altierawr/oto/internal/tidal"
 )
 
 func (app *application) viewAlbumHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,22 +11,10 @@ func (app *application) viewAlbumHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	album, err := tidal.GetAlbum(id)
+	album, err := app.tidal.GetAlbum(id)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
-	}
-
-	err = app.db.InsertTidalAlbum(album, nil)
-	if err != nil {
-		app.logger.Error("something went wrong inserting tidal album in view album handler",
-			"error", err.Error())
-	}
-
-	err = app.db.InsertTidalTracks(album.Songs, nil)
-	if err != nil {
-		app.logger.Error("something went wrong inserting tidal tracks in view album handler",
-			"error", err.Error())
 	}
 
 	err = app.writeJSON(w, 200, album, nil)

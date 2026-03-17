@@ -9,7 +9,6 @@ import (
 
 	"github.com/altierawr/oto/internal/data"
 	"github.com/altierawr/oto/internal/database"
-	"github.com/altierawr/oto/internal/tidal"
 	"github.com/altierawr/oto/internal/types"
 	"github.com/hbollon/go-edlib"
 )
@@ -192,16 +191,29 @@ func (s *Service) updateSingleUserRecommendedAlbums(ctx context.Context, user da
 					"album", meta.AlbumTitle)
 			}
 
+			if err == nil && album == nil {
+				// if album wasn't found, try again if the album title ends with things commonly conflicting strings
+				albumTitle, found := strings.CutSuffix(meta.AlbumTitle, " - EP")
+				if !found {
+					albumTitle, found = strings.CutSuffix(meta.AlbumTitle, " - Single")
+				}
+
+				if found {
+					album, err = s.db.GetTidalAlbumByArtistAndTitle(meta.ArtistName, albumTitle)
+					if err != nil {
+						s.logger.Warn("couldn't search tidal for lastfm album recommendation",
+							"error", err.Error(),
+							"artist", meta.ArtistName,
+							"album", albumTitle)
+					}
+				}
+			}
+
 			if err == nil && album != nil {
 				if _, exists := recommendedAlbumIDs[album.ID]; exists {
 					continue
 				}
 
-				s.logger.Info("adding new recommended album",
-					"userId", user.ID,
-					"username", user.Username,
-					"artist", meta.ArtistName,
-					"title", meta.AlbumTitle)
 				recommendedAlbums = append(recommendedAlbums, data.UserRecommendedAlbum{
 					Album:                *album,
 					RecommendedFromAlbum: recommendedFromAlbum,
@@ -211,7 +223,10 @@ func (s *Service) updateSingleUserRecommendedAlbums(ctx context.Context, user da
 				continue
 			}
 
-			results, err := tidal.Search(fmt.Sprintf("%s - %s", meta.ArtistName, meta.AlbumTitle))
+			s.logger.Info("tidal album wasn't found in database, need to fetch",
+				"artist", meta.ArtistName,
+				"album", meta.AlbumTitle)
+			results, err := s.tidal.Search(fmt.Sprintf("%s - %s", meta.ArtistName, meta.AlbumTitle))
 			if err != nil {
 				if !errors.Is(err, database.ErrRecordNotFound) {
 					s.logger.Warn("couldn't search tidal for lastfm album recommendation",
@@ -231,11 +246,6 @@ func (s *Service) updateSingleUserRecommendedAlbums(ctx context.Context, user da
 				continue
 			}
 
-			s.logger.Info("adding new recommended album",
-				"userId", user.ID,
-				"username", user.Username,
-				"artist", meta.ArtistName,
-				"title", meta.AlbumTitle)
 			recommendedAlbums = append(recommendedAlbums, data.UserRecommendedAlbum{
 				Album:                *bestAlbum,
 				RecommendedFromAlbum: recommendedFromAlbum,

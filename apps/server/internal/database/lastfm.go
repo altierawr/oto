@@ -8,7 +8,6 @@ import (
 
 	"github.com/altierawr/oto/internal/data"
 	"github.com/jmoiron/sqlx"
-	"github.com/twoscott/gobble-fm/lastfm"
 )
 
 type TidalLastfmRecommendation struct {
@@ -41,19 +40,21 @@ func (db *DB) InsertLastFmTrack(track *data.LastfmTrack, tx *sqlx.Tx) (*data.Las
 	defer cancel()
 
 	query := `
-		INSERT INTO lastfm_tracks (title, duration, artist_name, artist_mbid, album_title, album_mbid)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO lastfm_tracks (mbid, title, duration, artist_name, artist_mbid, album_title, album_mbid)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT DO UPDATE
-		SET title = excluded.title,
-				duration = excluded.duration,
+		SET mbid = COALESCE(excluded.mbid, lastfm_tracks.mbid),
+				title = excluded.title,
+				duration = COALESCE(excluded.duration, lastfm_tracks.duration),
 				artist_name = excluded.artist_name,
-				artist_mbid = excluded.artist_mbid,
+				artist_mbid = COALESCE(excluded.artist_mbid, lastfm_tracks.artist_mbid),
 				album_title = COALESCE(excluded.album_title, lastfm_tracks.album_title),
 				album_mbid = COALESCE(excluded.album_mbid, lastfm_tracks.album_mbid),
 				updated_at = unixepoch()
 		RETURNING id`
 
 	args := []any{
+		track.Mbid,
 		track.Title,
 		track.Duration,
 		track.ArtistName,
@@ -70,6 +71,74 @@ func (db *DB) InsertLastFmTrack(track *data.LastfmTrack, tx *sqlx.Tx) (*data.Las
 	}
 
 	return track, err
+}
+
+func (db *DB) GetLastfmTrackByMbid(mbid string) (*data.LastfmTrack, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), recommendationQueryTimeout)
+	defer cancel()
+
+	query := `
+		SELECT * FROM lastfm_tracks
+		WHERE mbid = $1`
+
+	track := data.LastfmTrack{}
+	err := db.GetContext(ctx, &track, query, mbid)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &track, nil
+}
+
+func (db *DB) GetLastfmTrackByArtistNameAndTitle(artistName, title string) (*data.LastfmTrack, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), recommendationQueryTimeout)
+	defer cancel()
+
+	query := `
+		SELECT * FROM lastfm_tracks
+		WHERE artist_name = $1
+			AND title = $2
+		LIMIT 1`
+
+	track := data.LastfmTrack{}
+	err := db.GetContext(ctx, &track, query, artistName, title)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &track, nil
+}
+
+func (db *DB) GetLastfmTrackById(id int) (*data.LastfmTrack, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), recommendationQueryTimeout)
+	defer cancel()
+
+	query := `
+		SELECT * FROM lastfm_tracks
+		WHERE id = $1`
+
+	track := data.LastfmTrack{}
+	err := db.GetContext(ctx, &track, query, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &track, nil
 }
 
 func (db *DB) HasTidalTrackLastfmRecommendations(tidalTrackId int64) (bool, error) {
@@ -150,7 +219,7 @@ func (db *DB) GetLastfmRecommendationsForTidalTrack(tidalTrackId int64) ([]Tidal
 		}
 
 		if duration.Valid {
-			d := lastfm.Duration(duration.Int64)
+			d := time.Duration(duration.Int64)
 			recommendation.LastfmTrack.Duration = &d
 		}
 

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 
 	"github.com/altierawr/oto/internal/database"
 	"github.com/altierawr/oto/internal/types"
@@ -92,7 +91,7 @@ type TidalTrackResponse struct {
 	} `json:"album"`
 }
 
-func GetSong(id int64) (*types.TidalSong, error) {
+func (s *Service) GetSong(id int64) (*types.TidalSong, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -156,34 +155,13 @@ func GetSong(id int64) (*types.TidalSong, error) {
 		})
 	}
 
+	err = s.db.InsertTidalTrack(song, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal track in tidal.GetSong",
+			"error", err.Error(),
+			"id", song.ID,
+			"title", song.Title)
+	}
+
 	return song, nil
-}
-
-func GetSongBatch(ids []int64) ([]types.TidalSong, error) {
-	tracks := make([]types.TidalSong, len(ids))
-	errs := make([]error, len(ids))
-	var wg sync.WaitGroup
-
-	for i, id := range ids {
-		wg.Add(1)
-		go func(idx int, trackId int64) {
-			defer wg.Done()
-			track, err := GetSong(trackId)
-			if err != nil {
-				errs[idx] = err
-				return
-			}
-			tracks[idx] = *track
-		}(i, id)
-	}
-
-	wg.Wait()
-
-	for _, err := range errs {
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return tracks, nil
 }

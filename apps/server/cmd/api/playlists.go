@@ -7,7 +7,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/altierawr/oto/internal/database"
-	"github.com/altierawr/oto/internal/tidal"
 	"github.com/altierawr/oto/internal/validator"
 )
 
@@ -226,7 +225,7 @@ func (app *application) addTrackToPlaylistHandler(w http.ResponseWriter, r *http
 	}
 
 	if err != nil || track == nil {
-		track, err = tidal.GetSong(input.TrackID)
+		track, err = app.tidal.GetSong(input.TrackID)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return

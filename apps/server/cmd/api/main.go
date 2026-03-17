@@ -145,21 +145,21 @@ func main() {
 		},
 	}
 
+	app.tidal = tidal.New(app.db, app.logger)
+	app.background(app.tidal.RunBackground)
+
 	cfg.lastFm.apiKey, found = os.LookupEnv("LASTFM_API_KEY")
 	if !found {
 		logger.Warn("missing env variable LASTFM_API_KEY. features requiring last fm integration won't work.")
 	} else {
 		app.lastFm = api.NewClientKeyOnly(cfg.lastFm.apiKey)
-		app.recs = recommendations.New(app.db, app.lastFm, app.logger)
+		app.recs = recommendations.New(app.db, app.lastFm, app.logger, app.tidal)
 		app.db.SetOnTidalTrackUpsert(app.recs.Enqueue)
 		app.background(app.recs.Run)
 	}
 
 	app.sessions = sessions.New(app.db, app.logger)
 	app.background(app.sessions.RunBackground)
-
-	app.tidal = tidal.New(app.db, app.logger)
-	app.background(app.tidal.RunBackground)
 
 	createdAdmin, err := createAdminUser(app)
 	if err != nil {

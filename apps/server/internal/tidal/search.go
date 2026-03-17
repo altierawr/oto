@@ -90,7 +90,7 @@ type TidalSearchResponse struct {
 	} `json:"topHits"`
 }
 
-func Search(query string) (*types.TidalSearch, error) {
+func (s *Service) Search(query string) (*types.TidalSearch, error) {
 	err := refreshTokens()
 	if err != nil {
 		return nil, err
@@ -265,6 +265,24 @@ func Search(query string) (*types.TidalSearch, error) {
 			Type:  item.Type,
 			Value: item.Value,
 		})
+	}
+
+	err = s.db.InsertTidalArtists(result.Artists, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal artists in search",
+			"error", err.Error())
+	}
+
+	err = s.db.InsertTidalAlbums(result.Albums, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal albums in search",
+			"error", err.Error())
+	}
+
+	err = s.db.InsertTidalTracks(result.Songs, nil)
+	if err != nil {
+		s.logger.Error("couldn't insert tidal tracks in search",
+			"error", err.Error())
 	}
 
 	return &result, nil

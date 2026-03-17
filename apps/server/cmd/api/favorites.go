@@ -84,7 +84,7 @@ func (app *application) toggleFavoriteAlbumHandler(w http.ResponseWriter, r *htt
 	if isFavorited {
 		err = app.db.RemoveFavoriteAlbum(*userId, input.ID)
 	} else {
-		album, err := tidal.GetAlbum(input.ID)
+		album, err := app.tidal.GetAlbum(input.ID)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
@@ -148,7 +148,7 @@ func (app *application) toggleFavoriteTrackHandler(w http.ResponseWriter, r *htt
 		}
 
 		if err != nil || track == nil {
-			track, err = tidal.GetSong(input.ID)
+			track, err = app.tidal.GetSong(input.ID)
 			if err != nil {
 				app.serverErrorResponse(w, r, err)
 				return
