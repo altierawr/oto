@@ -1,5 +1,11 @@
 # server
 
+## 0.11.0
+
+### Minor Changes
+
+- c5fd33d: Improved how updates of user track & album recommendations are done.
+
 ## 0.10.0
 
 ### Minor Changes
