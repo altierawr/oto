@@ -1,5 +1,15 @@
 # web
 
+## 0.13.0
+
+### Minor Changes
+
+- 6065d2a: Made history items in play queue faded out and adjusted play queue font sizes.
+
+### Patch Changes
+
+- 16cc2da: Fixed an issue where the navbar would be detached from the top even when the page is fully scrolled at the top (usually when navigating between pages).
+
 ## 0.12.0
 
 ### Minor Changes
