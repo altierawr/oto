@@ -12,9 +12,10 @@ type TProps = {
   song: Song;
   index: number;
   coverBlockVariant?: CoverBlockVariant;
+  isHistory?: boolean;
 };
 
-const SongQueueItem = ({ song, index, coverBlockVariant = CoverBlockVariant.PLAY_ONLY }: TProps) => {
+const SongQueueItem = ({ song, index, coverBlockVariant = CoverBlockVariant.PLAY_ONLY, isHistory }: TProps) => {
   const [isActive, setIsActive] = useState(false);
   const { player } = usePlayerState();
 
@@ -24,7 +25,11 @@ const SongQueueItem = ({ song, index, coverBlockVariant = CoverBlockVariant.PLAY
 
   return (
     <div
-      className={clsx("-ml-3 flex gap-2 rounded-md px-3 py-2 hover:bg-(--gray-4)", isActive && "bg-(--gray-5)!")}
+      className={clsx(
+        "-ml-3 flex gap-2 rounded-md px-3 py-2 hover:bg-(--gray-4)",
+        isActive && "bg-(--gray-5)!",
+        isHistory && "opacity-25",
+      )}
       onMouseDown={() => setIsActive(true)}
       onMouseUp={() => setIsActive(false)}
       onMouseLeave={() => setIsActive(false)}

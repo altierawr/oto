@@ -45,7 +45,7 @@ const SongQueue = () => {
         {isVisible}
         <div className="grid h-full w-full content-start rounded-md border border-(--gray-6) bg-(--gray-2)">
           <div className="p-5">
-            <h2 className="text-lg font-black tracking-wide text-(--gray-12)">Queue</h2>
+            <h2 className="text-lg font-bold tracking-wide text-(--gray-12)">Play queue</h2>
           </div>
 
           <div className="grid flex-1 content-start overflow-y-auto px-5">
@@ -55,15 +55,15 @@ const SongQueue = () => {
               <>
                 {playerState.playlistIndex > 0 && (
                   <>
-                    <h3 className="font-semibold">Previous tracks</h3>
+                    <h3 className="mb-2 text-sm font-semibold">History</h3>
                     {playerState.playlist.slice(0, playerState.playlistIndex).map((pe, index) => (
-                      <SongQueueItem key={pe.id} song={pe} index={index} />
+                      <SongQueueItem key={pe.id} song={pe} index={index} isHistory={true} />
                     ))}
                     <div className="min-h-5" />
                   </>
                 )}
 
-                <h3 ref={nowPlayingRef} className="font-semibold">
+                <h3 ref={nowPlayingRef} className="mb-2 text-sm font-semibold">
                   Now playing
                 </h3>
                 <SongQueueItem
@@ -76,7 +76,7 @@ const SongQueue = () => {
 
                 {playerState.playlist.length > playerState.playlistIndex + 1 && (
                   <>
-                    <h3 className="font-semibold">Next up</h3>
+                    <h3 className="mb-2 text-sm font-semibold">Next up</h3>
                     {playerState.playlist
                       .slice(playerState.playlistIndex + 1, playerState.playlist.length)
                       .map((pe, index) => (
