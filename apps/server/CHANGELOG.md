@@ -1,5 +1,11 @@
 # server
 
+## 0.11.1
+
+### Patch Changes
+
+- 55bf43a: Fixed an issue where a song that was already in playlist could get added with autoplay.
+
 ## 0.11.0
 
 ### Minor Changes
