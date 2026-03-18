@@ -21,6 +21,7 @@ const (
 	autoplayArtistPenaltyFactor     = 0.4
 	autoplayAlbumPenaltyFactor      = 1.4
 	autoplayRecommendationFindLimit = 3
+	autoplayRecommendationGuardMax  = 3
 )
 
 func (app *application) createSessionHandler(w http.ResponseWriter, r *http.Request) {
@@ -395,6 +396,36 @@ func (app *application) getSessionAutoplayTrackHandler(w http.ResponseWriter, r 
 			if bestResult != nil {
 				break
 			}
+		}
+	}
+
+	if bestResult == nil {
+		app.logger.Error("couldn't find a track to recommend",
+			"sessionId", sessionId)
+		app.serverErrorResponse(w, r, errors.New("couldn't find a track to recommend"))
+		return
+	}
+
+	for range autoplayRecommendationGuardMax {
+		exists, err := app.db.HasSessionTrack(*userId, *sessionId, int64(bestResult.ID))
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if !exists {
+			break
+		}
+
+		sessionTrackIds[int64(bestResult.ID)] = struct{}{}
+		bestResult, err = app.getBestAutoplayTrack(recommendationScores, sessionTrackIds, session.Tracks)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if bestResult == nil {
+			break
 		}
 	}
 

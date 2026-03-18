@@ -126,6 +126,28 @@ func (db *DB) AddSessionTrack(userId uuid.UUID, sessionId uuid.UUID, track types
 	return tx.Commit()
 }
 
+func (db *DB) HasSessionTrack(userId uuid.UUID, sessionId uuid.UUID, trackId int64) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT COUNT(1)
+		FROM session_tracks st
+		INNER JOIN sessions s ON s.id = st.session_id
+		WHERE s.user_id = $1
+			AND s.id = $2
+			AND s.expiry > $3
+			AND st.track_id = $4`
+
+	var count int
+	err := db.QueryRowContext(ctx, query, userId, sessionId, time.Now().Unix(), trackId).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
 func (db *DB) RemoveSessionTrack(userId uuid.UUID, sessionId uuid.UUID, position int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
