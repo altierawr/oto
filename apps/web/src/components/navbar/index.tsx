@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { useEffect, useState, type RefObject } from "react";
+import { useLocation } from "react-router";
 
 import Search from "../search";
 
@@ -9,6 +10,7 @@ type TProps = {
 
 const Navbar = ({ scrollRef }: TProps) => {
   const [isAtTop, setIsAtTop] = useState(scrollRef.current ? scrollRef.current.scrollTop === 0 : true);
+  const { pathname } = useLocation();
 
   useEffect(() => {
     if (!scrollRef.current) {
@@ -50,6 +52,8 @@ const Navbar = ({ scrollRef }: TProps) => {
       }
     };
 
+    setIsAtTop(current.scrollTop === 0);
+
     current.addEventListener("wheel", wheelListener);
     current.addEventListener("scrollend", scrollEndListener);
     current.addEventListener("scroll", scrollListener);
@@ -59,7 +63,7 @@ const Navbar = ({ scrollRef }: TProps) => {
       current.removeEventListener("scrollend", scrollEndListener);
       current.removeEventListener("scroll", scrollListener);
     };
-  }, [scrollRef, setIsAtTop]);
+  }, [scrollRef, setIsAtTop, pathname]);
 
   return (
     <div className="sticky top-0 z-30 col-[breakout]! flex w-full lg:px-5">
