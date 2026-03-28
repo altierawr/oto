@@ -87,7 +87,7 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	err = app.writeJSON(w, http.StatusCreated, nil, nil)
+	err = app.writeJSON(w, http.StatusCreated, tokenPair, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

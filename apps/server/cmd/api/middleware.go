@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -75,20 +76,41 @@ func (app *application) parseSession(next http.Handler) http.Handler {
 
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("access_token")
-		if err != nil {
-			switch {
-			case errors.Is(err, http.ErrNoCookie):
-				r = app.contextSetUserRole(r, UserRoleAnonymous)
-				next.ServeHTTP(w, r)
-			default:
-				app.serverErrorResponse(w, r, err)
+		w.Header().Set("Vary", "Authorization")
+
+		// try cookie first (web) and then auth header (mobile)
+		token, err := func() (string, error) {
+			cookie, err := r.Cookie("access_token")
+			if err == nil {
+				return cookie.Value, nil
+			}
+			if !errors.Is(err, http.ErrNoCookie) {
+				return "", err
 			}
 
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				return "", nil
+			}
+
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				return "", errors.New("invalid authorization header")
+			}
+
+			return parts[1], nil
+		}()
+
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
 			return
 		}
 
-		token := cookie.Value
+		if token == "" {
+			r = app.contextSetUserRole(r, UserRoleAnonymous)
+			next.ServeHTTP(w, r)
+			return
+		}
 
 		v := validator.New()
 
