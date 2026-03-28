@@ -1,5 +1,11 @@
 # server
 
+## 0.12.0
+
+### Minor Changes
+
+- 62e344e: The authentication endpoints now send the auth token pair as part of the response.
+
 ## 0.11.1
 
 ### Patch Changes
